@@ -1,5 +1,4 @@
 {
-    "$schema": "https://json-schema.org/draft-07/schema#",
     "title": "BriefAIOutline",
     "type": "object",
     "required": ["konu", "strateji", "title_meta", "outline", "eeat", "schema_org", "faq", "qc"],
