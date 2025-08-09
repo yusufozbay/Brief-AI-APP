@@ -253,7 +253,11 @@ Populate every field. Do not include markdown. No prose outside JSON.`;
     }
 
     // Validate against schema
-    const ajv = new Ajv();
+    const ajv = new Ajv({ 
+      strict: false,
+      validateSchema: false,
+      addUsedSchema: false
+    });
     const validate = ajv.compile(schema);
     const valid = validate(parsedResponse);
 
@@ -267,7 +271,12 @@ Populate every field. Do not include markdown. No prose outside JSON.`;
       
       try {
         parsedResponse = JSON.parse(repairedText);
-        const revalidate = ajv.compile(schema);
+        const revalidateAjv = new Ajv({ 
+          strict: false,
+          validateSchema: false,
+          addUsedSchema: false
+        });
+        const revalidate = revalidateAjv.compile(schema);
         const revalid = revalidate(parsedResponse);
         
         if (!revalid) {
