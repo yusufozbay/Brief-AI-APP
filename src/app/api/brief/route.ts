@@ -105,22 +105,26 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Store in Firebase
+    // Store in Firebase (optional, don't fail if it doesn't work)
     try {
-      const docRef = await addDoc(collection(db, 'briefs'), {
-        konu_sorgusu,
-        google_query_fan_out_entities,
-        outline: finalOutline,
-        validation_errors: validation.errors,
-        serp_data: {
-          competitors: competitors.slice(0, 5), // Store top 5 for reference
-          paa_questions: paaQuestions.slice(0, 10),
-          entities
-        },
-        created_at: new Date(),
-        language
-      });
-      console.log('Stored brief with ID:', docRef.id);
+      if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) {
+        const docRef = await addDoc(collection(db, 'briefs'), {
+          konu_sorgusu,
+          google_query_fan_out_entities,
+          outline: finalOutline,
+          validation_errors: validation.errors,
+          serp_data: {
+            competitors: competitors.slice(0, 5), // Store top 5 for reference
+            paa_questions: paaQuestions.slice(0, 10),
+            entities
+          },
+          created_at: new Date(),
+          language
+        });
+        console.log('Stored brief with ID:', docRef.id);
+      } else {
+        console.warn('Firebase not configured, skipping storage');
+      }
     } catch (firebaseError) {
       console.error('Firebase storage error:', firebaseError);
       // Continue without failing the request

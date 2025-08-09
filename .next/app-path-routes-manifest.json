@@ -1,8 +1,9 @@
 {
-  "/api/entities/route": "/api/entities",
-  "/api/paa/route": "/api/paa",
   "/_not-found/page": "/_not-found",
-  "/favicon.ico/route": "/favicon.ico",
+  "/api/entities/route": "/api/entities",
   "/api/brief/route": "/api/brief",
+  "/api/paa/route": "/api/paa",
+  "/api/test/route": "/api/test",
+  "/favicon.ico/route": "/favicon.ico",
   "/page": "/"
 }

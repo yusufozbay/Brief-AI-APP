@@ -1,8 +1,9 @@
 {
-  "/api/entities/route": "app/api/entities/route.js",
-  "/api/paa/route": "app/api/paa/route.js",
   "/_not-found/page": "app/_not-found/page.js",
-  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/api/entities/route": "app/api/entities/route.js",
   "/api/brief/route": "app/api/brief/route.js",
+  "/api/paa/route": "app/api/paa/route.js",
+  "/api/test/route": "app/api/test/route.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
   "/page": "app/page.js"
 }
