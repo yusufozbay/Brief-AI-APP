@@ -8,6 +8,8 @@ const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
 interface BriefInputs {
   konu_sorgusu: string;
   google_query_fan_out_entities?: string;
+  extra_subtitles?: string;
+  extra_faq?: string;
   serp_competitors: string;
   paa_questions: string;
 }
@@ -203,10 +205,12 @@ Populate every field. Do not include markdown. No prose outside JSON.`;
       console.warn('Using fallback schema');
     }
     
-    // Inject variables into template
+    // Replace template variables
     const systemPrompt = template
       .replace('{{konu_sorgusu}}', inputs.konu_sorgusu)
-      .replace('{{google_query_fan_out_entities}}', inputs.google_query_fan_out_entities || 'None provided')
+      .replace('{{google_query_fan_out_entities}}', inputs.google_query_fan_out_entities || '')
+      .replace('{{extra_subtitles}}', inputs.extra_subtitles || '')
+      .replace('{{extra_faq}}', inputs.extra_faq || '')
       .replace('{{serp_competitors}}', inputs.serp_competitors)
       .replace('{{paa_questions}}', inputs.paa_questions);
 

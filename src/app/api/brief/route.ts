@@ -25,7 +25,13 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { konu_sorgusu, google_query_fan_out_entities, language = 'tr' } = body;
+    const { 
+      konu_sorgusu, 
+      google_query_fan_out_entities, 
+      extra_subtitles,
+      extra_faq,
+      language = 'tr' 
+    } = body;
 
     if (!konu_sorgusu) {
       return NextResponse.json(
@@ -80,6 +86,8 @@ export async function POST(request: NextRequest) {
     const briefInputs = {
       konu_sorgusu,
       google_query_fan_out_entities,
+      extra_subtitles: extra_subtitles || '',
+      extra_faq: extra_faq || '',
       serp_competitors: serpCompetitors,
       paa_questions: paaFormatted
     };

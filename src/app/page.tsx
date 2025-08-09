@@ -27,7 +27,9 @@ export default function Home() {
 
   const [formData, setFormData] = useState({
     konu_sorgusu: '',
-    google_query_fan_out_entities: ''
+    google_query_fan_out_entities: '',
+    extra_subtitles: '',
+    extra_faq: ''
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -128,6 +130,38 @@ export default function Home() {
                 className="w-full px-4 py-3 text-gray-900 bg-white border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-colors placeholder-gray-500 text-base"
                 disabled={isLoading}
               />
+            </div>
+
+            <div>
+              <label htmlFor="extra_subtitles" className="block text-sm font-semibold text-gray-800 mb-3">
+                Extra Subtitles (Optional)
+              </label>
+              <textarea
+                id="extra_subtitles"
+                value={formData.extra_subtitles}
+                onChange={(e) => setFormData({ ...formData, extra_subtitles: e.target.value })}
+                placeholder="e.g., Kedi maması markaları karşılaştırması, En iyi yaş kedi maması, Kedi maması fiyat analizi"
+                className="w-full px-4 py-3 text-gray-900 bg-white border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-colors placeholder-gray-500 text-base resize-vertical"
+                rows={3}
+                disabled={isLoading}
+              />
+              <p className="text-sm text-gray-500 mt-1">Enter additional subtitles you want included in the outline, separated by commas</p>
+            </div>
+
+            <div>
+              <label htmlFor="extra_faq" className="block text-sm font-semibold text-gray-800 mb-3">
+                Extra FAQ Questions (Optional)
+              </label>
+              <textarea
+                id="extra_faq"
+                value={formData.extra_faq}
+                onChange={(e) => setFormData({ ...formData, extra_faq: e.target.value })}
+                placeholder="e.g., Kedi maması nasıl seçilir?, Hangi yaşta kedi maması verilir?, Kedi maması ne kadar sürede tüketilir?"
+                className="w-full px-4 py-3 text-gray-900 bg-white border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-colors placeholder-gray-500 text-base resize-vertical"
+                rows={3}
+                disabled={isLoading}
+              />
+              <p className="text-sm text-gray-500 mt-1">Enter additional FAQ questions you want included, separated by commas</p>
             </div>
 
             <button

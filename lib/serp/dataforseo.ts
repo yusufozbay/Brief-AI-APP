@@ -20,6 +20,12 @@ interface EntityResult {
   description?: string;
 }
 
+interface Competitor {
+  url: string;
+  title: string;
+  description: string;
+}
+
 export class DataForSEOClient {
   private credentials: DataForSEOCredentials;
   private baseUrl = 'https://api.dataforseo.com/v3';
@@ -50,65 +56,94 @@ export class DataForSEOClient {
     return response.json();
   }
 
-  async getTopCompetitors(query: string, location: string = 'Turkey', language: string = 'tr'): Promise<SERPResult[]> {
+  async getTopCompetitors(query: string, location: string = 'Turkey', language: string = 'tr'): Promise<Competitor[]> {
+    const postData = [{
+      language_code: language,
+      location_name: location,
+      keyword: query,
+      depth: 10
+    }];
+
+    console.log(' DataForSEO Competitors Request:', {
+      endpoint: '/serp/google/organic/live/advanced',
+      params: postData[0],
+      timestamp: new Date().toISOString()
+    });
+
     try {
-      const data = [{
-        keyword: query,
-        location_name: location,
-        language_name: language,
-        device: 'desktop',
-        os: 'windows'
-      }];
-
-      const result = await this.makeRequest('/serp/google/organic/live/advanced', data);
+      const response = await this.makeRequest('/serp/google/organic/live/advanced', postData);
       
-      if (result.tasks && result.tasks[0] && result.tasks[0].result) {
-        const items = result.tasks[0].result[0]?.items || [];
-        return items
-          .filter((item: { type: string }) => item.type === 'organic')
-          .slice(0, 10)
-          .map((item: { url: string; title: string; description?: string }) => ({
-            url: item.url,
-            title: item.title,
-            description: item.description || ''
-          }));
-      }
+      if (response.tasks?.[0]?.result?.[0]?.items) {
+        const items = response.tasks[0].result[0].items;
+        const competitors = items.slice(0, 10).map((item: { url?: string; title?: string; description?: string }) => ({
+          url: item.url || '',
+          title: item.title || '',
+          description: item.description || ''
+        }));
 
+        console.log('📊 Competitors Found:', competitors.length);
+        competitors.forEach((comp: Competitor, index: number) => {
+          console.log(`🏆 Competitor ${index + 1}:`, {
+            title: comp.title.substring(0, 60) + (comp.title.length > 60 ? '...' : ''),
+            url: comp.url,
+            description: comp.description.substring(0, 100) + (comp.description.length > 100 ? '...' : '')
+          });
+        });
+
+        return competitors;
+      }
+      
+      console.warn(' No competitor data found in response');
       return [];
     } catch (error) {
-      console.error('Error fetching competitors:', error);
-      return [];
+      console.error(' Error fetching competitors:', error);
+      throw error;
     }
   }
 
   async getPAAQuestions(query: string, location: string = 'Turkey', language: string = 'tr'): Promise<PAAQuestion[]> {
-    try {
-      const data = [{
-        keyword: query,
-        location_name: location,
-        language_name: language,
-        device: 'desktop',
-        os: 'windows'
-      }];
+    const postData = [{
+      language_code: language,
+      location_name: location,
+      keyword: query
+    }];
 
-      const result = await this.makeRequest('/serp/google/organic/live/advanced', data);
+    console.log('❓ DataForSEO PAA Request:', {
+      endpoint: '/serp/google/organic/live/advanced',
+      params: postData[0],
+      timestamp: new Date().toISOString()
+    });
+
+    try {
+      const response = await this.makeRequest('/serp/google/organic/live/advanced', postData);
       
-      if (result.tasks && result.tasks[0] && result.tasks[0].result) {
-        const items = result.tasks[0].result[0]?.items || [];
-        const paaItems = items.filter((item: { type: string }) => item.type === 'people_also_ask');
+      if (response.tasks?.[0]?.result?.[0]?.items) {
+        const items = response.tasks[0].result[0].items;
+        const paaItems = items.filter((item: { type?: string }) => item.type === 'people_also_ask');
         
-        return paaItems.flatMap((item: { items?: Array<{ title: string; expanded_element?: Array<{ description: string }> }> }) => 
-          item.items?.map((paa) => ({
-            question: paa.title,
-            answer: paa.expanded_element?.[0]?.description
+        const questions = paaItems.flatMap((item: { items?: Array<{ title?: string; snippet?: string }> }) => 
+          item.items?.map((paa: { title?: string; snippet?: string }) => ({
+            question: paa.title || '',
+            answer: paa.snippet || ''
           })) || []
         );
-      }
 
+        console.log('❓ PAA Questions Found:', questions.length);
+        questions.forEach((paa: PAAQuestion, index: number) => {
+          console.log(`❓ PAA ${index + 1}:`, {
+            question: paa.question.substring(0, 80) + (paa.question.length > 80 ? '...' : ''),
+            answer: paa.answer ? paa.answer.substring(0, 100) + (paa.answer.length > 100 ? '...' : '') : 'No answer'
+          });
+        });
+
+        return questions;
+      }
+      
+      console.warn('⚠️ No PAA data found in response');
       return [];
     } catch (error) {
-      console.error('Error fetching PAA questions:', error);
-      return [];
+      console.error('❌ Error fetching PAA questions:', error);
+      throw error;
     }
   }
 
