@@ -4,7 +4,7 @@ import { DataForSEOClient } from '../../../../lib/serp/dataforseo';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { query, location = 'Turkey', language = 'tr' } = body;
+    const { query } = body;
 
     if (!query) {
       return NextResponse.json(

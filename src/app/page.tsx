@@ -75,7 +75,7 @@ export default function Home() {
       const response = await fetch('/prompts/OUTPUT.schema.json');
       const schema = await response.json();
       return JSON.stringify(schema, null, 2);
-    } catch (error) {
+    } catch {
       return 'Error loading schema';
     }
   };

@@ -31,7 +31,7 @@ export class DataForSEOClient {
     };
   }
 
-  private async makeRequest(endpoint: string, data: any) {
+  private async makeRequest(endpoint: string, data: unknown) {
     const auth = Buffer.from(`${this.credentials.login}:${this.credentials.password}`).toString('base64');
     
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
@@ -65,9 +65,9 @@ export class DataForSEOClient {
       if (result.tasks && result.tasks[0] && result.tasks[0].result) {
         const items = result.tasks[0].result[0]?.items || [];
         return items
-          .filter((item: any) => item.type === 'organic')
+          .filter((item: { type: string }) => item.type === 'organic')
           .slice(0, 10)
-          .map((item: any) => ({
+          .map((item: { url: string; title: string; description?: string }) => ({
             url: item.url,
             title: item.title,
             description: item.description || ''
@@ -95,10 +95,10 @@ export class DataForSEOClient {
       
       if (result.tasks && result.tasks[0] && result.tasks[0].result) {
         const items = result.tasks[0].result[0]?.items || [];
-        const paaItems = items.filter((item: any) => item.type === 'people_also_ask');
+        const paaItems = items.filter((item: { type: string }) => item.type === 'people_also_ask');
         
-        return paaItems.flatMap((item: any) => 
-          item.items?.map((paa: any) => ({
+        return paaItems.flatMap((item: { items?: Array<{ title: string; expanded_element?: Array<{ description: string }> }> }) => 
+          item.items?.map((paa) => ({
             question: paa.title,
             answer: paa.expanded_element?.[0]?.description
           })) || []
@@ -119,7 +119,7 @@ export class DataForSEOClient {
         keyword: query,
         location_name: 'Turkey',
         language_name: 'tr',
-        device: 'desktop',
+        device: 'mobile',
         os: 'windows'
       }];
 
@@ -127,7 +127,7 @@ export class DataForSEOClient {
       
       if (result.tasks && result.tasks[0] && result.tasks[0].result) {
         const items = result.tasks[0].result[0]?.items || [];
-        const knowledgeGraph = items.find((item: any) => item.type === 'knowledge_graph');
+        const knowledgeGraph = items.find((item: { type: string }) => item.type === 'knowledge_graph') as { title: string; sub_title?: string; description?: string } | undefined;
         
         if (knowledgeGraph) {
           return [{
