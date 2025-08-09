@@ -81,8 +81,8 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100">
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -98,10 +98,10 @@ export default function Home() {
         </div>
 
         {/* Input Form */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8 mb-8 backdrop-blur-sm">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="konu_sorgusu" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="konu_sorgusu" className="block text-sm font-semibold text-gray-800 mb-3">
                 Topic Query *
               </label>
               <input
@@ -110,13 +110,13 @@ export default function Home() {
                 value={formData.konu_sorgusu}
                 onChange={(e) => setFormData({ ...formData, konu_sorgusu: e.target.value })}
                 placeholder="e.g., Kedi maması fiyatları"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 text-gray-900 bg-white border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-colors placeholder-gray-500 text-base"
                 disabled={isLoading}
               />
             </div>
 
             <div>
-              <label htmlFor="entities" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="entities" className="block text-sm font-semibold text-gray-800 mb-3">
                 Fan-Out Entities (Optional)
               </label>
               <input
@@ -125,7 +125,7 @@ export default function Home() {
                 value={formData.google_query_fan_out_entities}
                 onChange={(e) => setFormData({ ...formData, google_query_fan_out_entities: e.target.value })}
                 placeholder="e.g., Royal Canin, Whiskas, premium cat food brands"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 text-gray-900 bg-white border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-colors placeholder-gray-500 text-base"
                 disabled={isLoading}
               />
             </div>
@@ -133,9 +133,16 @@ export default function Home() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+              className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4 px-6 rounded-lg hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             >
-              {isLoading ? 'Generating Brief...' : 'Generate Brief'}
+              {isLoading ? (
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                  Generating Brief...
+                </div>
+              ) : (
+                'Generate Brief'
+              )}
             </button>
           </form>
         </div>

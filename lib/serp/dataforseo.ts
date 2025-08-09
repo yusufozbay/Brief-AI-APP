@@ -120,7 +120,7 @@ export class DataForSEOClient {
         location_name: 'Turkey',
         language_name: 'tr',
         device: 'mobile',
-        os: 'windows'
+        os: 'android'
       }];
 
       const result = await this.makeRequest('/serp/google/organic/live/advanced', data);
