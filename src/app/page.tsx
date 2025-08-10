@@ -13,8 +13,7 @@ interface ModelSettings {
 }
 
 export default function Home() {
-  const [outline, setOutline] = useState(null);
-  const [validationErrors, setValidationErrors] = useState([]);
+  const [outline, setOutline] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showSchema, setShowSchema] = useState(false);
   const [settings, setSettings] = useState<ModelSettings>({
@@ -42,9 +41,12 @@ export default function Home() {
 
     setIsLoading(true);
     setOutline(null);
-    setValidationErrors([]);
 
     try {
+      // Add timeout to frontend request (25 seconds to match Netlify limit)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 25000);
+
       const response = await fetch('/api/brief', {
         method: 'POST',
         headers: {
@@ -54,19 +56,39 @@ export default function Home() {
           ...formData,
           language: settings.language
         }),
+        signal: controller.signal
       });
 
-      const data = await response.json();
+      clearTimeout(timeoutId);
+
+      // Handle different response types
+      if (response.status === 504) {
+        alert('Request timed out. The brief generation is taking longer than expected. Please try with a simpler topic or try again later.');
+        return;
+      }
+
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        console.error('JSON parsing error:', jsonError);
+        alert('Server returned invalid response. Please try again.');
+        return;
+      }
 
       if (data.success) {
         setOutline(data.outline);
-        setValidationErrors(data.validation.errors || []);
       } else {
-        alert(`Error: ${data.error}`);
+        const errorMessage = data.details ? `${data.error}: ${data.details}` : data.error;
+        alert(`Error: ${errorMessage}`);
       }
     } catch (error) {
       console.error('Error generating brief:', error);
-      alert('Failed to generate brief. Please try again.');
+      if (error instanceof Error && error.name === 'AbortError') {
+        alert('Request timed out. Please try with a simpler topic or try again later.');
+      } else {
+        alert('Failed to generate brief. Please check your internet connection and try again.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -194,7 +216,6 @@ export default function Home() {
         {/* Editor */}
         <Editor
           outline={outline}
-          validationErrors={validationErrors}
           isLoading={isLoading}
         />
       </div>

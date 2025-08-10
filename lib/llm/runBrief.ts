@@ -214,28 +214,33 @@ Populate every field. Do not include markdown. No prose outside JSON.`;
       .replace('{{serp_competitors}}', inputs.serp_competitors)
       .replace('{{paa_questions}}', inputs.paa_questions);
 
-    // Initialize Gemini model with specified parameters
+    // Initialize Gemini model with optimized parameters for Markdown output
     console.log('Initializing Gemini model...');
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.0-flash-exp',
+      model: 'gemini-1.5-flash', // Use stable model instead of experimental
       generationConfig: {
-        temperature: 0.4,
-        topP: 0.9,
-        topK: 40,
-        maxOutputTokens: 6000,
-        responseMimeType: 'application/json'
-        // Note: responseSchema removed for compatibility
+        temperature: 0.3, // Lower temperature for more consistent output
+        topP: 0.8,
+        topK: 32,
+        maxOutputTokens: 6000, // Increased for detailed Markdown output
+        responseMimeType: 'text/plain' // Changed from JSON to plain text for Markdown
       }
     });
 
-    // Generate content with retry logic
+    // Generate content with timeout and retry logic
     console.log('Generating content with Gemini...');
     let result;
     let response;
     let text;
     
     try {
-      result = await model.generateContent(systemPrompt);
+      // Add timeout to Gemini API call (increased for Markdown generation)
+      const geminiPromise = model.generateContent(systemPrompt);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Gemini API timeout after 25 seconds')), 25000)
+      );
+      
+      result = await Promise.race([geminiPromise, timeoutPromise]) as any;
       response = await result.response;
       text = response.text();
       console.log('Gemini response received, length:', text.length);
@@ -244,50 +249,13 @@ Populate every field. Do not include markdown. No prose outside JSON.`;
       throw new Error(`Gemini API failed: ${geminiError instanceof Error ? geminiError.message : 'Unknown error'}`);
     }
 
-    // Parse and validate JSON
-    let parsedResponse;
-    try {
-      parsedResponse = JSON.parse(text);
-    } catch (error) {
-      throw new Error(`Invalid JSON response: ${error}`);
+    // Return the Markdown content directly
+    if (!text || text.trim().length === 0) {
+      throw new Error('Empty response from Gemini API');
     }
 
-    // Validate against schema
-    const ajv = new Ajv({ 
-      strict: false,
-      validateSchema: false,
-      addUsedSchema: false
-    });
-    const validate = ajv.compile(schema);
-    const valid = validate(parsedResponse);
-
-    if (!valid) {
-      // Attempt one repair pass
-      const repairPrompt = `The following JSON response failed validation. Please fix it to match the schema exactly:\n\n${text}\n\nValidation errors: ${JSON.stringify(validate.errors)}\n\nReturn only valid JSON that matches the schema.`;
-      
-      const repairResult = await model.generateContent(repairPrompt);
-      const repairResponse = await repairResult.response;
-      const repairedText = repairResponse.text();
-      
-      try {
-        parsedResponse = JSON.parse(repairedText);
-        const revalidateAjv = new Ajv({ 
-          strict: false,
-          validateSchema: false,
-          addUsedSchema: false
-        });
-        const revalidate = revalidateAjv.compile(schema);
-        const revalid = revalidate(parsedResponse);
-        
-        if (!revalid) {
-          throw new Error(`Schema validation failed after repair: ${JSON.stringify(revalidate.errors)}`);
-        }
-      } catch (error) {
-        throw new Error(`Repair attempt failed: ${error}`);
-      }
-    }
-
-    return parsedResponse;
+    console.log('Returning Markdown content, length:', text.length);
+    return text.trim();
   } catch (error) {
     console.error('Error in runBrief:', error);
     throw error;

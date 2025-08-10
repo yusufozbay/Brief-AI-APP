@@ -40,20 +40,35 @@ export class DataForSEOClient {
   private async makeRequest(endpoint: string, data: unknown) {
     const auth = Buffer.from(`${this.credentials.login}:${this.credentials.password}`).toString('base64');
     
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Basic ${auth}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(data)
-    });
+    // Create AbortController for timeout handling
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+    
+    try {
+      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${auth}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data),
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`DataForSEO API error: ${response.status} ${response.statusText}`);
+      }
 
-    if (!response.ok) {
-      throw new Error(`DataForSEO API error: ${response.status} ${response.statusText}`);
+      return response.json();
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('DataForSEO API request timed out after 8 seconds');
+      }
+      throw error;
     }
-
-    return response.json();
   }
 
   async getTopCompetitors(query: string, location: string = 'Turkey', language: string = 'tr'): Promise<Competitor[]> {

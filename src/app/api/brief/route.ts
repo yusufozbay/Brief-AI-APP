@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DataForSEOClient } from '../../../../lib/serp/dataforseo';
 import { runBrief } from '../../../../lib/llm/runBrief';
-import { OutlineValidator } from '../../../../lib/validate/outline';
 import { db } from '../../../../lib/db/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 
@@ -43,38 +42,55 @@ export async function POST(request: NextRequest) {
     // Initialize DataForSEO client
     const serpClient = new DataForSEOClient();
 
-    // Fetch SERP data with fallbacks
-    console.log('Fetching SERP competitors...');
+    // Fetch SERP data in parallel with timeouts and fallbacks
+    console.log('Fetching SERP data in parallel...');
     let competitors = [];
     let paaQuestions = [];
     let entities = [];
 
-    try {
-      competitors = await serpClient.getTopCompetitors(konu_sorgusu, 'Turkey', language);
-    } catch (error) {
-      console.warn('Failed to fetch competitors, using fallback:', error);
+    // Run all SERP requests in parallel with individual timeouts
+    const [competitorsResult, paaResult, entitiesResult] = await Promise.allSettled([
+      Promise.race([
+        serpClient.getTopCompetitors(konu_sorgusu, 'Turkey', language),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Competitors timeout')), 5000))
+      ]),
+      Promise.race([
+        serpClient.getPAAQuestions(konu_sorgusu, 'Turkey', language),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('PAA timeout')), 5000))
+      ]),
+      Promise.race([
+        serpClient.getEntities(konu_sorgusu),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Entities timeout')), 5000))
+      ])
+    ]);
+
+    // Handle competitors result
+    if (competitorsResult.status === 'fulfilled') {
+      competitors = competitorsResult.value as { url: string; title: string; description: string }[];
+    } else {
+      console.warn('Failed to fetch competitors, using fallback:', competitorsResult.reason);
       competitors = [
         { url: 'https://example.com', title: 'Sample Competitor 1', description: 'Fallback competitor data' },
         { url: 'https://example2.com', title: 'Sample Competitor 2', description: 'Fallback competitor data' }
       ];
     }
-    
-    try {
-      console.log('Fetching PAA questions...');
-      paaQuestions = await serpClient.getPAAQuestions(konu_sorgusu, 'Turkey', language);
-    } catch (error) {
-      console.warn('Failed to fetch PAA questions, using fallback:', error);
+
+    // Handle PAA result
+    if (paaResult.status === 'fulfilled') {
+      paaQuestions = paaResult.value as { question: string; answer?: string }[];
+    } else {
+      console.warn('Failed to fetch PAA questions, using fallback:', paaResult.reason);
       paaQuestions = [
         { question: `What is ${konu_sorgusu}?`, answer: 'Sample PAA answer' },
         { question: `How to choose ${konu_sorgusu}?`, answer: 'Sample PAA answer' }
       ];
     }
-    
-    try {
-      console.log('Fetching entities...');
-      entities = await serpClient.getEntities(konu_sorgusu);
-    } catch (error) {
-      console.warn('Failed to fetch entities, using fallback:', error);
+
+    // Handle entities result
+    if (entitiesResult.status === 'fulfilled') {
+      entities = entitiesResult.value as { name: string; type: string; description?: string }[];
+    } else {
+      console.warn('Failed to fetch entities, using fallback:', entitiesResult.reason);
       entities = [{ name: konu_sorgusu, type: 'Topic', description: 'Main topic entity' }];
     }
 
@@ -93,25 +109,25 @@ export async function POST(request: NextRequest) {
     };
 
     console.log('Calling Gemini API...');
-    const outline = await runBrief(briefInputs);
-
-    // Validate the outline
-    console.log('Validating outline...');
-    const validator = new OutlineValidator();
-    const validation = validator.validate(outline);
-
-    // Auto-fix common issues if validation fails
-    let finalOutline = outline;
-    if (!validation.isValid) {
-      console.log('Validation failed, attempting auto-fix...');
-      finalOutline = OutlineValidator.autoFix(outline);
-      
-      // Re-validate after auto-fix
-      const revalidation = validator.validate(finalOutline);
-      if (!revalidation.isValid) {
-        console.warn('Auto-fix could not resolve all validation issues');
+    let markdownOutline;
+    try {
+      markdownOutline = await runBrief(briefInputs);
+      if (!markdownOutline) {
+        throw new Error('Gemini API returned empty response');
       }
+    } catch (error) {
+      console.error('Brief generation failed:', error);
+      return NextResponse.json(
+        { 
+          error: 'Failed to generate brief',
+          details: error instanceof Error ? error.message : 'Unknown error',
+          fallback_available: true
+        },
+        { status: 500 }
+      );
     }
+
+    console.log('Markdown outline generated successfully, length:', markdownOutline.length);
 
     // Store in Firebase (optional, don't fail if it doesn't work)
     try {
@@ -119,8 +135,8 @@ export async function POST(request: NextRequest) {
         const docRef = await addDoc(collection(db, 'briefs'), {
           konu_sorgusu,
           google_query_fan_out_entities,
-          outline: finalOutline,
-          validation_errors: validation.errors,
+          markdown_outline: markdownOutline,
+          output_format: 'markdown',
           serp_data: {
             competitors: competitors.slice(0, 5), // Store top 5 for reference
             paa_questions: paaQuestions.slice(0, 10),
@@ -140,15 +156,13 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      outline: finalOutline,
-      validation: {
-        isValid: validation.isValid,
-        errors: validation.errors
-      },
+      outline: markdownOutline,
+      format: 'markdown',
       metadata: {
         competitors_found: competitors.length,
         paa_questions_found: paaQuestions.length,
-        entities_found: entities.length
+        entities_found: entities.length,
+        outline_length: markdownOutline.length
       }
     });
 
