@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     // Use selected competitors if provided, otherwise fetch from SERP
     let competitors = [];
     let paaQuestions = [];
-    let entities = [];
+    let entities: { name: string; type: string; description?: string }[] = [];
     
     if (selected_competitors && selected_competitors.length > 0) {
       // CRITICAL: Limit competitors to 3 max to prevent timeout scaling
@@ -93,24 +93,36 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Handle PAA result
-    const paaResult = serpResults[resultIndex++];
-    if (paaResult.status === 'fulfilled') {
-      paaQuestions = (paaResult.value as unknown) as { question: string; answer?: string }[];
+    // Handle PAA result - only if we fetched it
+    if (competitors.length === 0 && resultIndex < serpResults.length) {
+      const paaResult = serpResults[resultIndex++];
+      if (paaResult && paaResult.status === 'fulfilled') {
+        paaQuestions = (paaResult.value as unknown) as { question: string; answer?: string }[];
+      } else {
+        console.warn('Failed to fetch PAA questions, using fallback:', paaResult?.reason);
+        paaQuestions = [
+          { question: `What is ${konu_sorgusu}?`, answer: 'Sample PAA answer' },
+          { question: `How to choose ${konu_sorgusu}?`, answer: 'Sample PAA answer' }
+        ];
+      }
+
+      // Handle entities result - only if we fetched it
+      if (resultIndex < serpResults.length) {
+        const entitiesResult = serpResults[resultIndex++];
+        if (entitiesResult && entitiesResult.status === 'fulfilled') {
+          entities = (entitiesResult.value as unknown) as { name: string; type: string; description?: string }[];
+        } else {
+          console.warn('Failed to fetch entities, using fallback:', entitiesResult?.reason);
+          entities = [{ name: konu_sorgusu, type: 'Topic', description: 'Main topic entity' }];
+        }
+      }
     } else {
-      console.warn('Failed to fetch PAA questions, using fallback:', paaResult.reason);
+      // Use fallback data when competitors were already provided
+      console.log('🚀 Using fallback PAA and entities for speed optimization...');
       paaQuestions = [
         { question: `What is ${konu_sorgusu}?`, answer: 'Sample PAA answer' },
         { question: `How to choose ${konu_sorgusu}?`, answer: 'Sample PAA answer' }
       ];
-    }
-
-    // Handle entities result
-    const entitiesResult = serpResults[resultIndex++];
-    if (entitiesResult.status === 'fulfilled') {
-      entities = (entitiesResult.value as unknown) as { name: string; type: string; description?: string }[];
-    } else {
-      console.warn('Failed to fetch entities, using fallback:', entitiesResult.reason);
       entities = [{ name: konu_sorgusu, type: 'Topic', description: 'Main topic entity' }];
     }
 
