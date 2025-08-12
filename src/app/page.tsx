@@ -347,81 +347,82 @@ export default function Home() {
                       </p>
                     </div>
                     
-                    <div className="grid gap-3 max-h-80 overflow-y-auto pr-2">
-                    {competitors.map((competitor, index) => (
-                      <div
-                        key={competitor.url}
-                        className={`group relative bg-white border-2 rounded-xl p-4 transition-all duration-200 hover:shadow-md ${
-                          selectedCompetitors.some(c => c.url === competitor.url)
-                            ? 'border-green-400 bg-green-50 shadow-sm'
-                            : 'border-gray-200 hover:border-blue-300'
-                        }`}
-                      >
-                        <div className="flex items-start space-x-4">
-                          <div className="flex-shrink-0 pt-1">
-                            <input
-                              type="checkbox"
-                              id={competitor.url}
-                              checked={selectedCompetitors.some(c => c.url === competitor.url)}
-                              onChange={(e) => {
-                                console.log(`🎯 User Action: ${e.target.checked ? 'Selected' : 'Deselected'} competitor:`, competitor.title);
-                                if (e.target.checked) {
-                                  // CRITICAL: Limit to 3 competitors max to prevent timeout scaling
-                                  if (selectedCompetitors.length < 3) {
-                                    setSelectedCompetitors([...selectedCompetitors, competitor]);
-                                  } else {
-                                    alert('⚠️ Maximum 3 competitors allowed for optimal performance and to prevent timeouts!');
-                                  }
-                                } else {
-                                  setSelectedCompetitors(selectedCompetitors.filter(c => c.url !== competitor.url));
-                                }
-                              }}
-                              className="h-5 w-5 text-green-600 focus:ring-green-500 border-gray-300 rounded-md transition-colors"
-                            />
-                          </div>
-                          
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <span className="inline-flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-800 text-xs font-bold rounded-full">
-                                {index + 1}
-                              </span>
-                              <label 
-                                htmlFor={competitor.url} 
-                                className="text-sm font-bold text-gray-900 cursor-pointer hover:text-blue-700 transition-colors line-clamp-2"
-                              >
-                                {competitor.title}
-                              </label>
+                      <div className="grid gap-4 max-h-96 overflow-y-auto pr-2">
+                        {competitors.map((competitor, index) => (
+                          <div
+                            key={competitor.url}
+                            className={`group relative backdrop-blur-sm border-2 rounded-2xl p-6 transition-all duration-300 hover:shadow-xl ${
+                              selectedCompetitors.some(c => c.url === competitor.url)
+                                ? 'border-green-400/50 bg-gradient-to-r from-green-500/10 to-emerald-500/10 shadow-lg shadow-green-500/20'
+                                : 'border-slate-600/30 bg-slate-700/20 hover:border-cyan-400/50 hover:bg-slate-700/30'
+                            }`}
+                          >
+                            <div className="flex items-start space-x-6">
+                              <div className="flex-shrink-0 pt-1">
+                                <input
+                                  type="checkbox"
+                                  id={competitor.url}
+                                  checked={selectedCompetitors.some(c => c.url === competitor.url)}
+                                  onChange={(e) => {
+                                    console.log(`🎯 User Action: ${e.target.checked ? 'Selected' : 'Deselected'} competitor:`, competitor.title);
+                                    if (e.target.checked) {
+                                      // CRITICAL: Limit to 3 competitors max to prevent timeout scaling
+                                      if (selectedCompetitors.length < 3) {
+                                        setSelectedCompetitors([...selectedCompetitors, competitor]);
+                                      } else {
+                                        alert('⚠️ Maximum 3 competitors allowed for optimal performance and to prevent timeouts!');
+                                      }
+                                    } else {
+                                      setSelectedCompetitors(selectedCompetitors.filter(c => c.url !== competitor.url));
+                                    }
+                                  }}
+                                  className="h-6 w-6 text-green-500 focus:ring-green-500/30 focus:ring-4 border-slate-500 rounded-lg transition-all duration-200 bg-slate-600/50"
+                                />
+                              </div>
+                              
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center space-x-3 mb-3">
+                                  <span className="inline-flex items-center justify-center w-8 h-8 bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-sm font-black rounded-2xl shadow-lg">
+                                    {index + 1}
+                                  </span>
+                                  <label 
+                                    htmlFor={competitor.url} 
+                                    className="text-lg font-bold text-slate-100 cursor-pointer hover:text-cyan-300 transition-colors line-clamp-2"
+                                  >
+                                    {competitor.title}
+                                  </label>
+                                </div>
+                                
+                                <div className="mb-3">
+                                  <a 
+                                    href={competitor.url} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="text-sm text-cyan-400 hover:text-cyan-300 hover:underline font-medium break-all flex items-center"
+                                  >
+                                    <span className="mr-2">🔗</span>
+                                    {competitor.url}
+                                  </a>
+                                </div>
+                                
+                                <p className="text-sm text-slate-300 leading-relaxed">
+                                  {competitor.description}
+                                </p>
+                              </div>
                             </div>
                             
-                            <div className="mb-2">
-                              <a 
-                                href={competitor.url} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-xs text-blue-600 hover:text-blue-800 hover:underline font-medium break-all"
-                              >
-                                🔗 {competitor.url}
-                              </a>
-                            </div>
-                            
-                            <p className="text-sm text-gray-700 leading-relaxed">
-                              {competitor.description}
-                            </p>
+                            {selectedCompetitors.some(c => c.url === competitor.url) && (
+                              <div className="absolute top-3 right-3">
+                                <div className="bg-gradient-to-r from-green-400 to-emerald-500 text-white rounded-2xl p-2 shadow-lg shadow-green-500/30">
+                                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                  </svg>
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        </div>
-                        
-                        {selectedCompetitors.some(c => c.url === competitor.url) && (
-                          <div className="absolute top-2 right-2">
-                            <div className="bg-green-500 text-white rounded-full p-1">
-                              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                              </svg>
-                            </div>
-                          </div>
-                        )}
+                        ))}
                       </div>
-                    ))}
-                  </div>
                   
                     {selectedCompetitors.length > 0 && (
                       <div className="mt-6 p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-2xl">
