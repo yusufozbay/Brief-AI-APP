@@ -72,7 +72,7 @@ export async function runBrief(inputs: BriefInputs) {
     console.log('Template loaded successfully:', templateLoaded);
     
     const model = genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash', // Use stable Gemini 1.5 Flash for reliable performance
+      model: 'gemini-1.5-pro', // Use Gemini 1.5 Pro for better competitor analysis and context understanding
       generationConfig: {
         temperature: 0.2, // Lower temperature for more focused, consistent output
         topP: 0.8,

@@ -225,9 +225,12 @@ export class DataForSEOClient {
     }
   }
 
-  formatCompetitorsForPrompt(competitors: SERPResult[]): string {
+  formatCompetitorsForPrompt(competitors: Competitor[]): string {
     return competitors
-      .map((comp, index) => `${index + 1}. ${comp.title}\n   URL: ${comp.url}\n   Description: ${comp.description}`)
+      .map((comp, index) => `${index + 1}. **${comp.title}**
+   🔗 URL: ${comp.url}
+   📝 Content Summary: ${comp.description}
+   🎯 Analysis Focus: Analyze this competitor's approach, content structure, and identify gaps for superior content strategy.`)
       .join('\n\n');
   }
 
