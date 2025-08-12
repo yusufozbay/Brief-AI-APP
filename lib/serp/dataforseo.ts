@@ -71,7 +71,7 @@ export class DataForSEOClient {
     }
   }
 
-  async getTopCompetitors(query: string, _location: string = 'Turkey', language: string = 'tr'): Promise<Competitor[]> {
+  async getTopCompetitors(query: string, _location: string, language: string = 'tr'): Promise<Competitor[]> {
     const postData = [{
       language_code: language,
       location_code: 2792, // Turkey location code
@@ -134,7 +134,7 @@ export class DataForSEOClient {
     }
   }
 
-  async getPAAQuestions(query: string, _location: string = 'Turkey', language: string = 'tr'): Promise<PAAQuestion[]> {
+  async getPAAQuestions(query: string, _location: string, language: string = 'tr'): Promise<string[]> {
     const postData = [{
       language_code: language,
       location_code: 2792, // Turkey location code

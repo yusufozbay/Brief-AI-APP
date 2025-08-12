@@ -25,7 +25,7 @@ export default function Home() {
   const [competitors, setCompetitors] = useState<Competitor[]>([]);
   const [selectedCompetitors, setSelectedCompetitors] = useState<Competitor[]>([]);
   const [isLoadingCompetitors, setIsLoadingCompetitors] = useState(false);
-  const [showCompetitors, setShowCompetitors] = useState(false);
+
   const [settings, setSettings] = useState<ModelSettings>({
     temperature: 0.4,
     topP: 0.9,
@@ -77,7 +77,7 @@ export default function Home() {
         setCompetitors(data.competitors || []);
         
         // Log each competitor for debugging
-        data.competitors?.forEach((comp: any, index: number) => {
+        data.competitors?.forEach((comp: Competitor, index: number) => {
           console.log(`🏆 Competitor ${index + 1}:`, {
             title: comp.title,
             url: comp.url,
@@ -99,16 +99,7 @@ export default function Home() {
     }
   };
 
-  const toggleCompetitorSelection = (competitor: Competitor) => {
-    setSelectedCompetitors(prev => {
-      const isSelected = prev.some(c => c.url === competitor.url);
-      if (isSelected) {
-        return prev.filter(c => c.url !== competitor.url);
-      } else {
-        return [...prev, competitor];
-      }
-    });
-  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -304,7 +295,7 @@ export default function Home() {
                   </div>
                   
                   <p className="text-sm text-gray-700 mb-4 bg-white/50 p-3 rounded-lg border-l-4 border-blue-400">
-                    💡 <strong>Gerçek SERP verisi:</strong> Aşağıdaki rakipler Google'dan canlı olarak çekilmiştir. 
+                    💡 <strong>Gerçek SERP verisi:</strong> Aşağıdaki rakipler Google&apos;dan canlı olarak çekilmiştir. 
                     Analiz için dahil etmek istediğiniz rakipleri seçin.
                   </p>
                   
