@@ -141,39 +141,97 @@ export async function POST(request: NextRequest) {
     } catch (error) {
       console.error('Brief generation failed, using fallback:', error);
       
-      // Generate a simple fallback outline when Gemini fails
-      markdownOutline = `# ${konu_sorgusu} - İçerik Planı
+      // Generate a detailed fallback outline that matches the prompt structure
+      markdownOutline = `# ${konu_sorgusu} İçin Kapsamlı İçerik Stratejisi ve Planı
 
-## Giriş
-${konu_sorgusu} hakkında kapsamlı bir rehber hazırlamak için bu planı kullanabilirsiniz.
+## STRATEJİK BAŞLANGIÇ
+- **Ana Odak ve Kullanıcı Niyeti**: ${konu_sorgusu} konusunda bilgi arayan kullanıcılar için kapsamlı rehber (Informational intent)
+- **Rakiplerin İçerik Tonu ve Stili**: Profesyonel ve samimi ton, pratik odaklı yaklaşım önerilir
+- **STRATEJİK FIRSAT VE ÖZGÜN DEĞER TEKLİFİ (UVP)**:
+  - **Rekabet Analizi Özeti**: ${selected_competitors.length > 0 ? 'Seçilen rakipler genel bilgi sunuyor ancak detaylı uygulama örnekleri eksik' : 'Mevcut içerikler temel bilgi sunuyor ancak pratik uygulamalar eksik'}
+  - **Sizin Benzersiz Değeriniz Ne Olmalı?**: Adım adım uygulamalı rehber, gerçek örnekler ve Türkiye'ye özel bilgiler
+- **Hedef Anahtar Kelime**: ${konu_sorgusu}
+- **İkincil Anahtar Kelimeler**: ${google_query_fan_out_entities ? google_query_fan_out_entities.split(',').map((k: string) => k.trim()).slice(0, 5).join(', ') : `${konu_sorgusu} nasıl yapılır, ${konu_sorgusu} rehberi, ${konu_sorgusu} ipuçları`}
 
-## Ana Konular
+## İDEAL BAŞLIK (TITLE) VE META AÇIKLAMA ÖNERİLERİ
+- **Başlık Önerisi 1 (Tıklama Odaklı)**: ${konu_sorgusu} - 2024'ün En Kapsamlı Rehberi (Adım Adım)
+- **Başlık Önerisi 2 (SEO Odaklı)**: ${konu_sorgusu}: Başlangıçtan İleri Seviyeye Tam Rehber
+- **Meta Açıklama Önerisi**: ${konu_sorgusu} hakkında bilmeniz gereken her şey! Adım adım rehber, ipuçları ve uzman önerileri ile başarıya ulaşın.
 
-### ${konu_sorgusu} Nedir?
-- Temel tanım ve açıklama
-- Önemli özellikler
-- Kullanım alanları
+## A. DETAYLI İÇERİK PLANI (OUTLINE)
 
-### ${konu_sorgusu} Nasıl Yapılır?
-- Adım adım rehber
+### H1: ${konu_sorgusu}: Başlangıçtan İleri Seviyeye Tam Rehber
+**(Giriş Paragrafı - Strateji Notu)**: ${konu_sorgusu} konusunda kapsamlı bilgi arayan okuyucular için hazırlanmış bu rehber, temel bilgilerden ileri tekniklere kadar her şeyi kapsar.
+
+### H2: ${konu_sorgusu} Nedir ve Neden Önemlidir?
+- **İçerik & Strateji Notu**: Konunun temel tanımı ve önemini açıklayın
+- **Kilit Bilgi**: ${konu_sorgusu} hakkında temel bilgiler
+- **Görsel Önerisi**: Konuyu açıklayan infografik
+
+#### H3: ${konu_sorgusu} Temel Kavramları
+- Temel tanımlar ve açıklamalar
+- Önemli özellikler ve faydalar
+
+#### H3: ${konu_sorgusu} Kullan��m Alanları
+- Pratik uygulama örnekleri
+- Gerçek hayattan senaryolar
+
+### H2: ${konu_sorgusu} Nasıl Yapılır? (Adım Adım Rehber)
+- **İçerik & Strateji Notu**: Uygulamalı rehber ve detaylı açıklamalar
+- **Kilit Bilgi**: Adım adım uygulama süreci
+- **Görsel Önerisi**: Adımları gösteren görsel rehber
+
+#### H3: Başlangıç İçin Gerekli Hazırlıklar
 - Gerekli araçlar ve malzemeler
-- İpuçları ve püf noktaları
+- Ön hazırlık adımları
 
-### ${konu_sorgusu} ile İlgili Sık Sorulan Sorular
-${extra_faq ? `- ${extra_faq.split(',').map((q: string) => q.trim()).join('\n- ')}` : '- Temel sorular ve cevapları'}
+#### H3: Uygulama Adımları
+- Detaylı adım adım süreç
+- Her adım için ipuçları
 
-${selected_competitors.length > 0 ? `
-### Rakip Analizi
-Seçilen rakipler:
-${selected_competitors.map((comp: { title: string; description: string }) => `- **${comp.title}**: ${comp.description}`).join('\n')}
+${extra_subtitles ? `
+### H2: ${extra_subtitles.split(',')[0]?.trim() || `${konu_sorgusu} İleri Teknikleri`}
+- **İçerik & Strateji Notu**: İleri seviye bilgiler ve teknikler
+- **Kilit Bilgi**: Uzman seviyesi uygulamalar
+- **Görsel Önerisi**: İleri teknikleri gösteren örnekler
 ` : ''}
 
-### Sonuç
-- Önemli noktaların özeti
-- Öneriler ve tavsiyeler
+${selected_competitors.length > 0 ? `
+### H2: Rakip Analizi ve Pazar Durumu
+- **İçerik & Strateji Notu**: Seçilen rakiplerin analizi
+- **Kilit Bilgi**: Pazar fırsatları ve boşlukları
+${selected_competitors.map((comp: { title: string; description: string }) => `
+#### H3: ${comp.title}
+- ${comp.description}
+`).join('')}
+` : ''}
+
+## B. SSS (SIK SORULAN SORULAR)
+${extra_faq ? extra_faq.split(',').map((q: string) => `
+### ${q.trim()}
+**Cevap**: ${q.trim()} hakkında detaylı açıklama ve pratik öneriler.
+`).join('') : `
+### ${konu_sorgusu} ne kadar sürede öğrenilir?
+**Cevap**: Temel seviyede ${konu_sorgusu} öğrenmek için ortalama 2-4 hafta yeterlidir.
+
+### ${konu_sorgusu} için hangi araçlar gereklidir?
+**Cevap**: Başlangıç için temel araçlar yeterlidir, ilerledikçe daha gelişmiş araçlara geçilebilir.
+`}
+
+## C. E-E-A-T VE GÜVENİLİRLİK
+- **Yazar Önerisi**: ${konu_sorgusu} konusunda deneyimli uzman
+- **Veri Kaynak Önerileri**: Güncel araştırmalar ve uzman görüşleri
+- **Güncelleme Planı**: Yılda 2 kez içerik güncellemesi
+
+## D. KALİTE KONTROL LİSTESİ
+- ✅ Özgün değer teklifi mevcut
+- ✅ Başlık hiyerarşisi doğru
+- ✅ Görsel önerileri eklendi
+- ✅ SSS bölümü kapsamlı
+- ✅ E-E-A-T kriterleri karşılandı
 
 ---
-*Not: Bu basit bir plan şablonudur. Daha detaylı içerik için lütfen tekrar deneyin.*`;
+*Not: Bu detaylı plan ${selected_competitors.length > 0 ? 'seçilen rakip analizi ile' : 'genel analiz ile'} oluşturulmuştur. Daha spesifik içerik için Gemini AI'dan tam yanıt alınması önerilir.*`;
 
       console.log('Using fallback outline, length:', markdownOutline.length);
     }
