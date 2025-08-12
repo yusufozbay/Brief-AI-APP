@@ -122,6 +122,12 @@ export async function runBrief(inputs: BriefInputs) {
     for (let i = 0; i < GEMINI_MODELS.length; i++) {
       const modelConfig = GEMINI_MODELS[i];
       
+      // TIME BREAK: Between model attempts (except first)
+      if (i > 0) {
+        console.log(`⏱️ TIME BREAK: Pausing before trying ${modelConfig.name}...`);
+        await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second break between models
+      }
+      
       try {
         text = await tryGeminiModel(modelConfig, systemPrompt, genAI);
         console.log(`🎉 SUCCESS with ${modelConfig.name}!`);

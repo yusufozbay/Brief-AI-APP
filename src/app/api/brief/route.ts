@@ -70,6 +70,10 @@ export async function POST(request: NextRequest) {
     
     const serpResults = await Promise.allSettled(serpPromises);
     
+    // TIME BREAK 1: After SERP data fetching
+    console.log('⏱️ TIME BREAK 1: SERP data fetched, processing results...');
+    await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second break
+    
     // Handle results based on whether competitors were user-selected
     let resultIndex = 0;
     if (competitors.length === 0) {
@@ -106,10 +110,18 @@ export async function POST(request: NextRequest) {
       entities = [{ name: konu_sorgusu, type: 'Topic', description: 'Main topic entity' }];
     }
 
+    // TIME BREAK 2: After data processing, before competitor analysis
+    console.log('⏱️ TIME BREAK 2: Data processed, preparing competitor analysis...');
+    await new Promise(resolve => setTimeout(resolve, 1500)); // 1.5 second break
+    
     // Format data for prompt
     const serpCompetitors = serpClient.formatCompetitorsForPrompt(competitors);
     const paaFormatted = serpClient.formatPAAForPrompt(paaQuestions);
 
+    // TIME BREAK 3: Before Gemini processing
+    console.log('⏱️ TIME BREAK 3: Competitor data formatted, starting Gemini analysis...');
+    await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second break
+    
     // Prepare inputs for LLM
     const briefInputs = {
       konu_sorgusu,
@@ -121,6 +133,7 @@ export async function POST(request: NextRequest) {
     };
 
     console.log('🚀 CALLING GEMINI CALLBACK PIPELINE - NO FALLBACK ALLOWED, UNRESTRICTED PROCESSING...');
+    console.log('📊 Processing', competitors.length, 'competitors with comprehensive analysis...');
     let markdownOutline;
     try {
       markdownOutline = await runBrief(briefInputs);
@@ -128,6 +141,11 @@ export async function POST(request: NextRequest) {
         throw new Error('Gemini API returned empty response');
       }
       console.log('✅ GEMINI CALLBACK PIPELINE SUCCESS - Generated content length:', markdownOutline.length);
+      
+      // TIME BREAK 4: After Gemini processing, before final formatting
+      console.log('⏱️ TIME BREAK 4: Gemini processing complete, preparing final output...');
+      await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second break
+      
     } catch (error) {
       console.error('❌ GEMINI API FAILED:', error);
       // NO FALLBACK - Return error to force proper debugging
