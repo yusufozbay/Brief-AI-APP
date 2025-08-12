@@ -271,7 +271,7 @@ export default function Home() {
                     Select competitors to include in your brief analysis ({selectedCompetitors.length} selected):
                   </p>
                   <div className="space-y-2 max-h-60 overflow-y-auto">
-                    {competitors.map((competitor, index) => (
+                    {competitors.map((competitor) => (
                       <div
                         key={competitor.url}
                         className={`p-3 rounded-lg border cursor-pointer transition-all ${

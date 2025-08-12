@@ -165,7 +165,7 @@ ${extra_faq ? `- ${extra_faq.split(',').map((q: string) => q.trim()).join('\n- '
 ${selected_competitors.length > 0 ? `
 ### Rakip Analizi
 Seçilen rakipler:
-${selected_competitors.map((comp: any) => `- **${comp.title}**: ${comp.description}`).join('\n')}
+${selected_competitors.map((comp: { title: string; description: string }) => `- **${comp.title}**: ${comp.description}`).join('\n')}
 ` : ''}
 
 ### Sonuç

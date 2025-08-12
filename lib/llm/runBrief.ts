@@ -1,5 +1,4 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import Ajv from 'ajv';
 import fs from 'fs';
 import path from 'path';
 
@@ -18,7 +17,6 @@ export async function runBrief(inputs: BriefInputs) {
   try {
     // Load runtime system prompt template with multiple path attempts
     let template: string = '';
-    let schema: object = {};
     
     const possibleTemplatePaths = [
       path.join(process.cwd(), 'prompts', 'RUNTIME_SYSTEM.tmpl.md'),
@@ -26,11 +24,7 @@ export async function runBrief(inputs: BriefInputs) {
       path.join(process.cwd(), '..', 'prompts', 'RUNTIME_SYSTEM.tmpl.md')
     ];
     
-    const possibleSchemaPaths = [
-      path.join(process.cwd(), 'prompts', 'OUTPUT.schema.json'),
-      path.join(__dirname, '..', '..', 'prompts', 'OUTPUT.schema.json'),
-      path.join(process.cwd(), '..', 'prompts', 'OUTPUT.schema.json')
-    ];
+
 
     // Try to load template
     let templateLoaded = false;
@@ -74,136 +68,7 @@ Populate every field. Do not include markdown. No prose outside JSON.`;
       console.warn('Using fallback template');
     }
 
-    // Try to load schema
-    let schemaLoaded = false;
-    for (const schemaPath of possibleSchemaPaths) {
-      try {
-        if (fs.existsSync(schemaPath)) {
-          schema = JSON.parse(fs.readFileSync(schemaPath, 'utf-8'));
-          schemaLoaded = true;
-          console.log('Schema loaded from:', schemaPath);
-          break;
-        }
-      } catch {
-        console.warn('Failed to load schema from:', schemaPath);
-      }
-    }
 
-    if (!schemaLoaded) {
-      // Fallback schema - basic structure
-      schema = {
-        type: "object",
-        required: ["konu", "strateji", "title_meta", "outline", "eeat", "schema_org", "faq", "qc"],
-        properties: {
-          konu: { type: "string" },
-          strateji: {
-            type: "object",
-            required: ["intent", "tone", "uvp", "rekabet_ozeti", "hedef_anahtar", "ikincil_anahtarlar"],
-            properties: {
-              intent: { type: "string" },
-              tone: { type: "string" },
-              uvp: { type: "string" },
-              rekabet_ozeti: { type: "string" },
-              hedef_anahtar: { type: "string" },
-              ikincil_anahtarlar: { type: "array", items: { type: "string" } }
-            }
-          },
-          title_meta: {
-            type: "object",
-            required: ["title_click", "title_seo", "meta"],
-            properties: {
-              title_click: { type: "string" },
-              title_seo: { type: "string" },
-              meta: { type: "string" }
-            }
-          },
-          outline: {
-            type: "object",
-            required: ["h1", "giris", "bolumler"],
-            properties: {
-              h1: { type: "string" },
-              giris: { type: "string" },
-              bolumler: {
-                type: "array",
-                items: {
-                  type: "object",
-                  required: ["h2", "icerik_notu", "media", "kilit_bilgi", "alt"],
-                  properties: {
-                    h2: { type: "string" },
-                    icerik_notu: { type: "string" },
-                    media: { type: "string" },
-                    kilit_bilgi: { type: "string" },
-                    alt: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        required: ["h3", "icerik_notu"],
-                        properties: {
-                          h3: { type: "string" },
-                          icerik_notu: { type: "string" }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          eeat: {
-            type: "object",
-            required: ["yazar_onerisi", "veri_kaynak_onerileri", "entity_entegrasyonu", "guncellik_plani"],
-            properties: {
-              yazar_onerisi: { type: "string" },
-              veri_kaynak_onerileri: { type: "array", items: { type: "string" } },
-              entity_entegrasyonu: { type: "array", items: { type: "string" } },
-              guncellik_plani: {
-                type: "object",
-                required: ["yillik_kontrol", "veri_tazeleme"],
-                properties: {
-                  yillik_kontrol: { type: "string" },
-                  veri_tazeleme: { type: "string" }
-                }
-              }
-            }
-          },
-          schema_org: {
-            type: "object",
-            required: ["ana", "destekleyici", "gerekce"],
-            properties: {
-              ana: { type: "string" },
-              destekleyici: { type: "array", items: { type: "string" } },
-              gerekce: { type: "string" }
-            }
-          },
-          faq: {
-            type: "array",
-            items: {
-              type: "object",
-              required: ["soru", "cevap"],
-              properties: {
-                soru: { type: "string" },
-                cevap: { type: "string" }
-              }
-            }
-          },
-          qc: {
-            type: "object",
-            required: ["ozgunluk", "baslik_giris", "okunabilirlik", "eeat", "gorsel", "linkleme", "sss", "dilbilgisi"],
-            properties: {
-              ozgunluk: { type: "boolean" },
-              baslik_giris: { type: "boolean" },
-              okunabilirlik: { type: "boolean" },
-              eeat: { type: "boolean" },
-              gorsel: { type: "boolean" },
-              linkleme: { type: "boolean" },
-              sss: { type: "boolean" },
-              dilbilgisi: { type: "boolean" }
-            }
-          }
-        }
-      };
-      console.warn('Using fallback schema');
-    }
     
     // Replace template variables
     const systemPrompt = template
@@ -240,8 +105,8 @@ Populate every field. Do not include markdown. No prose outside JSON.`;
         setTimeout(() => reject(new Error('Gemini API timeout after 6 seconds')), 6000)
       );
       
-      result = await Promise.race([geminiPromise, timeoutPromise]) as any;
-      response = await result.response;
+      result = await Promise.race([geminiPromise, timeoutPromise]);
+      response = await (result as { response: { text: () => string } }).response;
       text = response.text();
       console.log('Gemini response received, length:', text.length);
     } catch (geminiError) {

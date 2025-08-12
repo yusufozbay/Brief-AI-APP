@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
         setTimeout(() => reject(new Error('Competitors timeout')), 5000)
       );
       
-      const competitors = await Promise.race([competitorsPromise, timeoutPromise]) as any[];
+      const competitors = await Promise.race([competitorsPromise, timeoutPromise]) as { url: string; title: string; description: string }[];
       
       return NextResponse.json({
         success: true,

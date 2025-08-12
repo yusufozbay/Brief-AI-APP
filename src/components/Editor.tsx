@@ -2,6 +2,7 @@
 
 import React from 'react';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface ValidationError {
   type: string;
   message: string;
@@ -20,6 +21,7 @@ interface OutlineSection {
   }>;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface BriefOutline {
   konu: string;
   strateji: {

@@ -1,10 +1,11 @@
 {
-  "/api/paa/route": "/api/paa",
-  "/api/brief-debug/route": "/api/brief-debug",
   "/api/brief/route": "/api/brief",
-  "/api/entities/route": "/api/entities",
-  "/favicon.ico/route": "/favicon.ico",
   "/_not-found/page": "/_not-found",
+  "/api/paa/route": "/api/paa",
+  "/api/entities/route": "/api/entities",
+  "/api/brief-debug/route": "/api/brief-debug",
+  "/favicon.ico/route": "/favicon.ico",
+  "/api/competitors/route": "/api/competitors",
   "/api/test/route": "/api/test",
   "/page": "/"
 }
