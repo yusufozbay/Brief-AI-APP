@@ -99,10 +99,10 @@ Populate every field. Do not include markdown. No prose outside JSON.`;
     let text;
     
     try {
-      // Add timeout to Gemini API call (further reduced for faster response)
+      // Set up timeout for Gemini API call (8 seconds to allow more comprehensive output)
       const geminiPromise = model.generateContent(systemPrompt);
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Gemini API timeout after 6 seconds')), 6000)
+        setTimeout(() => reject(new Error('Gemini API timeout after 8 seconds')), 8000)
       );
       
       result = await Promise.race([geminiPromise, timeoutPromise]);

@@ -154,7 +154,7 @@ export async function POST(request: NextRequest) {
 - **İkincil Anahtar Kelimeler**: ${google_query_fan_out_entities ? google_query_fan_out_entities.split(',').map((k: string) => k.trim()).slice(0, 5).join(', ') : `${konu_sorgusu} nasıl yapılır, ${konu_sorgusu} rehberi, ${konu_sorgusu} ipuçları`}
 
 ## İDEAL BAŞLIK (TITLE) VE META AÇIKLAMA ÖNERİLERİ
-- **Başlık Önerisi 1 (Tıklama Odaklı)**: ${konu_sorgusu} - 2024'ün En Kapsamlı Rehberi (Adım Adım)
+- **Başlık Önerisi 1 (Tıklama Odaklı)**: ${konu_sorgusu} - 2025'in En Kapsamlı Rehberi (Adım Adım)
 - **Başlık Önerisi 2 (SEO Odaklı)**: ${konu_sorgusu}: Başlangıçtan İleri Seviyeye Tam Rehber
 - **Meta Açıklama Önerisi**: ${konu_sorgusu} hakkında bilmeniz gereken her şey! Adım adım rehber, ipuçları ve uzman önerileri ile başarıya ulaşın.
 
@@ -172,7 +172,7 @@ export async function POST(request: NextRequest) {
 - Temel tanımlar ve açıklamalar
 - Önemli özellikler ve faydalar
 
-#### H3: ${konu_sorgusu} Kullan��m Alanları
+#### H3: ${konu_sorgusu} Kullanım Alanları
 - Pratik uygulama örnekleri
 - Gerçek hayattan senaryolar
 

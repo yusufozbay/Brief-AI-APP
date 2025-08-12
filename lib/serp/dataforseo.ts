@@ -74,29 +74,46 @@ export class DataForSEOClient {
   async getTopCompetitors(query: string, location: string = 'Turkey', language: string = 'tr'): Promise<Competitor[]> {
     const postData = [{
       language_code: language,
-      location_name: location,
+      location_code: 2792, // Turkey location code
       keyword: query,
-      depth: 10
+      depth: 20,
+      device: 'desktop',
+      os: 'windows'
     }];
 
-    console.log(' DataForSEO Competitors Request:', {
+    console.log('🔍 DataForSEO Competitors Request:', {
       endpoint: '/serp/google/organic/live/advanced',
       params: postData[0],
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      credentials_configured: !!(this.credentials.login && this.credentials.password)
     });
 
     try {
       const response = await this.makeRequest('/serp/google/organic/live/advanced', postData);
       
+      console.log('📡 DataForSEO Response Structure:', {
+        has_tasks: !!response.tasks,
+        tasks_length: response.tasks?.length || 0,
+        has_result: !!response.tasks?.[0]?.result,
+        result_length: response.tasks?.[0]?.result?.length || 0,
+        has_items: !!response.tasks?.[0]?.result?.[0]?.items,
+        items_length: response.tasks?.[0]?.result?.[0]?.items?.length || 0,
+        status_code: response.tasks?.[0]?.status_code,
+        status_message: response.tasks?.[0]?.status_message
+      });
+      
       if (response.tasks?.[0]?.result?.[0]?.items) {
         const items = response.tasks[0].result[0].items;
-        const competitors = items.slice(0, 10).map((item: { url?: string; title?: string; description?: string }) => ({
-          url: item.url || '',
-          title: item.title || '',
-          description: item.description || ''
-        }));
+        const competitors = items
+          .filter((item: any) => item.url && item.title && item.description)
+          .slice(0, 10)
+          .map((item: { url?: string; title?: string; description?: string }) => ({
+            url: item.url || '',
+            title: item.title || '',
+            description: item.description || ''
+          }));
 
-        console.log('📊 Competitors Found:', competitors.length);
+        console.log('📊 Real Competitors Found:', competitors.length);
         competitors.forEach((comp: Competitor, index: number) => {
           console.log(`🏆 Competitor ${index + 1}:`, {
             title: comp.title.substring(0, 60) + (comp.title.length > 60 ? '...' : ''),
@@ -108,10 +125,11 @@ export class DataForSEOClient {
         return competitors;
       }
       
-      console.warn(' No competitor data found in response');
+      console.warn('⚠️ No competitor data found in DataForSEO response');
+      console.log('Full response for debugging:', JSON.stringify(response, null, 2));
       return [];
     } catch (error) {
-      console.error(' Error fetching competitors:', error);
+      console.error('❌ Error fetching competitors from DataForSEO:', error);
       throw error;
     }
   }
@@ -119,7 +137,7 @@ export class DataForSEOClient {
   async getPAAQuestions(query: string, location: string = 'Turkey', language: string = 'tr'): Promise<PAAQuestion[]> {
     const postData = [{
       language_code: language,
-      location_name: location,
+      location_code: 2792, // Turkey location code
       keyword: query
     }];
 
