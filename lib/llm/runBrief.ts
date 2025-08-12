@@ -15,25 +15,25 @@ interface BriefInputs {
 
 // Define Gemini models in priority order (best to fallback)
 const GEMINI_MODELS = [
-  // Latest Gemini 2.5 models (highest priority)
-  { name: 'gemini-2.5-pro', timeout: 35000, maxTokens: 4500 },
-  { name: 'gemini-2.5-flash', timeout: 30000, maxTokens: 4000 },
-  { name: 'gemini-2.5-flash-8b', timeout: 25000, maxTokens: 3500 },
+  // Latest Gemini 2.5 models (highest priority) - Extended timeouts for comprehensive content
+  { name: 'gemini-2.5-pro', timeout: 60000, maxTokens: 4500 },
+  { name: 'gemini-2.5-flash', timeout: 50000, maxTokens: 4000 },
+  { name: 'gemini-2.5-flash-8b', timeout: 45000, maxTokens: 3500 },
   
-  // Gemini 2.0 models
-  { name: 'gemini-2.0-pro', timeout: 30000, maxTokens: 4000 },
-  { name: 'gemini-2.0-flash', timeout: 25000, maxTokens: 4000 },
-  { name: 'gemini-2.0-flash-8b-exp', timeout: 20000, maxTokens: 3500 },
+  // Gemini 2.0 models - Generous timeouts for quality output
+  { name: 'gemini-2.0-pro', timeout: 55000, maxTokens: 4000 },
+  { name: 'gemini-2.0-flash', timeout: 45000, maxTokens: 4000 },
+  { name: 'gemini-2.0-flash-8b-exp', timeout: 40000, maxTokens: 3500 },
   
-  // Gemini 1.5 models (stable fallbacks)
-  { name: 'gemini-1.5-pro-002', timeout: 30000, maxTokens: 4000 },
-  { name: 'gemini-1.5-pro', timeout: 30000, maxTokens: 4000 },
-  { name: 'gemini-1.5-flash-002', timeout: 20000, maxTokens: 3500 },
-  { name: 'gemini-1.5-flash', timeout: 20000, maxTokens: 3500 },
-  { name: 'gemini-1.5-flash-8b', timeout: 15000, maxTokens: 3000 },
+  // Gemini 1.5 models (stable fallbacks) - Extended for comprehensive Turkish SEO
+  { name: 'gemini-1.5-pro-002', timeout: 50000, maxTokens: 4000 },
+  { name: 'gemini-1.5-pro', timeout: 50000, maxTokens: 4000 },
+  { name: 'gemini-1.5-flash-002', timeout: 40000, maxTokens: 3500 },
+  { name: 'gemini-1.5-flash', timeout: 40000, maxTokens: 3500 },
+  { name: 'gemini-1.5-flash-8b', timeout: 35000, maxTokens: 3000 },
   
-  // Final fallback
-  { name: 'gemini-1.0-pro', timeout: 15000, maxTokens: 3000 }
+  // Final fallback - Still generous timeout
+  { name: 'gemini-1.0-pro', timeout: 30000, maxTokens: 3000 }
 ];
 
 async function tryGeminiModel(modelConfig: { name: string; timeout: number; maxTokens: number }, systemPrompt: string, genAI: GoogleGenerativeAI) {
