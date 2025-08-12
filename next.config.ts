@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   // External packages configuration for serverless functions
   serverExternalPackages: ['@google/generative-ai'],
   
-  // API routes configuration for extended Gemini processing
+  // API routes configuration for unrestricted Gemini processing
   async headers() {
     return [
       {
@@ -13,10 +13,6 @@ const nextConfig: NextConfig = {
           {
             key: 'Cache-Control',
             value: 'no-cache, no-store, must-revalidate',
-          },
-          {
-            key: 'X-Function-Timeout',
-            value: '120',
           },
         ],
       },

@@ -13,31 +13,31 @@ interface BriefInputs {
   paa_questions: string;
 }
 
-// Define Gemini models in priority order (best to fallback)
+// Define Gemini models in priority order (best to fallback) - NO TIMEOUTS + MAXIMUM TOKENS for unrestricted processing
 const GEMINI_MODELS = [
-  // Latest Gemini 2.5 models (highest priority) - Extended timeouts for comprehensive content
-  { name: 'gemini-2.5-pro', timeout: 60000, maxTokens: 4500 },
-  { name: 'gemini-2.5-flash', timeout: 50000, maxTokens: 4000 },
-  { name: 'gemini-2.5-flash-8b', timeout: 45000, maxTokens: 3500 },
+  // Latest Gemini 2.5 models (highest priority) - Maximum comprehensive output
+  { name: 'gemini-2.5-pro', maxTokens: 8192 },
+  { name: 'gemini-2.5-flash', maxTokens: 8192 },
+  { name: 'gemini-2.5-flash-8b', maxTokens: 8192 },
   
-  // Gemini 2.0 models - Generous timeouts for quality output
-  { name: 'gemini-2.0-pro', timeout: 55000, maxTokens: 4000 },
-  { name: 'gemini-2.0-flash', timeout: 45000, maxTokens: 4000 },
-  { name: 'gemini-2.0-flash-8b-exp', timeout: 40000, maxTokens: 3500 },
+  // Gemini 2.0 models - High capacity comprehensive output
+  { name: 'gemini-2.0-pro', maxTokens: 8192 },
+  { name: 'gemini-2.0-flash', maxTokens: 8192 },
+  { name: 'gemini-2.0-flash-8b-exp', maxTokens: 8192 },
   
-  // Gemini 1.5 models (stable fallbacks) - Extended for comprehensive Turkish SEO
-  { name: 'gemini-1.5-pro-002', timeout: 50000, maxTokens: 4000 },
-  { name: 'gemini-1.5-pro', timeout: 50000, maxTokens: 4000 },
-  { name: 'gemini-1.5-flash-002', timeout: 40000, maxTokens: 3500 },
-  { name: 'gemini-1.5-flash', timeout: 40000, maxTokens: 3500 },
-  { name: 'gemini-1.5-flash-8b', timeout: 35000, maxTokens: 3000 },
+  // Gemini 1.5 models (stable fallbacks) - Maximum Turkish SEO content
+  { name: 'gemini-1.5-pro-002', maxTokens: 8192 },
+  { name: 'gemini-1.5-pro', maxTokens: 8192 },
+  { name: 'gemini-1.5-flash-002', maxTokens: 8192 },
+  { name: 'gemini-1.5-flash', maxTokens: 8192 },
+  { name: 'gemini-1.5-flash-8b', maxTokens: 8192 },
   
-  // Final fallback - Still generous timeout
-  { name: 'gemini-1.0-pro', timeout: 30000, maxTokens: 3000 }
+  // Final fallback - Maximum reliable output
+  { name: 'gemini-1.0-pro', maxTokens: 8192 }
 ];
 
-async function tryGeminiModel(modelConfig: { name: string; timeout: number; maxTokens: number }, systemPrompt: string, genAI: GoogleGenerativeAI) {
-  console.log(`🤖 Trying ${modelConfig.name} with ${modelConfig.timeout/1000}s timeout...`);
+async function tryGeminiModel(modelConfig: { name: string; maxTokens: number }, systemPrompt: string, genAI: GoogleGenerativeAI) {
+  console.log(`🤖 Trying ${modelConfig.name} with unrestricted processing time...`);
   
   try {
     const model = genAI.getGenerativeModel({
@@ -51,13 +51,9 @@ async function tryGeminiModel(modelConfig: { name: string; timeout: number; maxT
       }
     });
 
-    const geminiPromise = model.generateContent(systemPrompt);
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error(`${modelConfig.name} timeout after ${modelConfig.timeout/1000} seconds`)), modelConfig.timeout)
-    );
-    
-    const result = await Promise.race([geminiPromise, timeoutPromise]);
-    const response = await (result as { response: { text: () => string } }).response;
+    // No timeout - let Gemini process as long as needed
+    const result = await model.generateContent(systemPrompt);
+    const response = await result.response;
     const text = response.text();
     
     if (!text || text.trim().length < 200) {
