@@ -105,8 +105,20 @@ export class DataForSEOClient {
       if (response.tasks?.[0]?.result?.[0]?.items) {
         const items = response.tasks[0].result[0].items;
         const competitors = items
-          .filter((item: { url?: string; title?: string; description?: string }) => item.url && item.title && item.description)
-          .slice(0, 10)
+          .filter((item: { url?: string; title?: string; description?: string }) => {
+            // Basic validation
+            if (!item.url || !item.title || !item.description) return false;
+            
+            // Exclude YouTube and Instagram results
+            const url = item.url.toLowerCase();
+            if (url.includes('youtube.com') || url.includes('youtu.be') || 
+                url.includes('instagram.com') || url.includes('instagr.am')) {
+              return false;
+            }
+            
+            return true;
+          })
+          .slice(0, 10) // Return exactly 10 competitors after filtering
           .map((item: { url?: string; title?: string; description?: string }) => ({
             url: item.url || '',
             title: item.title || '',

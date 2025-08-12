@@ -21,7 +21,10 @@ export async function runBrief(inputs: BriefInputs) {
     const possibleTemplatePaths = [
       path.join(process.cwd(), 'prompts', 'RUNTIME_SYSTEM.tmpl.md'),
       path.join(__dirname, '..', '..', 'prompts', 'RUNTIME_SYSTEM.tmpl.md'),
-      path.join(process.cwd(), '..', 'prompts', 'RUNTIME_SYSTEM.tmpl.md')
+      path.join(process.cwd(), '..', 'prompts', 'RUNTIME_SYSTEM.tmpl.md'),
+      // Additional paths for different deployment scenarios
+      path.join(process.cwd(), 'src', 'prompts', 'RUNTIME_SYSTEM.tmpl.md'),
+      path.join(__dirname, 'prompts', 'RUNTIME_SYSTEM.tmpl.md')
     ];
     
 
@@ -79,16 +82,20 @@ Populate every field. Do not include markdown. No prose outside JSON.`;
       .replace('{{serp_competitors}}', inputs.serp_competitors)
       .replace('{{paa_questions}}', inputs.paa_questions);
 
-    // Initialize Gemini model with optimized parameters for Markdown output
+    // Initialize Gemini model with optimized parameters for Turkish SEO content
     console.log('Initializing Gemini model...');
+    console.log('System prompt length:', systemPrompt.length);
+    console.log('Topic (konu_sorgusu):', inputs.konu_sorgusu);
+    console.log('Template loaded successfully:', templateLoaded);
+    
     const model = genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash', // Use stable model instead of experimental
+      model: 'gemini-1.5-pro', // Use Pro model for better content quality and instruction following
       generationConfig: {
-        temperature: 0.1, // Very low temperature for faster, more consistent output
-        topP: 0.8,
-        topK: 32,
-        maxOutputTokens: 3000, // Further reduced to speed up generation
-        responseMimeType: 'text/plain' // Changed from JSON to plain text for Markdown
+        temperature: 0.3, // Slightly higher for more creative but still focused content
+        topP: 0.9,
+        topK: 40,
+        maxOutputTokens: 4000, // Increased for comprehensive Turkish SEO content
+        responseMimeType: 'text/plain'
       }
     });
 
@@ -99,10 +106,10 @@ Populate every field. Do not include markdown. No prose outside JSON.`;
     let text;
     
     try {
-      // Set up timeout for Gemini API call (8 seconds to allow more comprehensive output)
+      // Set up timeout for Gemini Pro API call (12 seconds for comprehensive Turkish SEO content)
       const geminiPromise = model.generateContent(systemPrompt);
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Gemini API timeout after 8 seconds')), 8000)
+        setTimeout(() => reject(new Error('Gemini API timeout after 12 seconds')), 12000)
       );
       
       result = await Promise.race([geminiPromise, timeoutPromise]);
