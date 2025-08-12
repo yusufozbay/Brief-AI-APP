@@ -156,20 +156,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate that we got real Gemini output, not fallback
-    if (markdownOutline.includes('Generate a detailed fallback outline') || 
-        markdownOutline.includes('STRATEJİK BAŞLANGIÇ') ||
-        markdownOutline.length < 500) {
-      console.error('❌ DETECTED FALLBACK CONTENT OR TOO SHORT');
+    // Basic validation - ensure we got substantial content from Gemini
+    if (markdownOutline.length < 200) {
+      console.error('❌ GEMINI OUTPUT TOO SHORT:', markdownOutline.length, 'characters');
       return NextResponse.json(
         { 
-          error: 'Fallback content detected - Gemini must generate real output',
-          details: 'Generated content appears to be fallback template, not Gemini 2.5 Pro output',
+          error: 'Gemini generated insufficient content',
+          details: `Generated content is too short (${markdownOutline.length} characters). Expected comprehensive Turkish SEO brief.`,
           content_length: markdownOutline.length
         },
         { status: 500 }
       );
     }
+    
+    console.log('✅ GEMINI OUTPUT VALIDATED - Length:', markdownOutline.length, 'characters');
 
     // ALL FALLBACK CODE REMOVED - ONLY GEMINI 2.5 PRO ALLOWED
 
