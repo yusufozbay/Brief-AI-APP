@@ -176,27 +176,56 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">🚀 Brief AI</h1>
-            <p className="text-gray-600 mt-1">AI-powered Turkish SEO content strategy generator</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      <div className="container mx-auto px-6 py-12 max-w-6xl">
+        {/* Modern Header */}
+        <div className="text-center mb-16">
+          <div className="relative inline-block">
+            <h1 className="text-7xl font-black bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent mb-6 tracking-tight">
+              ⚡ Brief AI
+            </h1>
+            <div className="absolute -top-3 -right-3 w-5 h-5 bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-400/50"></div>
           </div>
-          <Settings
-            settings={settings}
-            onSettingsChange={setSettings}
-            showSchema={showSchema}
-            onToggleSchema={() => setShowSchema(!showSchema)}
-          />
+          <p className="text-2xl text-slate-300 font-semibold mb-8 max-w-2xl mx-auto leading-relaxed">
+            Next-Generation AI Content Strategy Platform
+          </p>
+          
+          {/* Status Indicators */}
+          <div className="flex flex-wrap justify-center gap-4 mb-8">
+            <div className="flex items-center space-x-3 bg-slate-800/60 backdrop-blur-sm px-6 py-3 rounded-2xl border border-slate-600/50 shadow-lg">
+              <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse shadow-sm shadow-green-400/50"></div>
+              <span className="text-sm font-medium text-slate-200">Gemini 2.5 Pro Active</span>
+            </div>
+            <div className="flex items-center space-x-3 bg-slate-800/60 backdrop-blur-sm px-6 py-3 rounded-2xl border border-slate-600/50 shadow-lg">
+              <div className="w-3 h-3 bg-blue-400 rounded-full shadow-sm shadow-blue-400/50"></div>
+              <span className="text-sm font-medium text-slate-200">Turkish SEO Optimized</span>
+            </div>
+            <div className="flex items-center space-x-3 bg-slate-800/60 backdrop-blur-sm px-6 py-3 rounded-2xl border border-slate-600/50 shadow-lg">
+              <div className="w-3 h-3 bg-purple-400 rounded-full shadow-sm shadow-purple-400/50"></div>
+              <span className="text-sm font-medium text-slate-200">Max 3 Competitors (Performance)</span>
+            </div>
+          </div>
+
+          {/* Settings Toggle */}
+          <div className="flex justify-center">
+            <Settings
+              settings={settings}
+              onSettingsChange={setSettings}
+              showSchema={showSchema}
+              onToggleSchema={() => setShowSchema(!showSchema)}
+            />
+          </div>
         </div>
 
-        {/* Input Form */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8 mb-8 backdrop-blur-sm">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Modern Input Form */}
+        <div className="bg-slate-800/40 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-600/30 p-10 mb-12 relative overflow-hidden">
+          {/* Animated Background */}
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 via-cyan-500/5 to-pink-500/5 animate-pulse"></div>
+          
+          <form onSubmit={handleSubmit} className="space-y-8 relative z-10">
             <div>
-              <label htmlFor="konu_sorgusu" className="block text-sm font-semibold text-gray-800 mb-3">
+              <label htmlFor="konu_sorgusu" className="block text-lg font-bold text-slate-200 mb-4 flex items-center">
+                <span className="text-2xl mr-3">🎯</span>
                 Topic Query *
               </label>
               <input
@@ -205,13 +234,14 @@ export default function Home() {
                 value={formData.konu_sorgusu}
                 onChange={(e) => setFormData({ ...formData, konu_sorgusu: e.target.value })}
                 placeholder="e.g., Kedi maması fiyatları"
-                className="w-full px-4 py-3 text-gray-900 bg-white border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-colors placeholder-gray-500 text-base"
+                className="w-full px-6 py-4 text-slate-100 bg-slate-700/50 backdrop-blur-sm border-2 border-slate-600/50 rounded-2xl focus:ring-4 focus:ring-purple-500/30 focus:border-purple-400 focus:outline-none transition-all duration-300 placeholder-slate-400 text-lg font-medium shadow-lg"
                 disabled={isLoading}
               />
             </div>
 
             <div>
-              <label htmlFor="entities" className="block text-sm font-semibold text-gray-800 mb-3">
+              <label htmlFor="entities" className="block text-lg font-bold text-slate-200 mb-4 flex items-center">
+                <span className="text-2xl mr-3">🌐</span>
                 Fan-Out Entities (Optional)
               </label>
               <input
@@ -220,13 +250,14 @@ export default function Home() {
                 value={formData.google_query_fan_out_entities}
                 onChange={(e) => setFormData({ ...formData, google_query_fan_out_entities: e.target.value })}
                 placeholder="e.g., Royal Canin, Whiskas, premium cat food brands"
-                className="w-full px-4 py-3 text-gray-900 bg-white border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-colors placeholder-gray-500 text-base"
+                className="w-full px-6 py-4 text-slate-100 bg-slate-700/50 backdrop-blur-sm border-2 border-slate-600/50 rounded-2xl focus:ring-4 focus:ring-cyan-500/30 focus:border-cyan-400 focus:outline-none transition-all duration-300 placeholder-slate-400 text-lg font-medium shadow-lg"
                 disabled={isLoading}
               />
             </div>
 
             <div>
-              <label htmlFor="extra_subtitles" className="block text-sm font-semibold text-gray-800 mb-3">
+              <label htmlFor="extra_subtitles" className="block text-lg font-bold text-slate-200 mb-4 flex items-center">
+                <span className="text-2xl mr-3">📝</span>
                 Extra Subtitles (Optional)
               </label>
               <textarea
@@ -234,15 +265,16 @@ export default function Home() {
                 value={formData.extra_subtitles}
                 onChange={(e) => setFormData({ ...formData, extra_subtitles: e.target.value })}
                 placeholder="e.g., Kedi maması markaları karşılaştırması, En iyi yaş kedi maması, Kedi maması fiyat analizi"
-                className="w-full px-4 py-3 text-gray-900 bg-white border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-colors placeholder-gray-500 text-base resize-vertical"
+                className="w-full px-6 py-4 text-slate-100 bg-slate-700/50 backdrop-blur-sm border-2 border-slate-600/50 rounded-2xl focus:ring-4 focus:ring-pink-500/30 focus:border-pink-400 focus:outline-none transition-all duration-300 placeholder-slate-400 text-lg font-medium shadow-lg resize-vertical"
                 rows={3}
                 disabled={isLoading}
               />
-              <p className="text-sm text-gray-500 mt-1">Enter additional subtitles you want included in the outline, separated by commas</p>
+              <p className="text-sm text-slate-400 mt-2 ml-1">Enter additional subtitles you want included in the outline, separated by commas</p>
             </div>
 
             <div>
-              <label htmlFor="extra_faq" className="block text-sm font-semibold text-gray-800 mb-3">
+              <label htmlFor="extra_faq" className="block text-lg font-bold text-slate-200 mb-4 flex items-center">
+                <span className="text-2xl mr-3">❓</span>
                 Extra FAQ Questions (Optional)
               </label>
               <textarea
@@ -250,56 +282,72 @@ export default function Home() {
                 value={formData.extra_faq}
                 onChange={(e) => setFormData({ ...formData, extra_faq: e.target.value })}
                 placeholder="e.g., Kedi maması nasıl seçilir?, Hangi yaşta kedi maması verilir?, Kedi maması ne kadar sürede tüketilir?"
-                className="w-full px-4 py-3 text-gray-900 bg-white border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-colors placeholder-gray-500 text-base resize-vertical"
+                className="w-full px-6 py-4 text-slate-100 bg-slate-700/50 backdrop-blur-sm border-2 border-slate-600/50 rounded-2xl focus:ring-4 focus:ring-green-500/30 focus:border-green-400 focus:outline-none transition-all duration-300 placeholder-slate-400 text-lg font-medium shadow-lg resize-vertical"
                 rows={3}
                 disabled={isLoading}
               />
-              <p className="text-sm text-gray-500 mt-1">Enter additional FAQ questions you want included, separated by commas</p>
+              <p className="text-sm text-slate-400 mt-2 ml-1">Enter additional FAQ questions you want included, separated by commas</p>
             </div>
 
-            {/* Competitor Selection */}
+            {/* Modern Competitor Selection */}
             <div>
-              <div className="flex items-center justify-between mb-3">
-                <label className="block text-sm font-semibold text-gray-800">
+              <div className="flex items-center justify-between mb-6">
+                <label className="block text-lg font-bold text-slate-200 flex items-center">
+                  <span className="text-2xl mr-3">🏆</span>
                   Competitor Analysis (Optional)
                 </label>
                 <button
                   type="button"
                   onClick={handleFetchCompetitors}
                   disabled={isLoadingCompetitors || !formData.konu_sorgusu.trim()}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                  className="px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-2xl hover:from-green-600 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 text-lg font-bold shadow-lg shadow-green-500/25 hover:shadow-green-500/40 transform hover:scale-105"
                 >
                   {isLoadingCompetitors ? (
                     <div className="flex items-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Fetching...
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                      Fetching Real Competitors...
                     </div>
                   ) : (
-                    'Fetch Competitors'
+                    <div className="flex items-center">
+                      <span className="mr-2">🔍</span>
+                      Fetch Live SERP Competitors
+                    </div>
                   )}
                 </button>
               </div>
               
               {competitors.length > 0 && (
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6 shadow-sm">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-bold text-gray-800 flex items-center">
-                      🏆 Rakip Analizi
-                      <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full">
-                        {competitors.length} rakip bulundu
-                      </span>
-                    </h3>
-                    <div className="text-sm text-gray-600 bg-white px-3 py-1 rounded-full border">
-                      {selectedCompetitors.length} seçili
+                <div className="bg-slate-700/30 backdrop-blur-xl border border-slate-600/40 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
+                  {/* Animated Background */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-cyan-500/5 animate-pulse"></div>
+                  
+                  <div className="relative z-10">
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-2xl font-black text-slate-100 flex items-center">
+                        🏆 Live SERP Competitors
+                        <span className="ml-4 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-sm font-bold rounded-2xl shadow-lg">
+                          {competitors.length} found
+                        </span>
+                      </h3>
+                      <div className="flex items-center space-x-4">
+                        <div className="text-sm text-slate-300 bg-slate-800/60 px-4 py-2 rounded-2xl border border-slate-600/50">
+                          <span className="font-bold text-green-400">{selectedCompetitors.length}</span> selected
+                        </div>
+                        <div className="text-sm text-slate-300 bg-purple-500/20 px-4 py-2 rounded-2xl border border-purple-500/30">
+                          <span className="font-bold text-purple-300">Max 3</span> for performance
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  
-                  <p className="text-sm text-gray-700 mb-4 bg-white/50 p-3 rounded-lg border-l-4 border-blue-400">
-                    💡 <strong>Gerçek SERP verisi:</strong> Aşağıdaki rakipler Google&apos;dan canlı olarak çekilmiştir. 
-                    Analiz için dahil etmek istediğiniz rakipleri seçin.
-                  </p>
-                  
-                  <div className="grid gap-3 max-h-80 overflow-y-auto pr-2">
+                    
+                    <div className="bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/20 rounded-2xl p-4 mb-6">
+                      <p className="text-slate-200 font-medium flex items-center">
+                        <span className="text-2xl mr-3">💡</span>
+                        <strong className="text-cyan-300">Real-time SERP data:</strong> 
+                        <span className="ml-2">These competitors are fetched live from Google Turkey. Select up to 3 for optimal performance.</span>
+                      </p>
+                    </div>
+                    
+                    <div className="grid gap-3 max-h-80 overflow-y-auto pr-2">
                     {competitors.map((competitor, index) => (
                       <div
                         key={competitor.url}
@@ -318,7 +366,12 @@ export default function Home() {
                               onChange={(e) => {
                                 console.log(`🎯 User Action: ${e.target.checked ? 'Selected' : 'Deselected'} competitor:`, competitor.title);
                                 if (e.target.checked) {
-                                  setSelectedCompetitors([...selectedCompetitors, competitor]);
+                                  // CRITICAL: Limit to 3 competitors max to prevent timeout scaling
+                                  if (selectedCompetitors.length < 3) {
+                                    setSelectedCompetitors([...selectedCompetitors, competitor]);
+                                  } else {
+                                    alert('⚠️ Maximum 3 competitors allowed for optimal performance and to prevent timeouts!');
+                                  }
                                 } else {
                                   setSelectedCompetitors(selectedCompetitors.filter(c => c.url !== competitor.url));
                                 }
@@ -370,33 +423,50 @@ export default function Home() {
                     ))}
                   </div>
                   
-                  {selectedCompetitors.length > 0 && (
-                    <div className="mt-4 p-3 bg-green-100 border border-green-300 rounded-lg">
-                      <p className="text-sm text-green-800 font-medium">
-                        ✅ {selectedCompetitors.length} rakip seçildi ve brief analizine dahil edilecek
-                      </p>
+                    {selectedCompetitors.length > 0 && (
+                      <div className="mt-6 p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-2xl">
+                        <p className="text-slate-200 font-bold flex items-center">
+                          <span className="text-xl mr-2">✅</span>
+                          {selectedCompetitors.length} competitors selected and will be included in brief analysis
+                        </p>
+                      </div>
+                    )}
                     </div>
-                  )}
+                  </div>
                 </div>
               )}
             </div>
 
+            {/* Modern Submit Button */}
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4 px-6 rounded-lg hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              className="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 text-white py-6 px-8 rounded-3xl hover:from-purple-700 hover:via-pink-700 hover:to-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 font-black text-xl shadow-2xl shadow-purple-500/25 hover:shadow-purple-500/40 transform hover:scale-105 relative overflow-hidden"
             >
-              {isLoading ? (
-                <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                  <div className="text-center">
-                    <div>🎯 Strategic Analysis & Brief Generation...</div>
-                    <div className="text-sm opacity-90 mt-1">⚡ Optimized for speed and quality</div>
+              {/* Animated Background */}
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-red-500/20 animate-pulse"></div>
+              
+              <div className="relative z-10">
+                {isLoading ? (
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-3 border-white mr-4"></div>
+                    <div className="text-center">
+                      <div className="flex items-center">
+                        <span className="text-2xl mr-2">🎯</span>
+                        Strategic Analysis & Brief Generation...
+                      </div>
+                      <div className="text-sm opacity-90 mt-1 font-medium">
+                        ⚡ Max 3 competitors • Optimized for speed and quality
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                '🚀 Generate Comprehensive Brief'
-              )}
+                ) : (
+                  <div className="flex items-center justify-center">
+                    <span className="text-3xl mr-3">🚀</span>
+                    <span>Generate Comprehensive Brief</span>
+                  </div>
+                )}
+              </div>
             </button>
           </form>
         </div>

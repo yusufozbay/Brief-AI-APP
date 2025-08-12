@@ -114,7 +114,7 @@ export class DataForSEOClient {
             
             return true;
           })
-          .slice(0, 10) // Return exactly 10 competitors after filtering
+          .slice(0, 3) // CRITICAL: Limit to 3 competitors max to prevent timeout scaling
           .map((item: { url?: string; title?: string; description?: string }) => ({
             url: item.url || '',
             title: item.title || '',

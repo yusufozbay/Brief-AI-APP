@@ -50,16 +50,21 @@ export async function POST(request: NextRequest) {
     let entities = [];
     
     if (selected_competitors && selected_competitors.length > 0) {
-      console.log('Using user-selected competitors:', selected_competitors.length);
-      competitors = selected_competitors;
+      // CRITICAL: Limit competitors to 3 max to prevent timeout scaling
+      competitors = selected_competitors.slice(0, 3);
+      console.log(`🎯 Using ${competitors.length} user-selected competitors (limited to 3 for performance)`);
+      if (selected_competitors.length > 3) {
+        console.log(`⚠️ Reduced from ${selected_competitors.length} to 3 competitors to prevent timeout`);
+      }
     } else {
       console.log('No selected competitors, fetching from SERP...');
     }
 
-    // Run SERP requests in parallel without timeout restrictions
+    // Run SERP requests in parallel with competitor limit
     const serpPromises = [];
     
     if (competitors.length === 0) {
+      console.log('🔍 Fetching max 3 competitors from SERP for performance...');
       serpPromises.push(serpClient.getTopCompetitors(konu_sorgusu, 'Turkey', language));
     }
     
