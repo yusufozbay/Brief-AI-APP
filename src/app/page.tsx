@@ -390,8 +390,8 @@ export default function Home() {
                 <div className="flex items-center justify-center">
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
                   <div className="text-center">
-                    <div>🔍 Analyzing Competitor URLs & Generating Brief...</div>
-                    <div className="text-sm opacity-90 mt-1">📊 Deep content analysis in progress</div>
+                    <div>🎯 Strategic Analysis & Brief Generation...</div>
+                    <div className="text-sm opacity-90 mt-1">⚡ Optimized for speed and quality</div>
                   </div>
                 </div>
               ) : (

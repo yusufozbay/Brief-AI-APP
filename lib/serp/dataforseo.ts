@@ -221,47 +221,30 @@ export class DataForSEOClient {
     }
   }
 
-  async formatCompetitorsForPrompt(competitors: Competitor[]): Promise<string> {
-    const competitorAnalysis = await Promise.all(
-      competitors.map(async (comp, index) => {
-        let urlContent = 'Content not accessible';
+  formatCompetitorsForPrompt(competitors: Competitor[]): string {
+    return competitors
+      .map((comp, index) => {
+        // Extract domain insights from URL for strategic analysis
+        const domain = comp.url.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+        const domainType = domain.includes('.com.tr') ? 'Turkish Local Site' : 
+                          domain.includes('.com') ? 'International Site' : 
+                          domain.includes('.org') ? 'Organization/Authority Site' : 'Other Domain';
         
-        try {
-          // Fetch actual URL content for deep analysis
-          const response = await fetch(comp.url, {
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (compatible; Brief-AI-Bot/1.0)',
-            },
-            signal: AbortSignal.timeout(10000) // 10 second timeout
-          });
-          
-          if (response.ok) {
-            const html = await response.text();
-            // Extract text content (basic HTML parsing)
-            const textContent = html
-              .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-              .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-              .replace(/<[^>]*>/g, ' ')
-              .replace(/\s+/g, ' ')
-              .trim()
-              .substring(0, 2000); // Limit to 2000 chars for prompt efficiency
-            
-            urlContent = textContent || 'Content extracted but empty';
-          }
-        } catch (error) {
-          console.warn(`Failed to fetch content from ${comp.url}:`, error);
-          urlContent = `URL fetch failed: ${comp.description}`;
-        }
+        // Analyze title and description for content strategy insights
+        const titleKeywords = comp.title.toLowerCase().split(/\s+/).filter(word => word.length > 3);
+        const descKeywords = comp.description.toLowerCase().split(/\s+/).filter(word => word.length > 3);
         
         return `${index + 1}. **${comp.title}**
    🔗 URL: ${comp.url}
+   🌐 Domain Type: ${domainType}
    📝 Meta Description: ${comp.description}
-   📄 Actual Content Analysis: ${urlContent}
-   🎯 Deep Analysis Required: Analyze this competitor's content structure, approach, keyword usage, and identify strategic gaps for superior content creation.`;
+   🎯 Strategic Analysis: 
+      - Title Focus: ${titleKeywords.slice(0, 5).join(', ')}
+      - Content Approach: ${descKeywords.slice(0, 8).join(', ')}
+      - Competitive Gap: Analyze this competitor's positioning and create superior content strategy
+   💡 Deep Analysis Required: Study this competitor's approach, content structure, keyword usage, and identify strategic opportunities for differentiation.`;
       })
-    );
-    
-    return competitorAnalysis.join('\n\n');
+      .join('\n\n');
   }
 
   formatPAAForPrompt(questions: PAAQuestion[]): string {

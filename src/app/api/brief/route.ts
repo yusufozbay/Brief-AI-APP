@@ -108,12 +108,12 @@ export async function POST(request: NextRequest) {
       entities = [{ name: konu_sorgusu, type: 'Topic', description: 'Main topic entity' }];
     }
 
-    // Format data for prompt with deep competitor URL analysis
-    console.log('🔍 Fetching and analyzing competitor URL content for deep analysis...');
-    const serpCompetitors = await serpClient.formatCompetitorsForPrompt(competitors);
+    // Format data for prompt with strategic competitor analysis (no URL fetching for speed)
+    console.log('🎯 Analyzing competitor strategy and positioning for deep insights...');
+    const serpCompetitors = serpClient.formatCompetitorsForPrompt(competitors);
     const paaFormatted = serpClient.formatPAAForPrompt(paaQuestions);
 
-    console.log('🚀 Competitor URLs analyzed, starting optimized Gemini generation...');
+    console.log('🚀 Strategic competitor analysis complete, starting optimized Gemini generation...');
     
     // Prepare inputs for LLM
     const briefInputs = {
