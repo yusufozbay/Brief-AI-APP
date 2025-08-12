@@ -181,8 +181,8 @@ export default function Home() {
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Brief AI</h1>
-
+            <h1 className="text-3xl font-bold text-gray-900">🚀 Brief AI</h1>
+            <p className="text-gray-600 mt-1">AI-powered Turkish SEO content strategy generator</p>
           </div>
           <Settings
             settings={settings}
@@ -390,12 +390,12 @@ export default function Home() {
                 <div className="flex items-center justify-center">
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
                   <div className="text-center">
-                    <div>🚀 Generating Comprehensive Brief...</div>
-                    <div className="text-sm opacity-90 mt-1">⏱️ This takes 1-2 minutes for best quality</div>
+                    <div>🔍 Analyzing Competitor URLs & Generating Brief...</div>
+                    <div className="text-sm opacity-90 mt-1">📊 Deep content analysis in progress</div>
                   </div>
                 </div>
               ) : (
-                'Generate Brief'
+                '🚀 Generate Comprehensive Brief'
               )}
             </button>
           </form>

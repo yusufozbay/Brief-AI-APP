@@ -96,6 +96,7 @@ export async function runBrief(inputs: BriefInputs) {
     
     console.log('✅ System prompt loaded successfully from file, length:', template.length);
     console.log('📝 System prompt preview (first 200 chars):', template.substring(0, 200) + '...');
+    console.log('🎯 ENFORCING: Modern UI Output Rules, Competitor Analysis, and Turkish SEO Strategy');
 
 
     

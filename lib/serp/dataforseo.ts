@@ -221,13 +221,47 @@ export class DataForSEOClient {
     }
   }
 
-  formatCompetitorsForPrompt(competitors: Competitor[]): string {
-    return competitors
-      .map((comp, index) => `${index + 1}. **${comp.title}**
+  async formatCompetitorsForPrompt(competitors: Competitor[]): Promise<string> {
+    const competitorAnalysis = await Promise.all(
+      competitors.map(async (comp, index) => {
+        let urlContent = 'Content not accessible';
+        
+        try {
+          // Fetch actual URL content for deep analysis
+          const response = await fetch(comp.url, {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (compatible; Brief-AI-Bot/1.0)',
+            },
+            signal: AbortSignal.timeout(10000) // 10 second timeout
+          });
+          
+          if (response.ok) {
+            const html = await response.text();
+            // Extract text content (basic HTML parsing)
+            const textContent = html
+              .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+              .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+              .replace(/<[^>]*>/g, ' ')
+              .replace(/\s+/g, ' ')
+              .trim()
+              .substring(0, 2000); // Limit to 2000 chars for prompt efficiency
+            
+            urlContent = textContent || 'Content extracted but empty';
+          }
+        } catch (error) {
+          console.warn(`Failed to fetch content from ${comp.url}:`, error);
+          urlContent = `URL fetch failed: ${comp.description}`;
+        }
+        
+        return `${index + 1}. **${comp.title}**
    🔗 URL: ${comp.url}
-   📝 Content Summary: ${comp.description}
-   🎯 Analysis Focus: Analyze this competitor's approach, content structure, and identify gaps for superior content strategy.`)
-      .join('\n\n');
+   📝 Meta Description: ${comp.description}
+   📄 Actual Content Analysis: ${urlContent}
+   🎯 Deep Analysis Required: Analyze this competitor's content structure, approach, keyword usage, and identify strategic gaps for superior content creation.`;
+      })
+    );
+    
+    return competitorAnalysis.join('\n\n');
   }
 
   formatPAAForPrompt(questions: PAAQuestion[]): string {
