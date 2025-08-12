@@ -131,110 +131,47 @@ export async function POST(request: NextRequest) {
       paa_questions: paaFormatted
     };
 
-    console.log('Calling Gemini API...');
+    console.log('🚀 CALLING GEMINI 2.5 PRO API - NO FALLBACK ALLOWED...');
     let markdownOutline;
     try {
       markdownOutline = await runBrief(briefInputs);
-      if (!markdownOutline) {
+      if (!markdownOutline || markdownOutline.trim().length === 0) {
         throw new Error('Gemini API returned empty response');
       }
+      console.log('✅ GEMINI 2.5 PRO SUCCESS - Generated content length:', markdownOutline.length);
     } catch (error) {
-      console.error('Brief generation failed, using fallback:', error);
-      
-      // Generate a detailed fallback outline that matches the prompt structure
-      markdownOutline = `# ${konu_sorgusu} İçin Kapsamlı İçerik Stratejisi ve Planı
-
-## STRATEJİK BAŞLANGIÇ
-- **Ana Odak ve Kullanıcı Niyeti**: ${konu_sorgusu} konusunda bilgi arayan kullanıcılar için kapsamlı rehber (Informational intent)
-- **Rakiplerin İçerik Tonu ve Stili**: Profesyonel ve samimi ton, pratik odaklı yaklaşım önerilir
-- **STRATEJİK FIRSAT VE ÖZGÜN DEĞER TEKLİFİ (UVP)**:
-  - **Rekabet Analizi Özeti**: ${selected_competitors.length > 0 ? 'Seçilen rakipler genel bilgi sunuyor ancak detaylı uygulama örnekleri eksik' : 'Mevcut içerikler temel bilgi sunuyor ancak pratik uygulamalar eksik'}
-  - **Sizin Benzersiz Değeriniz Ne Olmalı?**: Adım adım uygulamalı rehber, gerçek örnekler ve Türkiye'ye özel bilgiler
-- **Hedef Anahtar Kelime**: ${konu_sorgusu}
-- **İkincil Anahtar Kelimeler**: ${google_query_fan_out_entities ? google_query_fan_out_entities.split(',').map((k: string) => k.trim()).slice(0, 5).join(', ') : `${konu_sorgusu} nasıl yapılır, ${konu_sorgusu} rehberi, ${konu_sorgusu} ipuçları`}
-
-## İDEAL BAŞLIK (TITLE) VE META AÇIKLAMA ÖNERİLERİ
-- **Başlık Önerisi 1 (Tıklama Odaklı)**: ${konu_sorgusu} - 2025'in En Kapsamlı Rehberi (Adım Adım)
-- **Başlık Önerisi 2 (SEO Odaklı)**: ${konu_sorgusu}: Başlangıçtan İleri Seviyeye Tam Rehber
-- **Meta Açıklama Önerisi**: ${konu_sorgusu} hakkında bilmeniz gereken her şey! Adım adım rehber, ipuçları ve uzman önerileri ile başarıya ulaşın.
-
-## A. DETAYLI İÇERİK PLANI (OUTLINE)
-
-### H1: ${konu_sorgusu}: Başlangıçtan İleri Seviyeye Tam Rehber
-**(Giriş Paragrafı - Strateji Notu)**: ${konu_sorgusu} konusunda kapsamlı bilgi arayan okuyucular için hazırlanmış bu rehber, temel bilgilerden ileri tekniklere kadar her şeyi kapsar.
-
-### H2: ${konu_sorgusu} Nedir ve Neden Önemlidir?
-- **İçerik & Strateji Notu**: Konunun temel tanımı ve önemini açıklayın
-- **Kilit Bilgi**: ${konu_sorgusu} hakkında temel bilgiler
-- **Görsel Önerisi**: Konuyu açıklayan infografik
-
-#### H3: ${konu_sorgusu} Temel Kavramları
-- Temel tanımlar ve açıklamalar
-- Önemli özellikler ve faydalar
-
-#### H3: ${konu_sorgusu} Kullanım Alanları
-- Pratik uygulama örnekleri
-- Gerçek hayattan senaryolar
-
-### H2: ${konu_sorgusu} Nasıl Yapılır? (Adım Adım Rehber)
-- **İçerik & Strateji Notu**: Uygulamalı rehber ve detaylı açıklamalar
-- **Kilit Bilgi**: Adım adım uygulama süreci
-- **Görsel Önerisi**: Adımları gösteren görsel rehber
-
-#### H3: Başlangıç İçin Gerekli Hazırlıklar
-- Gerekli araçlar ve malzemeler
-- Ön hazırlık adımları
-
-#### H3: Uygulama Adımları
-- Detaylı adım adım süreç
-- Her adım için ipuçları
-
-${extra_subtitles ? `
-### H2: ${extra_subtitles.split(',')[0]?.trim() || `${konu_sorgusu} İleri Teknikleri`}
-- **İçerik & Strateji Notu**: İleri seviye bilgiler ve teknikler
-- **Kilit Bilgi**: Uzman seviyesi uygulamalar
-- **Görsel Önerisi**: İleri teknikleri gösteren örnekler
-` : ''}
-
-${selected_competitors.length > 0 ? `
-### H2: Rakip Analizi ve Pazar Durumu
-- **İçerik & Strateji Notu**: Seçilen rakiplerin analizi
-- **Kilit Bilgi**: Pazar fırsatları ve boşlukları
-${selected_competitors.map((comp: { title: string; description: string }) => `
-#### H3: ${comp.title}
-- ${comp.description}
-`).join('')}
-` : ''}
-
-## B. SSS (SIK SORULAN SORULAR)
-${extra_faq ? extra_faq.split(',').map((q: string) => `
-### ${q.trim()}
-**Cevap**: ${q.trim()} hakkında detaylı açıklama ve pratik öneriler.
-`).join('') : `
-### ${konu_sorgusu} ne kadar sürede öğrenilir?
-**Cevap**: Temel seviyede ${konu_sorgusu} öğrenmek için ortalama 2-4 hafta yeterlidir.
-
-### ${konu_sorgusu} için hangi araçlar gereklidir?
-**Cevap**: Başlangıç için temel araçlar yeterlidir, ilerledikçe daha gelişmiş araçlara geçilebilir.
-`}
-
-## C. E-E-A-T VE GÜVENİLİRLİK
-- **Yazar Önerisi**: ${konu_sorgusu} konusunda deneyimli uzman
-- **Veri Kaynak Önerileri**: Güncel araştırmalar ve uzman görüşleri
-- **Güncelleme Planı**: Yılda 2 kez içerik güncellemesi
-
-## D. KALİTE KONTROL LİSTESİ
-- ✅ Özgün değer teklifi mevcut
-- ✅ Başlık hiyerarşisi doğru
-- ✅ Görsel önerileri eklendi
-- ✅ SSS bölümü kapsamlı
-- ✅ E-E-A-T kriterleri karşılandı
-
----
-*Not: Bu detaylı plan ${selected_competitors.length > 0 ? 'seçilen rakip analizi ile' : 'genel analiz ile'} oluşturulmuştur. Daha spesifik içerik için Gemini AI'dan tam yanıt alınması önerilir.*`;
-
-      console.log('Using fallback outline, length:', markdownOutline.length);
+      console.error('❌ GEMINI API FAILED:', error);
+      // NO FALLBACK - Return error to force proper debugging
+      return NextResponse.json(
+        { 
+          error: 'Gemini API failure - no fallback allowed',
+          details: error instanceof Error ? error.message : 'Unknown Gemini error',
+          debug_info: {
+            api_key_configured: !!process.env.GOOGLE_AI_API_KEY,
+            inputs_provided: Object.keys(briefInputs),
+            topic: konu_sorgusu
+          }
+        },
+        { status: 500 }
+      );
     }
+
+    // Validate that we got real Gemini output, not fallback
+    if (markdownOutline.includes('Generate a detailed fallback outline') || 
+        markdownOutline.includes('STRATEJİK BAŞLANGIÇ') ||
+        markdownOutline.length < 500) {
+      console.error('❌ DETECTED FALLBACK CONTENT OR TOO SHORT');
+      return NextResponse.json(
+        { 
+          error: 'Fallback content detected - Gemini must generate real output',
+          details: 'Generated content appears to be fallback template, not Gemini 2.5 Pro output',
+          content_length: markdownOutline.length
+        },
+        { status: 500 }
+      );
+    }
+
+    // ALL FALLBACK CODE REMOVED - ONLY GEMINI 2.5 PRO ALLOWED
 
     console.log('Markdown outline generated successfully, length:', markdownOutline.length);
     
