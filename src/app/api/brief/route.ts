@@ -56,27 +56,16 @@ export async function POST(request: NextRequest) {
       console.log('No selected competitors, fetching from SERP...');
     }
 
-    // Run SERP requests in parallel with individual timeouts (skip competitors if user-selected)
+    // Run SERP requests in parallel without timeout restrictions
     const serpPromises = [];
     
     if (competitors.length === 0) {
-      serpPromises.push(
-        Promise.race([
-          serpClient.getTopCompetitors(konu_sorgusu, 'Turkey', language),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Competitors timeout')), 3000))
-        ])
-      );
+      serpPromises.push(serpClient.getTopCompetitors(konu_sorgusu, 'Turkey', language));
     }
     
     serpPromises.push(
-      Promise.race([
-        serpClient.getPAAQuestions(konu_sorgusu, 'Turkey', language),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('PAA timeout')), 3000))
-      ]),
-      Promise.race([
-        serpClient.getEntities(konu_sorgusu),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Entities timeout')), 3000))
-      ])
+      serpClient.getPAAQuestions(konu_sorgusu, 'Turkey', language),
+      serpClient.getEntities(konu_sorgusu)
     );
     
     const serpResults = await Promise.allSettled(serpPromises);
@@ -99,7 +88,7 @@ export async function POST(request: NextRequest) {
     // Handle PAA result
     const paaResult = serpResults[resultIndex++];
     if (paaResult.status === 'fulfilled') {
-      paaQuestions = paaResult.value as { question: string; answer?: string }[];
+      paaQuestions = (paaResult.value as unknown) as { question: string; answer?: string }[];
     } else {
       console.warn('Failed to fetch PAA questions, using fallback:', paaResult.reason);
       paaQuestions = [
@@ -111,7 +100,7 @@ export async function POST(request: NextRequest) {
     // Handle entities result
     const entitiesResult = serpResults[resultIndex++];
     if (entitiesResult.status === 'fulfilled') {
-      entities = entitiesResult.value as { name: string; type: string; description?: string }[];
+      entities = (entitiesResult.value as unknown) as { name: string; type: string; description?: string }[];
     } else {
       console.warn('Failed to fetch entities, using fallback:', entitiesResult.reason);
       entities = [{ name: konu_sorgusu, type: 'Topic', description: 'Main topic entity' }];
@@ -131,14 +120,14 @@ export async function POST(request: NextRequest) {
       paa_questions: paaFormatted
     };
 
-    console.log('🚀 CALLING GEMINI 1.5 FLASH API - NO FALLBACK ALLOWED (20s timeout)...');
+    console.log('🚀 CALLING GEMINI CALLBACK PIPELINE - NO FALLBACK ALLOWED, UNRESTRICTED PROCESSING...');
     let markdownOutline;
     try {
       markdownOutline = await runBrief(briefInputs);
       if (!markdownOutline || markdownOutline.trim().length === 0) {
         throw new Error('Gemini API returned empty response');
       }
-      console.log('✅ GEMINI 2.5 PRO SUCCESS - Generated content length:', markdownOutline.length);
+      console.log('✅ GEMINI CALLBACK PIPELINE SUCCESS - Generated content length:', markdownOutline.length);
     } catch (error) {
       console.error('❌ GEMINI API FAILED:', error);
       // NO FALLBACK - Return error to force proper debugging
