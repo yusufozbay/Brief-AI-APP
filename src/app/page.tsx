@@ -38,17 +38,24 @@ export default function Home() {
     konu_sorgusu: '',
     google_query_fan_out_entities: '',
     extra_subtitles: '',
-    extra_faq: ''
+    extra_faq: '',
+    language: 'tr'
   });
 
-  const fetchCompetitors = async () => {
+  const handleFetchCompetitors = async () => {
+    console.log('🎯 User Action: Fetch Competitors button clicked');
+    
     if (!formData.konu_sorgusu.trim()) {
-      alert('Please enter a topic first');
+      console.warn('⚠️ User Error: Empty query provided');
+      alert('Lütfen bir konu girin');
       return;
     }
 
+    console.log('🔄 Starting competitor fetch for query:', formData.konu_sorgusu);
     setIsLoadingCompetitors(true);
+    
     try {
+      console.log('📡 API Call: Sending request to /api/competitors');
       const response = await fetch('/api/competitors', {
         method: 'POST',
         headers: {
@@ -56,21 +63,38 @@ export default function Home() {
         },
         body: JSON.stringify({
           konu_sorgusu: formData.konu_sorgusu,
-          language: settings.language
-        })
+          language: formData.language || 'tr'
+        }),
       });
 
+      console.log('📥 API Response received, status:', response.status);
       const data = await response.json();
+      console.log('📊 API Response data:', data);
+      
       if (data.success) {
-        setCompetitors(data.competitors);
-        setShowCompetitors(true);
+        console.log('✅ Competitors fetched successfully:', data.competitors?.length || 0, 'competitors');
+        console.log('🏆 Competitor source:', data.source);
+        setCompetitors(data.competitors || []);
+        
+        // Log each competitor for debugging
+        data.competitors?.forEach((comp: any, index: number) => {
+          console.log(`🏆 Competitor ${index + 1}:`, {
+            title: comp.title,
+            url: comp.url,
+            description: comp.description?.substring(0, 100) + '...'
+          });
+        });
       } else {
-        alert(`Error fetching competitors: ${data.error}`);
+        console.error('❌ Failed to fetch competitors:', data.error);
+        alert(`Rakip analizi alınamadı: ${data.error || 'Bilinmeyen hata'}`);
+        setCompetitors([]);
       }
     } catch (error) {
-      console.error('Error fetching competitors:', error);
-      alert('Failed to fetch competitors. Please try again.');
+      console.error('💥 Network/API Error:', error);
+      alert('Ağ hatası oluştu. Lütfen internet bağlantınızı kontrol edin ve tekrar deneyin.');
+      setCompetitors([]);
     } finally {
+      console.log('🏁 Competitor fetch process completed');
       setIsLoadingCompetitors(false);
     }
   };
@@ -250,7 +274,7 @@ export default function Home() {
                 </label>
                 <button
                   type="button"
-                  onClick={fetchCompetitors}
+                  onClick={handleFetchCompetitors}
                   disabled={isLoadingCompetitors || !formData.konu_sorgusu.trim()}
                   className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
                 >
@@ -265,44 +289,103 @@ export default function Home() {
                 </button>
               </div>
               
-              {showCompetitors && competitors.length > 0 && (
-                <div className="border-2 border-gray-200 rounded-lg p-4 bg-gray-50">
-                  <p className="text-sm text-gray-600 mb-3">
-                    Select competitors to include in your brief analysis ({selectedCompetitors.length} selected):
+              {competitors.length > 0 && (
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6 shadow-sm">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-bold text-gray-800 flex items-center">
+                      🏆 Rakip Analizi
+                      <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full">
+                        {competitors.length} rakip bulundu
+                      </span>
+                    </h3>
+                    <div className="text-sm text-gray-600 bg-white px-3 py-1 rounded-full border">
+                      {selectedCompetitors.length} seçili
+                    </div>
+                  </div>
+                  
+                  <p className="text-sm text-gray-700 mb-4 bg-white/50 p-3 rounded-lg border-l-4 border-blue-400">
+                    💡 <strong>Gerçek SERP verisi:</strong> Aşağıdaki rakipler Google'dan canlı olarak çekilmiştir. 
+                    Analiz için dahil etmek istediğiniz rakipleri seçin.
                   </p>
-                  <div className="space-y-2 max-h-60 overflow-y-auto">
-                    {competitors.map((competitor) => (
+                  
+                  <div className="grid gap-3 max-h-80 overflow-y-auto pr-2">
+                    {competitors.map((competitor, index) => (
                       <div
                         key={competitor.url}
-                        className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                        className={`group relative bg-white border-2 rounded-xl p-4 transition-all duration-200 hover:shadow-md ${
                           selectedCompetitors.some(c => c.url === competitor.url)
-                            ? 'border-blue-500 bg-blue-50'
-                            : 'border-gray-300 bg-white hover:border-gray-400'
+                            ? 'border-green-400 bg-green-50 shadow-sm'
+                            : 'border-gray-200 hover:border-blue-300'
                         }`}
-                        onClick={() => toggleCompetitorSelection(competitor)}
                       >
-                        <div className="flex items-start">
-                          <input
-                            type="checkbox"
-                            checked={selectedCompetitors.some(c => c.url === competitor.url)}
-                            onChange={() => toggleCompetitorSelection(competitor)}
-                            className="mt-1 mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                          />
+                        <div className="flex items-start space-x-4">
+                          <div className="flex-shrink-0 pt-1">
+                            <input
+                              type="checkbox"
+                              id={competitor.url}
+                              checked={selectedCompetitors.some(c => c.url === competitor.url)}
+                              onChange={(e) => {
+                                console.log(`🎯 User Action: ${e.target.checked ? 'Selected' : 'Deselected'} competitor:`, competitor.title);
+                                if (e.target.checked) {
+                                  setSelectedCompetitors([...selectedCompetitors, competitor]);
+                                } else {
+                                  setSelectedCompetitors(selectedCompetitors.filter(c => c.url !== competitor.url));
+                                }
+                              }}
+                              className="h-5 w-5 text-green-600 focus:ring-green-500 border-gray-300 rounded-md transition-colors"
+                            />
+                          </div>
+                          
                           <div className="flex-1 min-w-0">
-                            <h4 className="text-sm font-medium text-gray-900 truncate">
-                              {competitor.title}
-                            </h4>
-                            <p className="text-xs text-gray-500 truncate mt-1">
-                              {competitor.url}
-                            </p>
-                            <p className="text-xs text-gray-600 mt-1 line-clamp-2">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <span className="inline-flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-800 text-xs font-bold rounded-full">
+                                {index + 1}
+                              </span>
+                              <label 
+                                htmlFor={competitor.url} 
+                                className="text-sm font-bold text-gray-900 cursor-pointer hover:text-blue-700 transition-colors line-clamp-2"
+                              >
+                                {competitor.title}
+                              </label>
+                            </div>
+                            
+                            <div className="mb-2">
+                              <a 
+                                href={competitor.url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-xs text-blue-600 hover:text-blue-800 hover:underline font-medium break-all"
+                              >
+                                🔗 {competitor.url}
+                              </a>
+                            </div>
+                            
+                            <p className="text-sm text-gray-700 leading-relaxed">
                               {competitor.description}
                             </p>
                           </div>
                         </div>
+                        
+                        {selectedCompetitors.some(c => c.url === competitor.url) && (
+                          <div className="absolute top-2 right-2">
+                            <div className="bg-green-500 text-white rounded-full p-1">
+                              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
+                  
+                  {selectedCompetitors.length > 0 && (
+                    <div className="mt-4 p-3 bg-green-100 border border-green-300 rounded-lg">
+                      <p className="text-sm text-green-800 font-medium">
+                        ✅ {selectedCompetitors.length} rakip seçildi ve brief analizine dahil edilecek
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

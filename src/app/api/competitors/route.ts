@@ -31,45 +31,40 @@ export async function POST(request: NextRequest) {
       // Fetch competitors with timeout
       const competitorsPromise = serpClient.getTopCompetitors(konu_sorgusu, 'Turkey', language);
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Competitors timeout')), 5000)
+        setTimeout(() => reject(new Error('Competitors timeout')), 20000)
       );
       
+      console.log('🔍 DataForSEO API Call - Fetching real competitors for:', konu_sorgusu);
       const competitors = await Promise.race([competitorsPromise, timeoutPromise]) as { url: string; title: string; description: string }[];
       
-      // If we got competitors from the API, use them; otherwise use enhanced fallback
-      const finalCompetitors = competitors && competitors.length > 0 ? competitors : [
-        { 
-          url: `https://www.example1.com/${konu_sorgusu.replace(/\s+/g, '-')}`, 
-          title: `${konu_sorgusu} - Kapsamlı Rehber | Örnek Site 1`, 
-          description: `${konu_sorgusu} hakkında detaylı bilgiler, ipuçları ve uzman önerileri. Adım adım rehber ve pratik uygulamalar.` 
-        },
-        { 
-          url: `https://www.example2.com/${konu_sorgusu.replace(/\s+/g, '-')}-rehberi`, 
-          title: `${konu_sorgusu} Nasıl Yapılır? | Örnek Site 2`, 
-          description: `${konu_sorgusu} için en iyi yöntemler, araçlar ve teknikler. Başlangıçtan ileri seviyeye kadar.` 
-        },
-        { 
-          url: `https://www.example3.com/blog/${konu_sorgusu.replace(/\s+/g, '-')}`, 
-          title: `${konu_sorgusu} Hakkında Bilmeniz Gerekenler | Örnek Site 3`, 
-          description: `${konu_sorgusu} konusunda uzman görüşleri, sık sorulan sorular ve pratik çözümler.` 
-        },
-        { 
-          url: `https://www.example4.com/${konu_sorgusu.replace(/\s+/g, '-')}-ipuclari`, 
-          title: `${konu_sorgusu} İpuçları ve Püf Noktaları | Örnek Site 4`, 
-          description: `${konu_sorgusu} için profesyonel ipuçları, yaygın hatalar ve bunlardan kaçınma yolları.` 
-        },
-        { 
-          url: `https://www.example5.com/rehber/${konu_sorgusu.replace(/\s+/g, '-')}`, 
-          title: `${konu_sorgusu} - Uzman Rehberi | Örnek Site 5`, 
-          description: `${konu_sorgusu} konusunda kapsamlı rehber, örnekler ve uygulamalı bilgiler.` 
-        }
-      ];
+      console.log('📊 DataForSEO Response - Competitors found:', competitors?.length || 0);
+      
+      // Only return real competitors from DataForSEO API - NO FALLBACK
+      if (!competitors || competitors.length === 0) {
+        console.warn('⚠️ No real competitors found from DataForSEO API');
+        return NextResponse.json({
+          success: false,
+          error: 'No competitors found from DataForSEO API. Please try a different query.',
+          competitors: [],
+          query: konu_sorgusu,
+          source: 'none'
+        });
+      }
+      
+      console.log('✅ Real competitors successfully fetched from DataForSEO');
+      competitors.forEach((comp, index) => {
+        console.log(`🏆 Real Competitor ${index + 1}:`, {
+          title: comp.title.substring(0, 50) + '...',
+          url: comp.url,
+          description: comp.description.substring(0, 80) + '...'
+        });
+      });
       
       return NextResponse.json({
         success: true,
-        competitors: finalCompetitors,
+        competitors: competitors,
         query: konu_sorgusu,
-        source: competitors && competitors.length > 0 ? 'api' : 'fallback'
+        source: 'api'
       });
       
     } catch (error) {

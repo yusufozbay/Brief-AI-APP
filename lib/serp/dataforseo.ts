@@ -42,7 +42,7 @@ export class DataForSEOClient {
     
     // Create AbortController for timeout handling
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout for real SERP data
     
     try {
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
@@ -65,7 +65,7 @@ export class DataForSEOClient {
     } catch (error) {
       clearTimeout(timeoutId);
       if (error instanceof Error && error.name === 'AbortError') {
-        throw new Error('DataForSEO API request timed out after 8 seconds');
+        throw new Error('DataForSEO API request timed out after 15 seconds');
       }
       throw error;
     }
