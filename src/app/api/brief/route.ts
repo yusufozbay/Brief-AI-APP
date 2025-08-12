@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
       console.log('No selected competitors, fetching from SERP...');
     }
 
-    // Run SERP requests in parallel with competitor limit
+    // ULTRA-FAST: Skip SERP requests if competitors already provided to save time
     const serpPromises = [];
     
     if (competitors.length === 0) {
@@ -68,10 +68,11 @@ export async function POST(request: NextRequest) {
       serpPromises.push(serpClient.getTopCompetitors(konu_sorgusu, 'Turkey', language));
     }
     
-    serpPromises.push(
-      serpClient.getPAAQuestions(konu_sorgusu, 'Turkey', language),
-      serpClient.getEntities(konu_sorgusu)
-    );
+    // OPTIMIZATION: Skip PAA and entities for faster processing on Netlify
+    if (competitors.length === 0) {
+      serpPromises.push(serpClient.getPAAQuestions(konu_sorgusu, 'Turkey', language));
+      serpPromises.push(serpClient.getEntities(konu_sorgusu));
+    }
     
     const serpResults = await Promise.allSettled(serpPromises);
     

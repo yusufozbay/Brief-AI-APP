@@ -13,13 +13,11 @@ interface BriefInputs {
   paa_questions: string;
 }
 
-// Define comprehensive Gemini Models Configuration - Fast configuration optimized for Netlify constraints
+// Define ultra-fast Gemini Models Configuration - Optimized for Netlify 10s timeout constraint
 const GEMINI_MODELS = [
-  { name: 'gemini-1.5-flash', maxTokens: 4096 },
-  { name: 'gemini-1.5-flash-8b', maxTokens: 4096 },
-  { name: 'gemini-2.0-flash', maxTokens: 4096 },
-  { name: 'gemini-1.5-pro', maxTokens: 4096 },
-  { name: 'gemini-2.5-flash', maxTokens: 4096 }
+  { name: 'gemini-1.5-flash-8b', maxTokens: 2048 }, // Fastest model, reduced tokens
+  { name: 'gemini-1.5-flash', maxTokens: 2048 },     // Fast model, reduced tokens
+  { name: 'gemini-2.0-flash', maxTokens: 2048 }      // Backup fast model
 ];
 
 async function tryGeminiModel(modelConfig: { name: string; maxTokens: number }, systemPrompt: string, genAI: GoogleGenerativeAI) {
@@ -27,9 +25,9 @@ async function tryGeminiModel(modelConfig: { name: string; maxTokens: number }, 
   
   try {
     const generationConfig = {
-      temperature: 0.9,
-      topP: 0.95,
-      topK: 64,
+      temperature: 0.7,  // Reduced for faster, more focused generation
+      topP: 0.8,         // Reduced for faster generation
+      topK: 32,          // Reduced for faster generation
       maxOutputTokens: modelConfig.maxTokens,
       responseMimeType: "text/plain",
     };
@@ -44,7 +42,7 @@ async function tryGeminiModel(modelConfig: { name: string; maxTokens: number }, 
     const response = await result.response;
     const text = response.text();
     
-    if (!text || text.trim().length < 200) {
+    if (!text || text.trim().length < 100) {
       throw new Error(`${modelConfig.name} generated insufficient content (${text?.length || 0} chars)`);
     }
     
