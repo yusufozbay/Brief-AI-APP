@@ -126,10 +126,9 @@ Bu outline'a göre içeriği hazırladıktan sonra, yayınlamadan önce aşağı
 🚨 CRITICAL: COMPETITOR ANALYSIS & MODERN UI OUTPUT RULES - MUST BE FOLLOWED EXACTLY:
 
 **MANDATORY COMPETITOR ANALYSIS:**
-1. **Deep URL Analysis**: Analyze each selected competitor URL's content, structure, and approach
-2. **Context Understanding**: Use competitor content to understand topic scope and user intent
-3. **Strategic Gaps**: Identify what competitors are missing and create superior content strategy
-4. **Content Differentiation**: Ensure your outline provides unique value beyond competitor offerings
+1. **Quick Analysis**: Review competitor titles and descriptions to understand their approach
+2. **Gap Identification**: Find missing elements in competitor content for differentiation
+3. **Strategic Advantage**: Create superior content structure based on competitor weaknesses
 
 **MANDATORY FORMAT REQUIREMENTS:**
 1. **HTML/Markdown Hybrid**: EVERY paragraph MUST be wrapped in <p>...</p> tags with proper spacing

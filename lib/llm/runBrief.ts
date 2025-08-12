@@ -13,6 +13,66 @@ interface BriefInputs {
   paa_questions: string;
 }
 
+// Define Gemini models in priority order (best to fallback)
+const GEMINI_MODELS = [
+  // Latest Gemini 2.5 models (highest priority)
+  { name: 'gemini-2.5-pro', timeout: 35000, maxTokens: 4500 },
+  { name: 'gemini-2.5-flash', timeout: 30000, maxTokens: 4000 },
+  { name: 'gemini-2.5-flash-8b', timeout: 25000, maxTokens: 3500 },
+  
+  // Gemini 2.0 models
+  { name: 'gemini-2.0-pro', timeout: 30000, maxTokens: 4000 },
+  { name: 'gemini-2.0-flash', timeout: 25000, maxTokens: 4000 },
+  { name: 'gemini-2.0-flash-8b-exp', timeout: 20000, maxTokens: 3500 },
+  
+  // Gemini 1.5 models (stable fallbacks)
+  { name: 'gemini-1.5-pro-002', timeout: 30000, maxTokens: 4000 },
+  { name: 'gemini-1.5-pro', timeout: 30000, maxTokens: 4000 },
+  { name: 'gemini-1.5-flash-002', timeout: 20000, maxTokens: 3500 },
+  { name: 'gemini-1.5-flash', timeout: 20000, maxTokens: 3500 },
+  { name: 'gemini-1.5-flash-8b', timeout: 15000, maxTokens: 3000 },
+  
+  // Final fallback
+  { name: 'gemini-1.0-pro', timeout: 15000, maxTokens: 3000 }
+];
+
+async function tryGeminiModel(modelConfig: { name: string; timeout: number; maxTokens: number }, systemPrompt: string, genAI: GoogleGenerativeAI) {
+  console.log(`🤖 Trying ${modelConfig.name} with ${modelConfig.timeout/1000}s timeout...`);
+  
+  try {
+    const model = genAI.getGenerativeModel({
+      model: modelConfig.name,
+      generationConfig: {
+        temperature: 0.3,
+        topP: 0.9,
+        topK: 40,
+        maxOutputTokens: modelConfig.maxTokens,
+        responseMimeType: 'text/plain'
+      }
+    });
+
+    const geminiPromise = model.generateContent(systemPrompt);
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error(`${modelConfig.name} timeout after ${modelConfig.timeout/1000} seconds`)), modelConfig.timeout)
+    );
+    
+    const result = await Promise.race([geminiPromise, timeoutPromise]);
+    const response = await (result as { response: { text: () => string } }).response;
+    const text = response.text();
+    
+    if (!text || text.trim().length < 200) {
+      throw new Error(`${modelConfig.name} generated insufficient content (${text?.length || 0} chars)`);
+    }
+    
+    console.log(`✅ ${modelConfig.name} SUCCESS - Generated ${text.length} characters`);
+    return text;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.warn(`❌ ${modelConfig.name} failed: ${errorMessage}`);
+    throw error;
+  }
+}
+
 export async function runBrief(inputs: BriefInputs) {
   try {
     // Load runtime system prompt template with multiple path attempts
@@ -27,7 +87,6 @@ export async function runBrief(inputs: BriefInputs) {
       path.join(__dirname, 'prompts', 'RUNTIME_SYSTEM.tmpl.md')
     ];
     
-
 
     // Try to load template
     let templateLoaded = false;
@@ -65,43 +124,36 @@ export async function runBrief(inputs: BriefInputs) {
       .replace('{{serp_competitors}}', inputs.serp_competitors)
       .replace('{{paa_questions}}', inputs.paa_questions);
 
-    // Initialize Gemini model with optimized parameters for Turkish SEO content
-    console.log('Initializing Gemini model...');
+    console.log('🚀 Starting Gemini Model Callback Pipeline...');
     console.log('System prompt length:', systemPrompt.length);
     console.log('Topic (konu_sorgusu):', inputs.konu_sorgusu);
     console.log('Template loaded successfully:', templateLoaded);
     
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-1.5-pro', // Use Gemini 1.5 Pro for better competitor analysis and context understanding
-      generationConfig: {
-        temperature: 0.2, // Lower temperature for more focused, consistent output
-        topP: 0.8,
-        topK: 32,
-        maxOutputTokens: 3500, // Optimized for comprehensive content within timeout limits
-        responseMimeType: 'text/plain'
-      }
-    });
-
-    // Generate content with timeout and retry logic
-    console.log('Generating content with Gemini...');
-    let result;
-    let response;
-    let text;
+    // Try models in priority order with callback pipeline
+    let text: string | null = null;
+    let lastError: Error | null = null;
     
-    try {
-      // Set up timeout for Gemini 2.0 Flash API call (20 seconds for comprehensive Turkish SEO content)
-      const geminiPromise = model.generateContent(systemPrompt);
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Gemini API timeout after 20 seconds')), 20000)
-      );
+    for (let i = 0; i < GEMINI_MODELS.length; i++) {
+      const modelConfig = GEMINI_MODELS[i];
       
-      result = await Promise.race([geminiPromise, timeoutPromise]);
-      response = await (result as { response: { text: () => string } }).response;
-      text = response.text();
-      console.log('Gemini response received, length:', text.length);
-    } catch (geminiError) {
-      console.error('Gemini API error:', geminiError);
-      throw new Error(`Gemini API failed: ${geminiError instanceof Error ? geminiError.message : 'Unknown error'}`);
+      try {
+        text = await tryGeminiModel(modelConfig, systemPrompt, genAI);
+        console.log(`🎉 SUCCESS with ${modelConfig.name}!`);
+        break;
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        console.warn(`❌ ${modelConfig.name} failed:`, lastError.message);
+        
+        if (i < GEMINI_MODELS.length - 1) {
+          console.log(`🔄 Falling back to next model...`);
+        } else {
+          console.error('💥 All Gemini models failed!');
+        }
+      }
+    }
+    
+    if (!text) {
+      throw new Error(`All Gemini models failed. Last error: ${lastError?.message || 'Unknown error'}`);
     }
 
     // Return the Markdown content directly

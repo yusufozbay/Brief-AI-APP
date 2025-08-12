@@ -3,11 +3,7 @@ interface DataForSEOCredentials {
   password: string;
 }
 
-interface SERPResult {
-  url: string;
-  title: string;
-  description: string;
-}
+
 
 interface PAAQuestion {
   question: string;
