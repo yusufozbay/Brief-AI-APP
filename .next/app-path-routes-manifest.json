@@ -1,11 +1,13 @@
 {
-  "/api/brief/route": "/api/brief",
-  "/api/competitors/route": "/api/competitors",
-  "/api/brief-debug/route": "/api/brief-debug",
+  "/api/brief-minimal/route": "/api/brief-minimal",
   "/_not-found/page": "/_not-found",
+  "/api/brief-debug/route": "/api/brief-debug",
   "/api/paa/route": "/api/paa",
-  "/favicon.ico/route": "/favicon.ico",
+  "/api/competitors/route": "/api/competitors",
+  "/api/brief/route": "/api/brief",
   "/api/entities/route": "/api/entities",
+  "/favicon.ico/route": "/favicon.ico",
   "/api/test/route": "/api/test",
+  "/test-minimal/page": "/test-minimal",
   "/page": "/"
 }

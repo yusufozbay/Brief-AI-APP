@@ -48,6 +48,12 @@
       "regex": "^/favicon\\.ico(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/favicon\\.ico(?:/)?$"
+    },
+    {
+      "page": "/test-minimal",
+      "regex": "^/test\\-minimal(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/test\\-minimal(?:/)?$"
     }
   ],
   "dataRoutes": [],

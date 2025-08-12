@@ -113,9 +113,9 @@ export default function Home() {
     setOutline(null);
 
     try {
-      // Add timeout to frontend request (25 seconds to match Netlify limit)
+      // Extended timeout for comprehensive Gemini generation (2 minutes)
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 25000);
+      const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minutes
 
       const response = await fetch('/api/brief', {
         method: 'POST',
@@ -389,7 +389,10 @@ export default function Home() {
               {isLoading ? (
                 <div className="flex items-center justify-center">
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                  Generating Brief...
+                  <div className="text-center">
+                    <div>🚀 Generating Comprehensive Brief...</div>
+                    <div className="text-sm opacity-90 mt-1">⏱️ This takes 1-2 minutes for best quality</div>
+                  </div>
                 </div>
               ) : (
                 'Generate Brief'
