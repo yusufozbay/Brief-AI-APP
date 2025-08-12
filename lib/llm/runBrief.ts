@@ -13,32 +13,30 @@ interface BriefInputs {
   paa_questions: string;
 }
 
-// Define comprehensive Gemini models - following working Netlify app pattern
+// Define comprehensive Gemini Models Configuration - Fast configuration optimized for Netlify constraints
 const GEMINI_MODELS = [
-  // Latest Gemini 2.5 models (highest priority) - like working Netlify app
-  { name: 'gemini-2.5-pro', maxTokens: 8192 },
-  { name: 'gemini-2.5-flash', maxTokens: 8192 },
-  { name: 'gemini-2.5-flash-8b', maxTokens: 8192 },
-  { name: 'gemini-2.0-flash-exp', maxTokens: 8192 },
-  { name: 'gemini-1.5-pro', maxTokens: 8192 },
-  { name: 'gemini-1.5-flash', maxTokens: 8192 },
-  { name: 'gemini-1.5-flash-8b', maxTokens: 8192 },
-  { name: 'gemini-1.0-pro', maxTokens: 8192 }
+  { name: 'gemini-1.5-flash', maxTokens: 4096 },
+  { name: 'gemini-1.5-flash-8b', maxTokens: 4096 },
+  { name: 'gemini-2.0-flash', maxTokens: 4096 },
+  { name: 'gemini-1.5-pro', maxTokens: 4096 },
+  { name: 'gemini-2.5-flash', maxTokens: 4096 }
 ];
 
 async function tryGeminiModel(modelConfig: { name: string; maxTokens: number }, systemPrompt: string, genAI: GoogleGenerativeAI) {
   console.log(`🤖 Trying ${modelConfig.name} with comprehensive generation like working Netlify app...`);
   
   try {
+    const generationConfig = {
+      temperature: 0.9,
+      topP: 0.95,
+      topK: 64,
+      maxOutputTokens: modelConfig.maxTokens,
+      responseMimeType: "text/plain",
+    };
+
     const model = genAI.getGenerativeModel({
       model: modelConfig.name,
-      generationConfig: {
-        temperature: 0.3, // Quality-focused like working app
-        topP: 0.9,
-        topK: 40,
-        maxOutputTokens: modelConfig.maxTokens,
-        responseMimeType: 'text/plain'
-      }
+      generationConfig,
     });
 
     // No timeout - let Gemini process as long as needed
@@ -122,11 +120,7 @@ export async function runBrief(inputs: BriefInputs) {
     for (let i = 0; i < GEMINI_MODELS.length; i++) {
       const modelConfig = GEMINI_MODELS[i];
       
-      // TIME BREAK: Between model attempts (except first)
-      if (i > 0) {
-        console.log(`⏱️ TIME BREAK: Pausing before trying ${modelConfig.name}...`);
-        await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second break between models
-      }
+
       
       try {
         text = await tryGeminiModel(modelConfig, systemPrompt, genAI);

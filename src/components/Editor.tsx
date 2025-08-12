@@ -125,7 +125,7 @@ ${outline}
           <span className="text-lg text-gray-600">Brief oluşturuluyor...</span>
         </div>
         <div className="mt-4 text-center text-sm text-gray-500">
-          Bu işlem 30-60 saniye sürebilir
+
         </div>
       </div>
     );

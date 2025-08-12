@@ -1,12 +1,12 @@
 {
-  "/api/brief-minimal/route": "/api/brief-minimal",
+  "/api/brief/route": "/api/brief",
+  "/api/competitors/route": "/api/competitors",
   "/_not-found/page": "/_not-found",
   "/api/brief-debug/route": "/api/brief-debug",
   "/api/paa/route": "/api/paa",
-  "/api/competitors/route": "/api/competitors",
-  "/api/brief/route": "/api/brief",
-  "/api/entities/route": "/api/entities",
+  "/api/brief-minimal/route": "/api/brief-minimal",
   "/favicon.ico/route": "/favicon.ico",
+  "/api/entities/route": "/api/entities",
   "/api/test/route": "/api/test",
   "/test-minimal/page": "/test-minimal",
   "/page": "/"
