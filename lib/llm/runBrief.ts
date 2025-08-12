@@ -13,39 +13,28 @@ interface BriefInputs {
   paa_questions: string;
 }
 
-// Define Gemini models in priority order (best to fallback) - NO TIMEOUTS + MAXIMUM TOKENS for unrestricted processing
+// Define FAST Gemini models optimized for Netlify serverless limits (10-26s)
 const GEMINI_MODELS = [
-  // Latest Gemini 2.5 models (highest priority) - Maximum comprehensive output
-  { name: 'gemini-2.5-pro', maxTokens: 8192 },
-  { name: 'gemini-2.5-flash', maxTokens: 8192 },
-  { name: 'gemini-2.5-flash-8b', maxTokens: 8192 },
+  // Fastest models first - optimized for speed within platform constraints
+  { name: 'gemini-1.5-flash-8b', maxTokens: 4000 },
+  { name: 'gemini-1.5-flash', maxTokens: 4000 },
+  { name: 'gemini-2.0-flash', maxTokens: 4000 },
+  { name: 'gemini-1.5-flash-002', maxTokens: 4000 },
   
-  // Gemini 2.0 models - High capacity comprehensive output
-  { name: 'gemini-2.0-pro', maxTokens: 8192 },
-  { name: 'gemini-2.0-flash', maxTokens: 8192 },
-  { name: 'gemini-2.0-flash-8b-exp', maxTokens: 8192 },
-  
-  // Gemini 1.5 models (stable fallbacks) - Maximum Turkish SEO content
-  { name: 'gemini-1.5-pro-002', maxTokens: 8192 },
-  { name: 'gemini-1.5-pro', maxTokens: 8192 },
-  { name: 'gemini-1.5-flash-002', maxTokens: 8192 },
-  { name: 'gemini-1.5-flash', maxTokens: 8192 },
-  { name: 'gemini-1.5-flash-8b', maxTokens: 8192 },
-  
-  // Final fallback - Maximum reliable output
-  { name: 'gemini-1.0-pro', maxTokens: 8192 }
+  // Backup faster models
+  { name: 'gemini-1.0-pro', maxTokens: 3000 }
 ];
 
 async function tryGeminiModel(modelConfig: { name: string; maxTokens: number }, systemPrompt: string, genAI: GoogleGenerativeAI) {
-  console.log(`🤖 Trying ${modelConfig.name} with unrestricted processing time...`);
+  console.log(`🚀 Trying ${modelConfig.name} optimized for Netlify speed...`);
   
   try {
     const model = genAI.getGenerativeModel({
       model: modelConfig.name,
       generationConfig: {
-        temperature: 0.3,
-        topP: 0.9,
-        topK: 40,
+        temperature: 0.7, // Higher temperature for faster generation
+        topP: 0.95,
+        topK: 64,
         maxOutputTokens: modelConfig.maxTokens,
         responseMimeType: 'text/plain'
       }
