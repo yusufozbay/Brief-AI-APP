@@ -71,7 +71,7 @@ export class DataForSEOClient {
     }
   }
 
-  async getTopCompetitors(query: string, location: string = 'Turkey', language: string = 'tr'): Promise<Competitor[]> {
+  async getTopCompetitors(query: string, _location: string = 'Turkey', language: string = 'tr'): Promise<Competitor[]> {
     const postData = [{
       language_code: language,
       location_code: 2792, // Turkey location code
@@ -105,7 +105,7 @@ export class DataForSEOClient {
       if (response.tasks?.[0]?.result?.[0]?.items) {
         const items = response.tasks[0].result[0].items;
         const competitors = items
-          .filter((item: any) => item.url && item.title && item.description)
+          .filter((item: { url?: string; title?: string; description?: string }) => item.url && item.title && item.description)
           .slice(0, 10)
           .map((item: { url?: string; title?: string; description?: string }) => ({
             url: item.url || '',
@@ -134,7 +134,7 @@ export class DataForSEOClient {
     }
   }
 
-  async getPAAQuestions(query: string, location: string = 'Turkey', language: string = 'tr'): Promise<PAAQuestion[]> {
+  async getPAAQuestions(query: string, _location: string = 'Turkey', language: string = 'tr'): Promise<PAAQuestion[]> {
     const postData = [{
       language_code: language,
       location_code: 2792, // Turkey location code
@@ -185,8 +185,8 @@ export class DataForSEOClient {
       // DataForSEO doesn't have a direct entity endpoint, so we'll extract from knowledge graph
       const data = [{
         keyword: query,
-        location_name: 'Turkey',
-        language_name: 'tr',
+        location_code: 2792, // Turkey location code
+        language_code: 'tr',
         device: 'mobile',
         os: 'android'
       }];
