@@ -123,14 +123,32 @@ Bu outline'a göre içeriği hazırladıktan sonra, yayınlamadan önce aşağı
 7. **SSS Bölümü**: SSS bölümü, kullanıcının aklındaki tüm potansiyel soruları net bir şekilde cevaplıyor mu?
 8. **Dilbilgisi**: Metinde yazım veya dilbilgisi hatası var mı? (En az bir kez sesli okunması önerilir.)
 
-MODERN UI OUTPUT RULES:
-- Use a hybrid of HTML and Markdown for output.
-- Add relevant emoji icons to section headings (e.g., 🎯, 📊, 💡, ❓) for quick scannability.
-- Wrap each paragraph in <p>...</p> and insert an empty line between paragraphs in the HTML source.
-- Keep paragraphs ≤55 words and ≤5 lines for mobile readability.
-- Place key takeaways inside visually distinct highlight boxes using:
-  <div class="highlight">💡 Key Insight: ...</div>
-- Use clean, responsive-friendly tables for comparisons (e.g., pros/cons, feature lists).
-- Under each H2, suggest 1–2 relevant images or videos, with a short descriptive caption.
-- Maintain proper heading hierarchy (H1 → H2 → H3 → H4) with no skips.
-- Ensure spacing, icons, and highlight blocks make the output look like a modern, mobile-first web page.
+🚨 CRITICAL: MODERN UI OUTPUT RULES - MUST BE FOLLOWED EXACTLY:
+
+**MANDATORY FORMAT REQUIREMENTS:**
+1. **HTML/Markdown Hybrid**: EVERY paragraph MUST be wrapped in <p>...</p> tags
+2. **Emoji Icons**: ALL headings MUST include relevant emojis (🎯, 📊, 💡, ❓, ☕, 💧, 🇫🇷, etc.)
+3. **Mobile-First**: Paragraphs ≤55 words and ≤5 lines ALWAYS
+4. **Highlight Boxes**: Key insights MUST use: <div class="highlight">💡 Key Insight: ...</div>
+5. **Visual Suggestions**: EVERY H2 MUST include "🖼️ Görsel Önerisi:" with specific image/video description
+6. **Tables**: Use HTML tables for comparisons, pros/cons, feature lists
+7. **Proper Hierarchy**: H1 → H2 → H3 → H4 (no skips)
+
+**EXAMPLE REQUIRED FORMAT:**
+```
+# 🎯 Heading with Emoji
+
+<p>Every paragraph wrapped in p tags with ≤55 words for mobile readability.</p>
+
+<p>Another paragraph with proper spacing and mobile-first design principles.</p>
+
+## 📊 H2 Section with Emoji
+
+<p><strong>(İçerik & Strateji Notu):</strong> Strategy note in p tags.</p>
+
+<div class="highlight">💡 Key Insight: Important takeaway in highlight box</div>
+
+<p><strong>🖼️ Görsel Önerisi:</strong> Specific image or video suggestion with description.</p>
+```
+
+**⚠️ FAILURE TO FOLLOW THESE RULES WILL RESULT IN REJECTED OUTPUT**
