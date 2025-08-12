@@ -22,5 +22,14 @@
     Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
     Access-Control-Allow-Headers = "Content-Type, Authorization"
 
+# Function configuration for extended Gemini processing like working Netlify app
+[functions]
+  external_node_modules = ["@google/generative-ai"]
+  node_bundler = "esbuild"
+  
+[[functions]]
+  path = "src/app/api/brief"
+  included_files = ["prompts/**/*"]
+
 # Build configuration - Next.js handles function timeouts internally with extended Gemini timeouts
 # Netlify serverless functions will use Next.js internal timeout handling

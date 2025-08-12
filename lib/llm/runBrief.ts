@@ -13,28 +13,29 @@ interface BriefInputs {
   paa_questions: string;
 }
 
-// Define FAST Gemini models optimized for Netlify serverless limits (10-26s)
+// Define comprehensive Gemini models - following working Netlify app pattern
 const GEMINI_MODELS = [
-  // Fastest models first - optimized for speed within platform constraints
-  { name: 'gemini-1.5-flash-8b', maxTokens: 4000 },
-  { name: 'gemini-1.5-flash', maxTokens: 4000 },
-  { name: 'gemini-2.0-flash', maxTokens: 4000 },
-  { name: 'gemini-1.5-flash-002', maxTokens: 4000 },
-  
-  // Backup faster models
-  { name: 'gemini-1.0-pro', maxTokens: 3000 }
+  // Latest Gemini 2.5 models (highest priority) - like working Netlify app
+  { name: 'gemini-2.5-pro', maxTokens: 8192 },
+  { name: 'gemini-2.5-flash', maxTokens: 8192 },
+  { name: 'gemini-2.5-flash-8b', maxTokens: 8192 },
+  { name: 'gemini-2.0-flash-exp', maxTokens: 8192 },
+  { name: 'gemini-1.5-pro', maxTokens: 8192 },
+  { name: 'gemini-1.5-flash', maxTokens: 8192 },
+  { name: 'gemini-1.5-flash-8b', maxTokens: 8192 },
+  { name: 'gemini-1.0-pro', maxTokens: 8192 }
 ];
 
 async function tryGeminiModel(modelConfig: { name: string; maxTokens: number }, systemPrompt: string, genAI: GoogleGenerativeAI) {
-  console.log(`🚀 Trying ${modelConfig.name} optimized for Netlify speed...`);
+  console.log(`🤖 Trying ${modelConfig.name} with comprehensive generation like working Netlify app...`);
   
   try {
     const model = genAI.getGenerativeModel({
       model: modelConfig.name,
       generationConfig: {
-        temperature: 0.7, // Higher temperature for faster generation
-        topP: 0.95,
-        topK: 64,
+        temperature: 0.3, // Quality-focused like working app
+        topP: 0.9,
+        topK: 40,
         maxOutputTokens: modelConfig.maxTokens,
         responseMimeType: 'text/plain'
       }
