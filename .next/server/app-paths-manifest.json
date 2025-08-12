@@ -1,13 +1,13 @@
 {
-  "/api/brief/route": "app/api/brief/route.js",
-  "/api/brief-debug/route": "app/api/brief-debug/route.js",
-  "/_not-found/page": "app/_not-found/page.js",
-  "/api/paa/route": "app/api/paa/route.js",
   "/api/brief-minimal/route": "app/api/brief-minimal/route.js",
-  "/api/competitors/route": "app/api/competitors/route.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/brief/route": "app/api/brief/route.js",
+  "/api/paa/route": "app/api/paa/route.js",
+  "/api/brief-debug/route": "app/api/brief-debug/route.js",
   "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/api/competitors/route": "app/api/competitors/route.js",
   "/api/entities/route": "app/api/entities/route.js",
   "/api/test/route": "app/api/test/route.js",
-  "/test-minimal/page": "app/test-minimal/page.js",
-  "/page": "app/page.js"
+  "/page": "app/page.js",
+  "/test-minimal/page": "app/test-minimal/page.js"
 }
