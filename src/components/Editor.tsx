@@ -66,14 +66,37 @@ interface EditorProps {
 }
 
 export default function Editor({ outline, isLoading }: EditorProps) {
-  const exportToMarkdown = () => {
+  const exportToHtml = () => {
     if (!outline) return;
 
-    const blob = new Blob([outline], { type: 'text/markdown' });
+    const htmlContent = `<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>İçerik Stratejisi ve Planı</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; color: #333; }
+    h1 { color: #2563eb; border-bottom: 3px solid #2563eb; padding-bottom: 10px; }
+    h2 { color: #1e40af; margin-top: 30px; }
+    h3 { color: #1e3a8a; margin-top: 25px; }
+    h4 { color: #1e3a8a; margin-top: 20px; }
+    ul { padding-left: 20px; }
+    li { margin-bottom: 5px; }
+    strong { color: #1f2937; }
+    p { margin-bottom: 15px; }
+  </style>
+</head>
+<body>
+${outline}
+</body>
+</html>`;
+
+    const blob = new Blob([htmlContent], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `brief_${new Date().getTime()}.md`;
+    a.download = `brief_${new Date().getTime()}.html`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -131,7 +154,7 @@ export default function Editor({ outline, isLoading }: EditorProps) {
               <span>Kopyala</span>
             </button>
             <button
-              onClick={exportToMarkdown}
+              onClick={exportToHtml}
               className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg transition-colors duration-200 flex items-center space-x-2"
             >
               <span>📄</span>
@@ -143,10 +166,15 @@ export default function Editor({ outline, isLoading }: EditorProps) {
 
       {/* Content */}
       <div className="p-6">
-        <div className="bg-gray-50 rounded-lg p-4 border">
-          <pre className="whitespace-pre-wrap text-sm text-gray-800 font-mono leading-relaxed overflow-x-auto">
-            {outline}
-          </pre>
+        <div className="bg-gray-50 rounded-lg p-6 border">
+          <div 
+            className="prose prose-sm max-w-none text-gray-800 leading-relaxed"
+            style={{
+              fontSize: '14px',
+              lineHeight: '1.6'
+            }}
+            dangerouslySetInnerHTML={{ __html: outline || '' }}
+          />
         </div>
       </div>
     </div>

@@ -3,6 +3,7 @@ import { DataForSEOClient } from '../../../../lib/serp/dataforseo';
 import { runBrief } from '../../../../lib/llm/runBrief';
 import { db } from '../../../../lib/db/firebase';
 import { collection, addDoc } from 'firebase/firestore';
+import { convertMarkdownToHtml, cleanHtml } from '../../../../lib/utils/markdownToHtml';
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,7 +30,8 @@ export async function POST(request: NextRequest) {
       google_query_fan_out_entities, 
       extra_subtitles,
       extra_faq,
-      language = 'tr' 
+      language = 'tr',
+      selected_competitors = []
     } = body;
 
     if (!konu_sorgusu) {
@@ -42,40 +44,60 @@ export async function POST(request: NextRequest) {
     // Initialize DataForSEO client
     const serpClient = new DataForSEOClient();
 
-    // Fetch SERP data in parallel with timeouts and fallbacks
-    console.log('Fetching SERP data in parallel...');
+    // Use selected competitors if provided, otherwise fetch from SERP
     let competitors = [];
     let paaQuestions = [];
     let entities = [];
+    
+    if (selected_competitors && selected_competitors.length > 0) {
+      console.log('Using user-selected competitors:', selected_competitors.length);
+      competitors = selected_competitors;
+    } else {
+      console.log('No selected competitors, fetching from SERP...');
+    }
 
-    // Run all SERP requests in parallel with individual timeouts
-    const [competitorsResult, paaResult, entitiesResult] = await Promise.allSettled([
-      Promise.race([
-        serpClient.getTopCompetitors(konu_sorgusu, 'Turkey', language),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Competitors timeout')), 5000))
-      ]),
+    // Run SERP requests in parallel with individual timeouts (skip competitors if user-selected)
+    const serpPromises = [];
+    
+    if (competitors.length === 0) {
+      serpPromises.push(
+        Promise.race([
+          serpClient.getTopCompetitors(konu_sorgusu, 'Turkey', language),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Competitors timeout')), 3000))
+        ])
+      );
+    }
+    
+    serpPromises.push(
       Promise.race([
         serpClient.getPAAQuestions(konu_sorgusu, 'Turkey', language),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('PAA timeout')), 5000))
+        new Promise((_, reject) => setTimeout(() => reject(new Error('PAA timeout')), 3000))
       ]),
       Promise.race([
         serpClient.getEntities(konu_sorgusu),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Entities timeout')), 5000))
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Entities timeout')), 3000))
       ])
-    ]);
-
-    // Handle competitors result
-    if (competitorsResult.status === 'fulfilled') {
-      competitors = competitorsResult.value as { url: string; title: string; description: string }[];
-    } else {
-      console.warn('Failed to fetch competitors, using fallback:', competitorsResult.reason);
-      competitors = [
-        { url: 'https://example.com', title: 'Sample Competitor 1', description: 'Fallback competitor data' },
-        { url: 'https://example2.com', title: 'Sample Competitor 2', description: 'Fallback competitor data' }
-      ];
+    );
+    
+    const serpResults = await Promise.allSettled(serpPromises);
+    
+    // Handle results based on whether competitors were user-selected
+    let resultIndex = 0;
+    if (competitors.length === 0) {
+      const competitorsResult = serpResults[resultIndex++];
+      if (competitorsResult.status === 'fulfilled') {
+        competitors = competitorsResult.value as { url: string; title: string; description: string }[];
+      } else {
+        console.warn('Failed to fetch competitors, using fallback:', competitorsResult.reason);
+        competitors = [
+          { url: 'https://example.com', title: 'Sample Competitor 1', description: 'Fallback competitor data' },
+          { url: 'https://example2.com', title: 'Sample Competitor 2', description: 'Fallback competitor data' }
+        ];
+      }
     }
 
     // Handle PAA result
+    const paaResult = serpResults[resultIndex++];
     if (paaResult.status === 'fulfilled') {
       paaQuestions = paaResult.value as { question: string; answer?: string }[];
     } else {
@@ -87,6 +109,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Handle entities result
+    const entitiesResult = serpResults[resultIndex++];
     if (entitiesResult.status === 'fulfilled') {
       entities = entitiesResult.value as { name: string; type: string; description?: string }[];
     } else {
@@ -116,18 +139,50 @@ export async function POST(request: NextRequest) {
         throw new Error('Gemini API returned empty response');
       }
     } catch (error) {
-      console.error('Brief generation failed:', error);
-      return NextResponse.json(
-        { 
-          error: 'Failed to generate brief',
-          details: error instanceof Error ? error.message : 'Unknown error',
-          fallback_available: true
-        },
-        { status: 500 }
-      );
+      console.error('Brief generation failed, using fallback:', error);
+      
+      // Generate a simple fallback outline when Gemini fails
+      markdownOutline = `# ${konu_sorgusu} - İçerik Planı
+
+## Giriş
+${konu_sorgusu} hakkında kapsamlı bir rehber hazırlamak için bu planı kullanabilirsiniz.
+
+## Ana Konular
+
+### ${konu_sorgusu} Nedir?
+- Temel tanım ve açıklama
+- Önemli özellikler
+- Kullanım alanları
+
+### ${konu_sorgusu} Nasıl Yapılır?
+- Adım adım rehber
+- Gerekli araçlar ve malzemeler
+- İpuçları ve püf noktaları
+
+### ${konu_sorgusu} ile İlgili Sık Sorulan Sorular
+${extra_faq ? `- ${extra_faq.split(',').map((q: string) => q.trim()).join('\n- ')}` : '- Temel sorular ve cevapları'}
+
+${selected_competitors.length > 0 ? `
+### Rakip Analizi
+Seçilen rakipler:
+${selected_competitors.map((comp: any) => `- **${comp.title}**: ${comp.description}`).join('\n')}
+` : ''}
+
+### Sonuç
+- Önemli noktaların özeti
+- Öneriler ve tavsiyeler
+
+---
+*Not: Bu basit bir plan şablonudur. Daha detaylı içerik için lütfen tekrar deneyin.*`;
+
+      console.log('Using fallback outline, length:', markdownOutline.length);
     }
 
     console.log('Markdown outline generated successfully, length:', markdownOutline.length);
+    
+    // Convert Markdown to HTML
+    const htmlOutline = cleanHtml(convertMarkdownToHtml(markdownOutline));
+    console.log('Converted to HTML, length:', htmlOutline.length);
 
     // Store in Firebase (optional, don't fail if it doesn't work)
     try {
@@ -156,13 +211,15 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      outline: markdownOutline,
-      format: 'markdown',
+      outline: htmlOutline,
+      format: 'html',
       metadata: {
         competitors_found: competitors.length,
+        competitors_user_selected: selected_competitors.length > 0,
         paa_questions_found: paaQuestions.length,
         entities_found: entities.length,
-        outline_length: markdownOutline.length
+        outline_length: htmlOutline.length,
+        original_markdown_length: markdownOutline.length
       }
     });
 

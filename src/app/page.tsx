@@ -12,10 +12,20 @@ interface ModelSettings {
   language: string;
 }
 
+interface Competitor {
+  url: string;
+  title: string;
+  description: string;
+}
+
 export default function Home() {
   const [outline, setOutline] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showSchema, setShowSchema] = useState(false);
+  const [competitors, setCompetitors] = useState<Competitor[]>([]);
+  const [selectedCompetitors, setSelectedCompetitors] = useState<Competitor[]>([]);
+  const [isLoadingCompetitors, setIsLoadingCompetitors] = useState(false);
+  const [showCompetitors, setShowCompetitors] = useState(false);
   const [settings, setSettings] = useState<ModelSettings>({
     temperature: 0.4,
     topP: 0.9,
@@ -30,6 +40,51 @@ export default function Home() {
     extra_subtitles: '',
     extra_faq: ''
   });
+
+  const fetchCompetitors = async () => {
+    if (!formData.konu_sorgusu.trim()) {
+      alert('Please enter a topic first');
+      return;
+    }
+
+    setIsLoadingCompetitors(true);
+    try {
+      const response = await fetch('/api/competitors', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          konu_sorgusu: formData.konu_sorgusu,
+          language: settings.language
+        })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setCompetitors(data.competitors);
+        setShowCompetitors(true);
+      } else {
+        alert(`Error fetching competitors: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('Error fetching competitors:', error);
+      alert('Failed to fetch competitors. Please try again.');
+    } finally {
+      setIsLoadingCompetitors(false);
+    }
+  };
+
+  const toggleCompetitorSelection = (competitor: Competitor) => {
+    setSelectedCompetitors(prev => {
+      const isSelected = prev.some(c => c.url === competitor.url);
+      if (isSelected) {
+        return prev.filter(c => c.url !== competitor.url);
+      } else {
+        return [...prev, competitor];
+      }
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +109,8 @@ export default function Home() {
         },
         body: JSON.stringify({
           ...formData,
-          language: settings.language
+          language: settings.language,
+          selected_competitors: selectedCompetitors
         }),
         signal: controller.signal
       });
@@ -184,6 +240,71 @@ export default function Home() {
                 disabled={isLoading}
               />
               <p className="text-sm text-gray-500 mt-1">Enter additional FAQ questions you want included, separated by commas</p>
+            </div>
+
+            {/* Competitor Selection */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <label className="block text-sm font-semibold text-gray-800">
+                  Competitor Analysis (Optional)
+                </label>
+                <button
+                  type="button"
+                  onClick={fetchCompetitors}
+                  disabled={isLoadingCompetitors || !formData.konu_sorgusu.trim()}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                >
+                  {isLoadingCompetitors ? (
+                    <div className="flex items-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Fetching...
+                    </div>
+                  ) : (
+                    'Fetch Competitors'
+                  )}
+                </button>
+              </div>
+              
+              {showCompetitors && competitors.length > 0 && (
+                <div className="border-2 border-gray-200 rounded-lg p-4 bg-gray-50">
+                  <p className="text-sm text-gray-600 mb-3">
+                    Select competitors to include in your brief analysis ({selectedCompetitors.length} selected):
+                  </p>
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {competitors.map((competitor, index) => (
+                      <div
+                        key={competitor.url}
+                        className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                          selectedCompetitors.some(c => c.url === competitor.url)
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-300 bg-white hover:border-gray-400'
+                        }`}
+                        onClick={() => toggleCompetitorSelection(competitor)}
+                      >
+                        <div className="flex items-start">
+                          <input
+                            type="checkbox"
+                            checked={selectedCompetitors.some(c => c.url === competitor.url)}
+                            onChange={() => toggleCompetitorSelection(competitor)}
+                            className="mt-1 mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-sm font-medium text-gray-900 truncate">
+                              {competitor.title}
+                            </h4>
+                            <p className="text-xs text-gray-500 truncate mt-1">
+                              {competitor.url}
+                            </p>
+                            <p className="text-xs text-gray-600 mt-1 line-clamp-2">
+                              {competitor.description}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <button

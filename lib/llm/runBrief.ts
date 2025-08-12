@@ -219,10 +219,10 @@ Populate every field. Do not include markdown. No prose outside JSON.`;
     const model = genAI.getGenerativeModel({
       model: 'gemini-1.5-flash', // Use stable model instead of experimental
       generationConfig: {
-        temperature: 0.3, // Lower temperature for more consistent output
+        temperature: 0.1, // Very low temperature for faster, more consistent output
         topP: 0.8,
         topK: 32,
-        maxOutputTokens: 6000, // Increased for detailed Markdown output
+        maxOutputTokens: 3000, // Further reduced to speed up generation
         responseMimeType: 'text/plain' // Changed from JSON to plain text for Markdown
       }
     });
@@ -234,10 +234,10 @@ Populate every field. Do not include markdown. No prose outside JSON.`;
     let text;
     
     try {
-      // Add timeout to Gemini API call (increased for Markdown generation)
+      // Add timeout to Gemini API call (further reduced for faster response)
       const geminiPromise = model.generateContent(systemPrompt);
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Gemini API timeout after 25 seconds')), 25000)
+        setTimeout(() => reject(new Error('Gemini API timeout after 6 seconds')), 6000)
       );
       
       result = await Promise.race([geminiPromise, timeoutPromise]) as any;
