@@ -72,12 +72,12 @@ export async function runBrief(inputs: BriefInputs) {
     console.log('Template loaded successfully:', templateLoaded);
     
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.0-flash-exp', // Use latest Gemini 2.0 Flash for best performance and instruction following
+      model: 'gemini-1.5-flash', // Use stable Gemini 1.5 Flash for reliable performance
       generationConfig: {
-        temperature: 0.3, // Slightly higher for more creative but still focused content
-        topP: 0.9,
-        topK: 40,
-        maxOutputTokens: 4000, // Increased for comprehensive Turkish SEO content
+        temperature: 0.2, // Lower temperature for more focused, consistent output
+        topP: 0.8,
+        topK: 32,
+        maxOutputTokens: 3500, // Optimized for comprehensive content within timeout limits
         responseMimeType: 'text/plain'
       }
     });
@@ -89,10 +89,10 @@ export async function runBrief(inputs: BriefInputs) {
     let text;
     
     try {
-      // Set up timeout for Gemini Pro API call (12 seconds for comprehensive Turkish SEO content)
+      // Set up timeout for Gemini 2.0 Flash API call (20 seconds for comprehensive Turkish SEO content)
       const geminiPromise = model.generateContent(systemPrompt);
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Gemini API timeout after 12 seconds')), 12000)
+        setTimeout(() => reject(new Error('Gemini API timeout after 20 seconds')), 20000)
       );
       
       result = await Promise.race([geminiPromise, timeoutPromise]);

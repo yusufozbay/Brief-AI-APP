@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
       paa_questions: paaFormatted
     };
 
-    console.log('🚀 CALLING GEMINI 2.5 PRO API - NO FALLBACK ALLOWED...');
+    console.log('🚀 CALLING GEMINI 1.5 FLASH API - NO FALLBACK ALLOWED (20s timeout)...');
     let markdownOutline;
     try {
       markdownOutline = await runBrief(briefInputs);
