@@ -2,6 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { nanoid } from 'nanoid';
 import { saveSharedAnalysis, getSharedAnalysis } from '../../../../lib/firebase-service';
 
+// Fallback in-memory storage for when Firebase is unavailable
+interface FallbackAnalysisData {
+  id: string;
+  query: string;
+  subtitles: string;
+  competitors: string[];
+  brief: string;
+}
+
+const fallbackStorage = new Map<string, FallbackAnalysisData>();
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -26,9 +37,15 @@ export async function POST(request: NextRequest) {
       brief,
     };
 
-    await saveSharedAnalysis(analysisData);
-
-    console.log('✅ Analysis shared with ID:', shareId);
+    try {
+      await saveSharedAnalysis(analysisData);
+      console.log('✅ Analysis shared with ID:', shareId);
+    } catch (firebaseError) {
+      console.error('❌ Firebase error:', firebaseError);
+      // Fallback to in-memory storage
+      fallbackStorage.set(shareId, analysisData);
+      console.log('⚠️ Using fallback storage for ID:', shareId);
+    }
 
     return NextResponse.json({
       shareId,
@@ -37,7 +54,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('❌ Error sharing analysis:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
@@ -55,7 +72,19 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const analysisData = await getSharedAnalysis(shareId);
+    let analysisData = null;
+    
+    // Try Firebase first
+    try {
+      analysisData = await getSharedAnalysis(shareId);
+    } catch (firebaseError) {
+      console.error('❌ Firebase retrieval error:', firebaseError);
+      // Try fallback storage
+      analysisData = fallbackStorage.get(shareId) || null;
+      if (analysisData) {
+        console.log('✅ Retrieved from fallback storage:', shareId);
+      }
+    }
 
     if (!analysisData) {
       return NextResponse.json(

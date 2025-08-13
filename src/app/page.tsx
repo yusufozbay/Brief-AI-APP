@@ -391,76 +391,141 @@ export default function Home() {
 
         {/* Results Section */}
         {(isGeneratingBrief || generatedBrief) && (
-          <div ref={resultsRef} className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
-            {/* Share Button */}
-            {generatedBrief && !isGeneratingBrief && (
-              <div className="flex justify-end mb-6">
-                <button
-                  onClick={shareAnalysis}
-                  disabled={isSharing}
-                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors text-sm font-medium flex items-center"
-                >
-                  {isSharing ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Paylaşılıyor...
-                    </>
-                  ) : (
-                    <>
-                      <span className="mr-2">📤</span>
-                      Analizi Paylaş
-                    </>
-                  )}
-                </button>
+          <div ref={resultsRef} className="bg-white rounded-xl shadow-lg border border-gray-200">
+            {/* Header with Share Button */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-8 py-6 border-b border-gray-200 rounded-t-xl">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                  📊 İçerik Stratejisi ve SEO Geliştirme Raporu
+                </h2>
+                {generatedBrief && !isGeneratingBrief && (
+                  <button
+                    onClick={shareAnalysis}
+                    disabled={isSharing}
+                    className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 disabled:opacity-50 shadow-md hover:shadow-lg"
+                  >
+                    {isSharing ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                        Paylaşılıyor...
+                      </>
+                    ) : (
+                      <>
+                        📤 Analizi Paylaş
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
-            )}
-
-            <div className="flex items-center mb-6">
-              <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center mr-3">
-                <span className="text-white font-bold">📊</span>
-              </div>
-              <h2 className="text-xl font-semibold text-gray-900">İçerik Stratejisi ve SEO Geliştirme Raporu</h2>
+              {query && (
+                <div className="mt-2 text-sm text-gray-600">
+                  Analiz Edilen İçerik: <span className="font-medium text-blue-700">{query}</span>
+                </div>
+              )}
             </div>
 
-            {isGeneratingBrief ? (
-              <div className="flex items-center justify-center py-16">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                  <p className="text-gray-600 text-lg mb-2">Brief oluşturuluyor...</p>
-                  <p className="text-gray-500 text-sm">Bu işlem 1-2 dakika sürebilir</p>
+            {/* Content Area */}
+            <div className="p-8">
+              {isGeneratingBrief ? (
+                <div className="flex items-center justify-center py-16">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-700 text-lg mb-2 font-medium">Brief oluşturuluyor...</p>
+                    <p className="text-gray-500 text-sm">Bu işlem 1-2 dakika sürebilir</p>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="prose prose-lg max-w-none">
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                  <p className="text-blue-800 text-sm mb-2">
-                    <strong>Analiz Edilen İçerik:</strong>
-                  </p>
-                  <p className="text-blue-700 font-mono text-sm bg-blue-100 px-3 py-2 rounded">
-                    {query}
-                  </p>
-                </div>
-                
-                <div className="markdown-content">
+              ) : (
+                <div className="prose prose-lg max-w-none">
                   <ReactMarkdown
                     components={{
-                      h1: ({children}) => <h1 className="text-2xl font-bold text-gray-900 mt-8 mb-4 border-b-2 border-gray-200 pb-2">{children}</h1>,
-                      h2: ({children}) => <h2 className="text-xl font-semibold text-gray-800 mt-6 mb-3">{children}</h2>,
-                      h3: ({children}) => <h3 className="text-lg font-medium text-gray-700 mt-4 mb-2">{children}</h3>,
-                      p: ({children}) => <p className="text-gray-700 mb-4 leading-relaxed">{children}</p>,
-                      ul: ({children}) => <ul className="list-disc list-inside mb-4 space-y-1">{children}</ul>,
-                      ol: ({children}) => <ol className="list-decimal list-inside mb-4 space-y-1">{children}</ol>,
-                      li: ({children}) => <li className="text-gray-700">{children}</li>,
-                      strong: ({children}) => <strong className="font-semibold text-gray-900">{children}</strong>,
-                      code: ({children}) => <code className="bg-gray-100 px-2 py-1 rounded text-sm font-mono">{children}</code>,
-                      blockquote: ({children}) => <blockquote className="border-l-4 border-blue-500 pl-4 italic text-gray-600 mb-4">{children}</blockquote>,
+                      h1: ({ children }) => (
+                        <h1 className="text-3xl font-bold text-gray-900 mb-6 pb-3 border-b-2 border-blue-200">
+                          {children}
+                        </h1>
+                      ),
+                      h2: ({ children }) => (
+                        <h2 className="text-2xl font-bold text-gray-800 mb-4 mt-8 pb-2 border-b border-gray-300 bg-gradient-to-r from-blue-50 to-transparent px-4 py-2 rounded-lg">
+                          {children}
+                        </h2>
+                      ),
+                      h3: ({ children }) => (
+                        <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6 flex items-center gap-2">
+                          <span className="w-2 h-6 bg-blue-500 rounded"></span>
+                          {children}
+                        </h3>
+                      ),
+                      h4: ({ children }) => (
+                        <h4 className="text-lg font-semibold text-gray-700 mb-2 mt-4">{children}</h4>
+                      ),
+                      p: ({ children }) => (
+                        <p className="text-gray-800 mb-4 leading-relaxed text-base">{children}</p>
+                      ),
+                      ul: ({ children }) => (
+                        <ul className="list-none pl-0 mb-6 space-y-2">{children}</ul>
+                      ),
+                      ol: ({ children }) => (
+                        <ol className="list-decimal pl-6 mb-6 space-y-2 text-gray-800">{children}</ol>
+                      ),
+                      li: ({ children }) => (
+                        <li className="flex items-start gap-3 text-gray-800">
+                          <span className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></span>
+                          <span>{children}</span>
+                        </li>
+                      ),
+                      strong: ({ children }) => (
+                        <strong className="font-bold text-gray-900 bg-yellow-100 px-1 rounded">
+                          {children}
+                        </strong>
+                      ),
+                      em: ({ children }) => (
+                        <em className="italic text-blue-700 font-medium">{children}</em>
+                      ),
+                      blockquote: ({ children }) => (
+                        <blockquote className="border-l-4 border-blue-500 pl-6 py-4 bg-gradient-to-r from-blue-50 to-transparent text-gray-800 mb-6 rounded-r-lg">
+                          {children}
+                        </blockquote>
+                      ),
+                      code: ({ children }) => (
+                        <code className="bg-gray-200 px-2 py-1 rounded text-sm font-mono text-gray-900 border">
+                          {children}
+                        </code>
+                      ),
+                      pre: ({ children }) => (
+                        <pre className="bg-gray-900 text-gray-100 p-6 rounded-lg overflow-x-auto mb-6 border">
+                          {children}
+                        </pre>
+                      ),
+                      table: ({ children }) => (
+                        <div className="overflow-x-auto mb-6">
+                          <table className="min-w-full border border-gray-300 rounded-lg overflow-hidden">
+                            {children}
+                          </table>
+                        </div>
+                      ),
+                      thead: ({ children }) => (
+                        <thead className="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+                          {children}
+                        </thead>
+                      ),
+                      tbody: ({ children }) => (
+                        <tbody className="bg-white">{children}</tbody>
+                      ),
+                      tr: ({ children }) => (
+                        <tr className="border-b border-gray-200 hover:bg-gray-50">{children}</tr>
+                      ),
+                      th: ({ children }) => (
+                        <th className="px-6 py-4 text-left font-semibold">{children}</th>
+                      ),
+                      td: ({ children }) => (
+                        <td className="px-6 py-4 text-gray-800">{children}</td>
+                      ),
                     }}
                   >
-                    {generatedBrief}
+                     {generatedBrief}
                   </ReactMarkdown>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
       </div>
