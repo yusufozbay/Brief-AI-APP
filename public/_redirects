@@ -1,0 +1,2 @@
+# Netlify redirects for SPA routing
+/share/* /index.html 200
