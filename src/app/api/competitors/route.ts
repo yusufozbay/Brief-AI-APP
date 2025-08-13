@@ -13,11 +13,14 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { konu_sorgusu, language = 'tr' } = body;
+    const { query, konu_sorgusu, language = 'tr' } = body;
+    
+    // Accept both 'query' and 'konu_sorgusu' for compatibility
+    const searchQuery = query || konu_sorgusu;
 
-    if (!konu_sorgusu) {
+    if (!searchQuery) {
       return NextResponse.json(
-        { error: 'konu_sorgusu is required' },
+        { error: 'query or konu_sorgusu is required' },
         { status: 400 }
       );
     }
@@ -25,16 +28,16 @@ export async function POST(request: NextRequest) {
     // Initialize DataForSEO client
     const serpClient = new DataForSEOClient();
 
-    console.log('Fetching competitors for:', konu_sorgusu);
+    console.log('Fetching competitors for:', searchQuery);
     
     try {
       // Fetch competitors with timeout
-      const competitorsPromise = serpClient.getTopCompetitors(konu_sorgusu, 'Turkey', language);
+      const competitorsPromise = serpClient.getTopCompetitors(searchQuery, 'Turkey', language);
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Competitors timeout')), 20000)
       );
       
-      console.log('🔍 DataForSEO API Call - Fetching real competitors for:', konu_sorgusu);
+      console.log('🔍 DataForSEO API Call - Fetching real competitors for:', searchQuery);
       const competitors = await Promise.race([competitorsPromise, timeoutPromise]) as { url: string; title: string; description: string }[];
       
       console.log('📊 DataForSEO Response - Competitors found:', competitors?.length || 0);
@@ -46,7 +49,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: 'No competitors found from DataForSEO API. Please try a different query.',
           competitors: [],
-          query: konu_sorgusu,
+          query: searchQuery,
           source: 'none'
         });
       }

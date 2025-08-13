@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import CodeEditor from '@uiw/react-textarea-code-editor';
+import React, { useState, useEffect, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
 
 interface Competitor {
   url: string;
@@ -10,304 +10,449 @@ interface Competitor {
 }
 
 export default function Home() {
-  const [outline, setOutline] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(false);
+  // State for the Mosanta AI-style UI
+  const [query, setQuery] = useState('');
+  const [subtitles, setSubtitles] = useState('');
   const [competitors, setCompetitors] = useState<Competitor[]>([]);
-  const [selectedCompetitors, setSelectedCompetitors] = useState<Competitor[]>([]);
+  const [selectedCompetitors, setSelectedCompetitors] = useState<string[]>([]);
   const [isLoadingCompetitors, setIsLoadingCompetitors] = useState(false);
+  const [isGeneratingBrief, setIsGeneratingBrief] = useState(false);
+  const [generatedBrief, setGeneratedBrief] = useState('');
+  const [isHydrated, setIsHydrated] = useState(false);
+  const [, setShareId] = useState<string | null>(null);
+  const [isSharing, setIsSharing] = useState(false);
+  const resultsRef = useRef<HTMLDivElement>(null);
 
-  const [formData, setFormData] = useState({
-    konu_sorgusu: '',
-    google_query_fan_out_entities: '',
-    extra_subtitles: '',
-    extra_faq: '',
-    language: 'tr'
-  });
+  // Fix hydration mismatch by ensuring client-side rendering
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
-  const handleFetchCompetitors = async () => {
-    if (!formData.konu_sorgusu.trim()) {
-      alert('Lütfen bir konu girin');
-      return;
-    }
-
-    setIsLoadingCompetitors(true);
-    
-    try {
-      const response = await fetch('/api/competitors', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query: formData.konu_sorgusu,
-          language: formData.language
-        }),
-      });
-
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-      const data = await response.json();
-      if (data.competitors && data.competitors.length > 0) {
-        setCompetitors(data.competitors);
-      } else {
-        alert('Bu konu için rakip bulunamadı');
+  // Auto-fetch competitors when query changes
+  useEffect(() => {
+    const fetchCompetitors = async () => {
+      if (!query.trim()) {
+        console.log('❌ Query is empty');
+        return;
       }
-    } catch (error) {
-      console.error('Failed to fetch competitors:', error);
-      alert('Rakipler getirilirken hata oluştu');
-    } finally {
-      setIsLoadingCompetitors(false);
-    }
-  };
 
-  const handleCompetitorToggle = (competitor: Competitor) => {
-    const isSelected = selectedCompetitors.some(c => c.url === competitor.url);
-    
-    if (isSelected) {
-      setSelectedCompetitors(selectedCompetitors.filter(c => c.url !== competitor.url));
+      console.log('🔍 Fetching competitors for query:', query);
+      setIsLoadingCompetitors(true);
+      setCompetitors([]);
+      setSelectedCompetitors([]);
+
+      try {
+        const response = await fetch('/api/competitors', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ query }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('📊 Competitors data received:', data);
+        
+        if (data.competitors && Array.isArray(data.competitors)) {
+          // Limit to 10 competitors as requested
+          const limitedCompetitors = data.competitors.slice(0, 10);
+          setCompetitors(limitedCompetitors);
+          console.log('✅ Competitors loaded:', limitedCompetitors.length);
+        } else {
+          console.log('❌ No competitors found in response');
+        }
+      } catch (error) {
+        console.error('❌ Error fetching competitors:', error);
+      } finally {
+        setIsLoadingCompetitors(false);
+      }
+    };
+
+    if (query.trim()) {
+      const timeoutId = setTimeout(() => {
+        fetchCompetitors();
+      }, 1000); // Debounce for 1 second
+      
+      return () => clearTimeout(timeoutId);
     } else {
-      if (selectedCompetitors.length < 3) {
-        setSelectedCompetitors([...selectedCompetitors, competitor]);
-      } else {
-        alert('⚠️ Maximum 3 competitors allowed for optimal performance!');
-      }
+      setCompetitors([]);
+      setSelectedCompetitors([]);
     }
+  }, [query]);
+
+
+
+  // Toggle competitor selection (allow multiple selections)
+  const toggleCompetitorSelection = (url: string) => {
+    setSelectedCompetitors(prev => {
+      if (prev.includes(url)) {
+        return prev.filter(u => u !== url);
+      } else {
+        return [...prev, url];
+      }
+    });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.konu_sorgusu.trim()) {
-      alert('Lütfen bir konu girin');
+  // Generate brief function with auto-scroll
+  const generateBrief = async () => {
+    if (!query.trim()) {
+      console.log('❌ Query is empty');
       return;
     }
 
-    setIsLoading(true);
-    setOutline('');
+    console.log('🚀 Generating brief for query:', query);
+    console.log('📝 Subtitles:', subtitles);
+    console.log('🏆 Selected competitors:', selectedCompetitors.length);
     
-    try {
-      const requestBody = {
-        ...formData,
-        selected_competitors: selectedCompetitors,
-      };
+    setIsGeneratingBrief(true);
+    setGeneratedBrief('');
+    setShareId(null);
 
+    // Auto-scroll to results section
+    setTimeout(() => {
+      resultsRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+
+    try {
+      const selectedCompetitorData = competitors.filter(comp => selectedCompetitors.includes(comp.url));
+      
       const response = await fetch('/api/brief', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody),
-        signal: AbortSignal.timeout(120000)
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          konu_sorgusu: query,
+          subtitles: subtitles,
+          competitors: selectedCompetitorData,
+        }),
+        signal: AbortSignal.timeout(120000), // 2 minutes timeout
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      if (data.outline) {
-        setOutline(data.outline);
+      console.log('📝 Brief data received:', data);
+      
+      // Handle both 'brief' and 'outline' response properties for compatibility
+      const briefContent = data.brief || data.outline;
+      if (briefContent) {
+        setGeneratedBrief(briefContent);
+        console.log('✅ Brief generated successfully');
       } else {
-        throw new Error('No outline received from API');
+        console.log('❌ No brief content received');
+        setGeneratedBrief('Brief oluşturulamadı. Lütfen tekrar deneyin.');
       }
     } catch (error) {
-      console.error('Brief generation failed:', error);
-      if (error instanceof Error) {
-        if (error.name === 'AbortError') {
-          alert('İşlem zaman aşımına uğradı. Lütfen daha basit bir konu deneyin.');
-        } else {
-          alert(`Hata: ${error.message}`);
-        }
-      } else {
-        alert('Bilinmeyen bir hata oluştu');
-      }
+      console.error('❌ Error generating brief:', error);
+      setGeneratedBrief('Brief oluşturulurken hata oluştu. Lütfen tekrar deneyin.');
     } finally {
-      setIsLoading(false);
+      setIsGeneratingBrief(false);
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-6 py-8">
-        {/* Clean Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-gray-900 mb-2">Brief AI</h1>
-          <p className="text-gray-600">Generate comprehensive SEO content briefs with AI</p>
-        </div>
+  // Share analysis function
+  const shareAnalysis = async () => {
+    if (!generatedBrief) {
+      console.log('❌ No brief to share');
+      return;
+    }
 
-        {/* Clean Form */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Topic Query */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                What is your content about? *
-              </label>
-              <input
-                type="text"
-                value={formData.konu_sorgusu}
-                onChange={(e) => setFormData({ ...formData, konu_sorgusu: e.target.value })}
-                placeholder="e.g., Kedi maması fiyatları"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                required
-              />
-              <p className="text-xs text-gray-500 mt-1">{formData.konu_sorgusu.length}/400</p>
-            </div>
+    setIsSharing(true);
+    try {
+      const response = await fetch('/api/share', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query,
+          subtitles,
+          competitors: selectedCompetitors,
+          brief: generatedBrief,
+        }),
+      });
 
-            {/* Keywords */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Keywords to include
-              </label>
-              <input
-                type="text"
-                value={formData.google_query_fan_out_entities}
-                onChange={(e) => setFormData({ ...formData, google_query_fan_out_entities: e.target.value })}
-                placeholder="vegetables, healthy"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-              <p className="text-xs text-gray-500 mt-1">{formData.google_query_fan_out_entities.length}/400</p>
-            </div>
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-            {/* Tone */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tone of voice
-              </label>
-              <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                <option>Informative</option>
-                <option>Professional</option>
-                <option>Casual</option>
-                <option>Academic</option>
-              </select>
-            </div>
+      const data = await response.json();
+      if (data.shareId) {
+        setShareId(data.shareId);
+        // Copy to clipboard
+        const shareUrl = `${window.location.origin}/share/${data.shareId}`;
+        await navigator.clipboard.writeText(shareUrl);
+        console.log('✅ Share URL copied to clipboard:', shareUrl);
+        alert('Paylaşım linki panoya kopyalandı!');
+      }
+    } catch (error) {
+      console.error('❌ Error sharing analysis:', error);
+      alert('Paylaşım linki oluşturulurken hata oluştu.');
+    } finally {
+      setIsSharing(false);
+    }
+  };
 
-            {/* Language */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Output language
-              </label>
-              <div className="flex gap-2">
-                <select 
-                  value={formData.language}
-                  onChange={(e) => setFormData({ ...formData, language: e.target.value })}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="tr">Turkish</option>
-                  <option value="en">English</option>
-                </select>
-                <select className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                  <option>Default</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Competitor Analysis */}
-            <div className="border-t border-gray-200 pt-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-medium text-gray-700">Competitor Analysis (Optional)</h3>
-                <button
-                  type="button"
-                  onClick={handleFetchCompetitors}
-                  disabled={isLoadingCompetitors || !formData.konu_sorgusu.trim()}
-                  className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {isLoadingCompetitors ? 'Fetching...' : 'Fetch Competitors'}
-                </button>
-              </div>
-
-              {competitors.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-600 mb-3">Select up to 3 competitors:</p>
-                  {competitors.slice(0, 10).map((competitor, index) => {
-                    const isSelected = selectedCompetitors.some(c => c.url === competitor.url);
-                    return (
-                      <div
-                        key={index}
-                        onClick={() => handleCompetitorToggle(competitor)}
-                        className={`p-3 rounded-md border cursor-pointer transition-colors ${
-                          isSelected ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center mb-1">
-                              <span className="inline-flex items-center justify-center w-5 h-5 bg-gray-500 text-white text-xs font-medium rounded-full mr-2">
-                                {index + 1}
-                              </span>
-                              <h4 className="font-medium text-gray-900 text-sm truncate">{competitor.title}</h4>
-                              {isSelected && <span className="ml-2 text-blue-600 text-sm">✓</span>}
-                            </div>
-                            <p className="text-xs text-gray-600 mb-1">{competitor.description}</p>
-                            <p className="text-xs text-blue-600 truncate">{competitor.url}</p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  
-                  {selectedCompetitors.length > 0 && (
-                    <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-md">
-                      <p className="text-green-700 text-sm">
-                        ✅ Selected {selectedCompetitors.length} competitor{selectedCompetitors.length > 1 ? 's' : ''}
-                      </p>
-                    </div>
-                  )}
+  // Prevent hydration mismatch by showing loading state until hydrated
+  if (!isHydrated) {
+    return (
+      <div className="min-h-screen bg-white text-gray-900 flex flex-col">
+        <div className="border-b border-gray-200 bg-white flex-shrink-0">
+          <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center py-4">
+              <div className="text-center">
+                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">B</span>
                 </div>
-              )}
-            </div>
-
-            {/* Submit Button */}
-            <div className="flex justify-center pt-6">
-              <button
-                type="submit"
-                disabled={isLoading || !formData.konu_sorgusu.trim()}
-                className="px-6 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 disabled:opacity-50"
-              >
-                {isLoading ? 'Generating...' : 'Generate'}
-              </button>
-            </div>
-          </form>
-        </div>
-
-        {/* Results Section with Rich Editor */}
-        {outline && (
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Generated Brief</h2>
-              <div className="flex gap-2">
-                <button className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-md hover:bg-gray-200">
-                  Copy
-                </button>
-                <button className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-md hover:bg-gray-200">
-                  Export
-                </button>
+                <h1 className="text-xl font-semibold text-gray-900">Brief AI</h1>
               </div>
-            </div>
-            
-            {/* Rich Text Editor */}
-            <div className="border border-gray-300 rounded-md">
-              <CodeEditor
-                value={outline}
-                language="markdown"
-                placeholder="Generated content will appear here..."
-                onChange={(evn) => setOutline(evn.target.value)}
-                padding={15}
-                style={{
-                  fontSize: 14,
-                  backgroundColor: "#f8f9fa",
-                  fontFamily: 'ui-monospace,SFMono-Regular,"SF Mono",Consolas,"Liberation Mono",Menlo,monospace',
-                  minHeight: '400px'
-                }}
-              />
             </div>
           </div>
-        )}
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      </div>
+    );
+  }
 
-        {/* Loading State */}
-        {isLoading && (
-          <div className="bg-white border border-gray-200 rounded-lg p-6 text-center">
-            <div className="inline-flex items-center">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-              <span className="text-gray-600">Generating comprehensive brief...</span>
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      {/* Header - Mosanta AI Style */}
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <div className="flex items-center justify-center mb-2">
+                <div className="w-10 h-10 bg-yellow-400 rounded-full flex items-center justify-center mr-3">
+                  <span className="text-blue-900 font-bold text-lg">✨</span>
+                </div>
+                <h1 className="text-3xl font-bold">Brief AI</h1>
+              </div>
+              <p className="text-blue-100 text-lg">SEO Content Analyzer</p>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Input Form */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8 mb-8">
+          <div className="flex items-center mb-6">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
+              <span className="text-white font-bold">🌐</span>
+            </div>
+            <h2 className="text-xl font-semibold text-gray-900">Content Analysis</h2>
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div className="flex items-start">
+              <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center mr-3 mt-0.5">
+                <span className="text-white text-sm font-bold">i</span>
+              </div>
+              <div>
+                <h3 className="text-blue-900 font-medium mb-1">Gelişmiş Rakip Analizi</h3>
+                <p className="text-blue-700 text-sm">
+                  Bu analiz ilk 10 organik rakibinizi tespit eder ve rakip içeriklerini analiz ederek size kapsamlı öneriler sunar.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            {/* Website URL */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Konu/Sorgu
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Örn: iPhone 15 inceleme, kedi maması karşılaştırması"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-sm bg-gray-50"
+                />
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                  <span className="text-gray-400">🌐</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Subtitles */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Subtitles (İsteğe Bağlı)
+              </label>
+              <textarea
+                value={subtitles}
+                onChange={(e) => setSubtitles(e.target.value)}
+                placeholder="Örn: Kedi maması markaları karşılaştırması, En iyi yaş kedi maması, Kedi maması fiyat analizi"
+                rows={3}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-sm bg-gray-50 resize-none"
+              />
+            </div>
+
+            {/* Competitors Section */}
+            {(isLoadingCompetitors || competitors.length > 0) && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Rakip İçerikler
+                </label>
+                
+                {isLoadingCompetitors ? (
+                  <div className="flex items-center justify-center py-8 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-3"></div>
+                    <span className="text-gray-600">Rakipler yükleniyor...</span>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-sm text-gray-600 mb-3">
+                      {competitors.length} rakip bulundu. Analiz için istediğiniz kadarını seçin:
+                    </p>
+                    <div className="grid grid-cols-1 gap-3 max-h-64 overflow-y-auto">
+                      {competitors.map((competitor, index) => (
+                        <div 
+                          key={index} 
+                          className={`border rounded-lg p-3 cursor-pointer transition-all ${
+                            selectedCompetitors.includes(competitor.url)
+                              ? 'border-blue-500 bg-blue-50'
+                              : 'border-gray-200 hover:border-gray-300 bg-white'
+                          }`}
+                          onClick={() => toggleCompetitorSelection(competitor.url)}
+                        >
+                          <div className="flex items-start space-x-3">
+                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                              selectedCompetitors.includes(competitor.url)
+                                ? 'bg-blue-500 text-white'
+                                : 'bg-gray-200 text-gray-600'
+                            }`}>
+                              {selectedCompetitors.includes(competitor.url) ? '✓' : index + 1}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-sm font-medium text-gray-900 line-clamp-1">
+                                {competitor.title}
+                              </h4>
+                              <p className="text-xs text-blue-600 truncate mt-1">{competitor.url}</p>
+                              <p className="text-xs text-gray-600 line-clamp-2 mt-1">{competitor.description}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2">
+                      Seçilen: {selectedCompetitors.length} rakip
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Generate Brief Button */}
+            <button
+              onClick={generateBrief}
+              disabled={!query.trim() || isGeneratingBrief}
+              className={`w-full py-4 px-6 rounded-lg font-medium text-base transition-all flex items-center justify-center ${
+                !query.trim() || isGeneratingBrief
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl'
+              }`}
+            >
+              {isGeneratingBrief ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                  Brief Oluşturuluyor... (1-2 dakika)
+                </>
+              ) : (
+                <>
+                  <span className="mr-2">⚡</span>
+                  Brief Oluştur
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Results Section */}
+        {(isGeneratingBrief || generatedBrief) && (
+          <div ref={resultsRef} className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
+            {/* Share Button */}
+            {generatedBrief && !isGeneratingBrief && (
+              <div className="flex justify-end mb-6">
+                <button
+                  onClick={shareAnalysis}
+                  disabled={isSharing}
+                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors text-sm font-medium flex items-center"
+                >
+                  {isSharing ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Paylaşılıyor...
+                    </>
+                  ) : (
+                    <>
+                      <span className="mr-2">📤</span>
+                      Analizi Paylaş
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+
+            <div className="flex items-center mb-6">
+              <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center mr-3">
+                <span className="text-white font-bold">📊</span>
+              </div>
+              <h2 className="text-xl font-semibold text-gray-900">İçerik Stratejisi ve SEO Geliştirme Raporu</h2>
+            </div>
+
+            {isGeneratingBrief ? (
+              <div className="flex items-center justify-center py-16">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                  <p className="text-gray-600 text-lg mb-2">Brief oluşturuluyor...</p>
+                  <p className="text-gray-500 text-sm">Bu işlem 1-2 dakika sürebilir</p>
+                </div>
+              </div>
+            ) : (
+              <div className="prose prose-lg max-w-none">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                  <p className="text-blue-800 text-sm mb-2">
+                    <strong>Analiz Edilen İçerik:</strong>
+                  </p>
+                  <p className="text-blue-700 font-mono text-sm bg-blue-100 px-3 py-2 rounded">
+                    {query}
+                  </p>
+                </div>
+                
+                <div className="markdown-content">
+                  <ReactMarkdown
+                    components={{
+                      h1: ({children}) => <h1 className="text-2xl font-bold text-gray-900 mt-8 mb-4 border-b-2 border-gray-200 pb-2">{children}</h1>,
+                      h2: ({children}) => <h2 className="text-xl font-semibold text-gray-800 mt-6 mb-3">{children}</h2>,
+                      h3: ({children}) => <h3 className="text-lg font-medium text-gray-700 mt-4 mb-2">{children}</h3>,
+                      p: ({children}) => <p className="text-gray-700 mb-4 leading-relaxed">{children}</p>,
+                      ul: ({children}) => <ul className="list-disc list-inside mb-4 space-y-1">{children}</ul>,
+                      ol: ({children}) => <ol className="list-decimal list-inside mb-4 space-y-1">{children}</ol>,
+                      li: ({children}) => <li className="text-gray-700">{children}</li>,
+                      strong: ({children}) => <strong className="font-semibold text-gray-900">{children}</strong>,
+                      code: ({children}) => <code className="bg-gray-100 px-2 py-1 rounded text-sm font-mono">{children}</code>,
+                      blockquote: ({children}) => <blockquote className="border-l-4 border-blue-500 pl-4 italic text-gray-600 mb-4">{children}</blockquote>,
+                    }}
+                  >
+                    {generatedBrief}
+                  </ReactMarkdown>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
