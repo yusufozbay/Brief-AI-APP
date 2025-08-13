@@ -11,6 +11,9 @@ interface AnalysisResult {
   competitorTone: string;
   uniqueValue: string;
   competitorAnalysisSummary: string;
+  competitorStrengths: string[];
+  contentGaps: string[];
+  dominantTone: string;
   primaryKeyword: string;
   secondaryKeywords: string[];
   titleSuggestions: {
@@ -25,6 +28,11 @@ interface AnalysisResult {
     supportingSchemas: string[];
     reasoning: string;
   };
+  qualityChecklist: Array<{
+    item: string;
+    status: boolean;
+    note: string;
+  }>;
   competitorAnalysis?: {
     competitorCount: number;
     averageWordCount: number;
@@ -106,6 +114,9 @@ const SEOAnalyzer: React.FC = () => {
         competitorTone: geminiResult.competitorTone,
         uniqueValue: geminiResult.uniqueValue,
         competitorAnalysisSummary: geminiResult.competitorAnalysisSummary,
+        competitorStrengths: geminiResult.competitorStrengths,
+        contentGaps: geminiResult.contentGaps,
+        dominantTone: geminiResult.dominantTone,
         primaryKeyword: geminiResult.primaryKeyword,
         secondaryKeywords: geminiResult.secondaryKeywords,
         titleSuggestions: geminiResult.titleSuggestions,
@@ -113,6 +124,7 @@ const SEOAnalyzer: React.FC = () => {
         contentOutline: geminiResult.contentOutline,
         faqSection: geminiResult.faqSection,
         schemaStrategy: geminiResult.schemaStrategy,
+        qualityChecklist: geminiResult.qualityChecklist,
       };
 
       if (competitorData) {
@@ -353,7 +365,7 @@ const SEOAnalyzer: React.FC = () => {
                     <div className="text-sm text-gray-600">Ortalama Kelime Sayısı</div>
                   </div>
                   <div className="text-center p-4 bg-purple-50 rounded-lg">
-                    <div className="text-2xl font-bold text-purple-600">{result.competitorAnalysis.dominantTone}</div>
+                    <div className="text-2xl font-bold text-purple-600">{result.dominantTone}</div>
                     <div className="text-sm text-gray-600">Baskın İçerik Tonu</div>
                   </div>
                 </div>
@@ -362,7 +374,7 @@ const SEOAnalyzer: React.FC = () => {
                   <div>
                     <h3 className="font-semibold text-gray-800 mb-3">Rakiplerin Güçlü Yönleri</h3>
                     <ul className="space-y-2">
-                      {result.competitorAnalysis.competitorStrengths.slice(0, 5).map((strength: string, index: number) => (
+                      {result.competitorStrengths.slice(0, 5).map((strength: string, index: number) => (
                         <li key={index} className="flex items-center text-sm text-gray-700">
                           <CheckCircle className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
                           {strength}
@@ -373,7 +385,7 @@ const SEOAnalyzer: React.FC = () => {
                   <div>
                     <h3 className="font-semibold text-gray-800 mb-3">Tespit Edilen İçerik Boşlukları</h3>
                     <ul className="space-y-2">
-                      {result.competitorAnalysis.contentGaps.map((gap: string, index: number) => (
+                      {result.contentGaps.map((gap: string, index: number) => (
                         <li key={index} className="flex items-center text-sm text-gray-700">
                           <Lightbulb className="w-4 h-4 text-yellow-500 mr-2 flex-shrink-0" />
                           {gap}
@@ -521,19 +533,15 @@ const SEOAnalyzer: React.FC = () => {
               </h2>
               
               <div className="grid md:grid-cols-2 gap-4">
-                {[
-                  "Özgün Değer Teklifi (UVP) karşılanıyor mu?",
-                  "Başlık merak uyandırıcı mı?",
-                  "Paragraflar kısa mı (Max 5 satır)?",
-                  "E-E-A-T sinyalleri mevcut mu?",
-                  "Her H2 altında görsel var mı?",
-                  "İç linkleme stratejisi doğru mu?",
-                  "SSS bölümü kapsamlı mı?",
-                  "Dilbilgisi kontrolü yapıldı mı?"
-                ].map((item, index) => (
-                  <div key={index} className="flex items-center p-3 bg-gray-50 rounded-lg">
-                    <CheckCircle className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
-                    <span className="text-gray-700">{item}</span>
+                {result.qualityChecklist.map((checkItem, index) => (
+                  <div key={index} className="flex items-start p-3 bg-gray-50 rounded-lg">
+                    <CheckCircle className={`w-5 h-5 mr-3 flex-shrink-0 mt-0.5 ${checkItem.status ? 'text-green-500' : 'text-gray-400'}`} />
+                    <div className="flex-1">
+                      <span className="text-gray-700 font-medium">{checkItem.item}</span>
+                      {checkItem.note && (
+                        <p className="text-sm text-gray-600 mt-1">{checkItem.note}</p>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

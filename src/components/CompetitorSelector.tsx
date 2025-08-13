@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Globe, Search, FileText, CheckCircle, AlertCircle, Circle, ExternalLink, TrendingUp } from 'lucide-react';
+import { Globe, Search, CheckCircle, Circle, ExternalLink, TrendingUp } from 'lucide-react';
 import { CompetitorSelection } from '../types/serp';
 import { dataForSEOService } from '../services/dataForSEO';
 import { geminiAIService } from '../services/geminiAI';
@@ -19,8 +19,7 @@ const CompetitorSelector: React.FC<CompetitorSelectorProps> = ({
   const [loading, setLoading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [selectedCompetitors, setSelectedCompetitors] = useState<CompetitorSelection[]>([]);
-  const [apiCredentials, setApiCredentials] = useState({ login: '', password: '' });
-  const [showCredentials, setShowCredentials] = useState(false);
+
 
 
   useEffect(() => {
@@ -119,13 +118,7 @@ const CompetitorSelector: React.FC<CompetitorSelectorProps> = ({
     }
   };
 
-  const setCredentials = () => {
-    if (apiCredentials.login && apiCredentials.password) {
-      dataForSEOService.setCredentials(apiCredentials.login, apiCredentials.password);
-      setShowCredentials(false);
-      fetchSERPResults();
-    }
-  };
+
 
 
 
@@ -136,49 +129,12 @@ const CompetitorSelector: React.FC<CompetitorSelectorProps> = ({
           <Globe className="w-6 h-6 mr-3 text-indigo-600" />
           SERP Analizi ve Rakip Seçimi
         </h2>
-        <div className="flex space-x-2">
-          <button
-            onClick={() => setShowCredentials(!showCredentials)}
-            className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center"
-          >
-            <FileText className="w-4 h-4 mr-1" />
-            API Ayarları
-          </button>
-        </div>
+
       </div>
 
 
 
-      {showCredentials && (
-        <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <h3 className="font-semibold text-gray-800 mb-3">DataForSEO API Bilgileri</h3>
-          <div className="grid md:grid-cols-2 gap-4">
-            <input
-              type="text"
-              placeholder="API Login"
-              value={apiCredentials.login}
-              onChange={(e) => setApiCredentials(prev => ({ ...prev, login: e.target.value }))}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-            />
-            <input
-              type="password"
-              placeholder="API Password"
-              value={apiCredentials.password}
-              onChange={(e) => setApiCredentials(prev => ({ ...prev, password: e.target.value }))}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-          <button
-            onClick={setCredentials}
-            className="mt-3 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-          >
-            Kaydet ve SERP'i Yenile
-          </button>
-          <p className="text-xs text-gray-600 mt-2">
-            API bilgileri olmadan demo veriler kullanılacaktır.
-          </p>
-        </div>
-      )}
+
 
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">

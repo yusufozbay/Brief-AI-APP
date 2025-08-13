@@ -7,6 +7,9 @@ interface GeminiAnalysisResult {
   competitorTone: string;
   uniqueValue: string;
   competitorAnalysisSummary: string;
+  competitorStrengths: string[];
+  contentGaps: string[];
+  dominantTone: string;
   primaryKeyword: string;
   secondaryKeywords: string[];
   titleSuggestions: {
@@ -30,6 +33,11 @@ interface GeminiAnalysisResult {
     supportingSchemas: string[];
     reasoning: string;
   };
+  qualityChecklist: Array<{
+    item: string;
+    status: boolean;
+    note: string;
+  }>;
 }
 
 class GeminiAIService {
@@ -159,9 +167,12 @@ Lütfen aşağıdaki JSON formatında yanıt ver:
 
 {
   "userIntent": "Kullanıcı niyeti analizi (Informational/Transactional/Navigational)",
-  "competitorTone": "Rakiplerin baskın ton ve stil analizi",
+  "competitorTone": "Rakiplerin baskın ton ve stil analizi - dinamik olarak analiz edilmiş",
   "uniqueValue": "Bu içeriğin rakiplerden farklılaşacağı benzersiz değer teklifi",
   "competitorAnalysisSummary": "Rakip analizi özeti",
+  "competitorStrengths": ["Rakiplerin güçlü yönleri listesi - 5 adet dinamik analiz"],
+  "contentGaps": ["Tespit edilen içerik boşlukları listesi - 5 adet dinamik analiz"],
+  "dominantTone": "Rakiplerin baskın içerik tonu (örn: Profesyonel ve bilgilendirici, Samimi ve yakın, Teknik ve detaylı)",
   "primaryKeyword": "${topic}",
   "secondaryKeywords": ["ikincil anahtar kelime listesi - 8 adet"],
   "titleSuggestions": {
@@ -193,7 +204,49 @@ Lütfen aşağıdaki JSON formatında yanıt ver:
     "mainSchema": "Ana schema türü",
     "supportingSchemas": ["destekleyici schema türleri"],
     "reasoning": "Schema seçiminin gerekçesi"
-  }
+  },
+  "qualityChecklist": [
+    {
+      "item": "Özgün Değer Teklifi (UVP) karşılanıyor mu?",
+      "status": true,
+      "note": "Bu içeriğin benzersiz değeri açıkça belirtilmiş"
+    },
+    {
+      "item": "Paragraflar kısa mı (Max 5 satır)?",
+      "status": true,
+      "note": "İçerik outline'ında kısa paragraflar önerilmiş"
+    },
+    {
+      "item": "Her H2 altında görsel var mı?",
+      "status": true,
+      "note": "Görsel önerileri içerik planında belirtilmiş"
+    },
+    {
+      "item": "Başlık merak uyandırıcı mı?",
+      "status": true,
+      "note": "Tıklama odaklı başlık önerisi merak uyandırıcı"
+    },
+    {
+      "item": "E-E-A-T sinyalleri mevcut mu?",
+      "status": true,
+      "note": "Uzman görüşleri ve güvenilir kaynaklar belirtilmiş"
+    },
+    {
+      "item": "İç linkleme stratejisi doğru mu?",
+      "status": true,
+      "note": "İlgili konulara bağlantılar önerilmiş"
+    },
+    {
+      "item": "SSS bölümü kapsamlı mı?",
+      "status": true,
+      "note": "10 adet detaylı SSS sorusu hazırlanmış"
+    },
+    {
+      "item": "Dilbilgisi kontrolü yapıldı mı?",
+      "status": true,
+      "note": "Türkçe dilbilgisi kurallarına uygun içerik"
+    }
+  ]
 }
 
 ÖNEMLI KURALLAR:
@@ -225,6 +278,22 @@ Lütfen aşağıdaki JSON formatında yanıt ver:
       competitorAnalysisSummary: competitorAnalysis 
         ? `${competitorAnalysis.competitorCount} rakip analiz edildi. Ortalama ${competitorAnalysis.averageWordCount} kelime uzunluğunda içerikler mevcut. Seçilen rakipler: ${competitorDomains}`
         : `${selectedCompetitors.length} rakip seçildi: ${competitorDomains}. Rakipler genel bilgi sunuyor ancak yerel örnekler ve güncel vaka çalışmaları eksik`,
+      competitorStrengths: [
+        "Kapsamlı konu işleme",
+        "Görsel destekli anlatım", 
+        "Pratik örnekler",
+        "Kapsamlı konu işleme",
+        "Görsel destekli anlatım"
+      ],
+      contentGaps: [
+        "Türkiye'ye özel veriler eksik",
+        "Güncel 2025 trendleri yetersiz", 
+        "Adım adım uygulama rehberi eksik",
+        "Gerçek kullanıcı deneyimleri az",
+        "Yerel vaka çalışmaları eksik",
+        "Görsel içerik kalitesi düşük"
+      ],
+      dominantTone: "Profesyonel ve bilgilendirici",
       primaryKeyword: topic,
       secondaryKeywords: [
         `${topic} nedir`,
@@ -336,7 +405,49 @@ Lütfen aşağıdaki JSON formatında yanıt ver:
         mainSchema: "Article",
         supportingSchemas: ["FAQPage", "HowTo", "BreadcrumbList", "Organization"],
         reasoning: "Article schema ana içerik için, FAQPage SSS bölümü için, HowTo pratik adımlar için, Organization Türkiye'deki şirket bilgileri için kullanılmalıdır."
-      }
+      },
+      qualityChecklist: [
+        {
+          item: "Özgün Değer Teklifi (UVP) karşılanıyor mu?",
+          status: true,
+          note: "Bu içeriğin benzersiz değeri açıkça belirtilmiş"
+        },
+        {
+          item: "Paragraflar kısa mı (Max 5 satır)?",
+          status: true,
+          note: "İçerik outline'ında kısa paragraflar önerilmiş"
+        },
+        {
+          item: "Her H2 altında görsel var mı?",
+          status: true,
+          note: "Görsel önerileri içerik planında belirtilmiş"
+        },
+        {
+          item: "Başlık merak uyandırıcı mı?",
+          status: true,
+          note: "Tıklama odaklı başlık önerisi merak uyandırıcı"
+        },
+        {
+          item: "E-E-A-T sinyalleri mevcut mu?",
+          status: true,
+          note: "Uzman görüşleri ve güvenilir kaynaklar belirtilmiş"
+        },
+        {
+          item: "İç linkleme stratejisi doğru mu?",
+          status: true,
+          note: "İlgili konulara bağlantılar önerilmiş"
+        },
+        {
+          item: "SSS bölümü kapsamlı mı?",
+          status: true,
+          note: "10 adet detaylı SSS sorusu hazırlanmış"
+        },
+        {
+          item: "Dilbilgisi kontrolü yapıldı mı?",
+          status: true,
+          note: "Türkçe dilbilgisi kurallarına uygun içerik"
+        }
+      ]
     };
   }
 }
