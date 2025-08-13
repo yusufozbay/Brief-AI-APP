@@ -69,26 +69,41 @@ class FirebaseService {
       }
 
       // Helper function to safely serialize objects and remove circular references
-      const sanitizeData = (obj: any): any => {
+      const sanitizeData = (obj: any, visited = new WeakSet()): any => {
         if (obj === null || obj === undefined) return obj;
         if (typeof obj !== 'object') return obj;
         if (obj instanceof Date) return obj;
-        if (Array.isArray(obj)) return obj.map(sanitizeData);
         
-        const sanitized: any = {};
-        for (const key in obj) {
-          if (obj.hasOwnProperty(key)) {
-            try {
-              const value = obj[key];
-              if (typeof value === 'function') continue; // Skip functions
-              if (value === obj) continue; // Skip self-references
-              sanitized[key] = sanitizeData(value);
-            } catch (error) {
-              console.warn(`Skipping property ${key} due to serialization error:`, error);
+        // Check for circular references
+        if (visited.has(obj)) {
+          console.warn('Circular reference detected, skipping object');
+          return '[Circular Reference]';
+        }
+        
+        visited.add(obj);
+        
+        try {
+          if (Array.isArray(obj)) {
+            return obj.map(item => sanitizeData(item, visited));
+          }
+          
+          const sanitized: any = {};
+          for (const key in obj) {
+            if (obj.hasOwnProperty(key)) {
+              try {
+                const value = obj[key];
+                if (typeof value === 'function') continue; // Skip functions
+                if (typeof value === 'symbol') continue; // Skip symbols
+                sanitized[key] = sanitizeData(value, visited);
+              } catch (error) {
+                console.warn(`Skipping property ${key} due to serialization error:`, error);
+              }
             }
           }
+          return sanitized;
+        } finally {
+          visited.delete(obj);
         }
-        return sanitized;
       };
 
       // Create a clean brief object without circular references

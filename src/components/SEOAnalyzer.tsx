@@ -75,8 +75,21 @@ const SEOAnalyzer: React.FC = () => {
     setCurrentStep('competitors');
   };
 
+  const goBackToInput = () => {
+    setCurrentStep('input');
+    setResult(null);
+    setSelectedCompetitors([]);
+    setCompetitorAnalysis(null);
+  };
+
+  const goBackToCompetitors = () => {
+    setCurrentStep('competitors');
+    setResult(null);
+  };
+
   const handleCompetitorsSelected = (competitors: CompetitorSelection[]) => {
     setSelectedCompetitors(competitors);
+    generateFinalAnalysis();
   };
 
   const handleAnalysisComplete = (analysisData: any) => {
@@ -280,13 +293,22 @@ const SEOAnalyzer: React.FC = () => {
           </div>
         )}
 
-        {/* Step 2: Competitor Selection */}
+        {/* Competitor Selection Step */}
         {currentStep === 'competitors' && (
-          <div className="mb-8">
+          <div>
+            <div className="mb-6">
+              <button
+                onClick={goBackToInput}
+                className="flex items-center text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
+              >
+                <ArrowRight className="w-4 h-4 mr-2 rotate-180" />
+                Konu Girişine Geri Dön
+              </button>
+            </div>
             <CompetitorSelector
               keyword={topic}
               onCompetitorsSelected={handleCompetitorsSelected}
-              onAnalysisComplete={handleAnalysisComplete}
+              onAnalysisComplete={generateFinalAnalysis}
             />
           </div>
         )}
@@ -294,14 +316,23 @@ const SEOAnalyzer: React.FC = () => {
         {/* Results */}
         {currentStep === 'results' && result && (
           <div className="space-y-8">
-            {/* Back to Start Button and Share Button */}
+            {/* Back Navigation and Share Button */}
             <div className="flex justify-between items-center">
-              <button
-                onClick={resetAnalysis}
-                className="flex items-center px-4 py-2 text-indigo-600 hover:text-indigo-800 font-medium"
-              >
-                ← Yeni Analiz Başlat
-              </button>
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={goBackToCompetitors}
+                  className="flex items-center px-4 py-2 text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
+                >
+                  <ArrowRight className="w-4 h-4 mr-2 rotate-180" />
+                  Rakip Seçimine Geri Dön
+                </button>
+                <button
+                  onClick={resetAnalysis}
+                  className="flex items-center px-4 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors"
+                >
+                  ← Yeni Analiz Başlat
+                </button>
+              </div>
               <div className="flex items-center space-x-4">
                 {isAnalyzing && (
                   <div className="flex items-center text-indigo-600">
