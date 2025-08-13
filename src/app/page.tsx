@@ -28,61 +28,51 @@ export default function Home() {
     setIsHydrated(true);
   }, []);
 
-  // Auto-fetch competitors when query changes
-  useEffect(() => {
-    const fetchCompetitors = async () => {
-      if (!query.trim()) {
-        console.log('❌ Query is empty');
-        return;
-      }
-
-      console.log('🔍 Fetching competitors for query:', query);
-      setIsLoadingCompetitors(true);
-      setCompetitors([]);
-      setSelectedCompetitors([]);
-
-      try {
-        const response = await fetch('/api/competitors', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ query }),
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log('📊 Competitors data received:', data);
-        
-        if (data.competitors && Array.isArray(data.competitors)) {
-          // Limit to 10 competitors as requested
-          const limitedCompetitors = data.competitors.slice(0, 10);
-          setCompetitors(limitedCompetitors);
-          console.log('✅ Competitors loaded:', limitedCompetitors.length);
-        } else {
-          console.log('❌ No competitors found in response');
-        }
-      } catch (error) {
-        console.error('❌ Error fetching competitors:', error);
-      } finally {
-        setIsLoadingCompetitors(false);
-      }
-    };
-
-    if (query.trim()) {
-      const timeoutId = setTimeout(() => {
-        fetchCompetitors();
-      }, 1000); // Debounce for 1 second
-      
-      return () => clearTimeout(timeoutId);
-    } else {
-      setCompetitors([]);
-      setSelectedCompetitors([]);
+  // Manual fetch competitors function
+  const fetchCompetitors = async () => {
+    if (!query.trim()) {
+      console.log('❌ Query is empty');
+      alert('Lütfen önce bir konu/sorgu girin.');
+      return;
     }
-  }, [query]);
+
+    console.log('🔍 Fetching competitors for query:', query);
+    setIsLoadingCompetitors(true);
+    setCompetitors([]);
+    setSelectedCompetitors([]);
+
+    try {
+      const response = await fetch('/api/competitors', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('📊 Competitors data received:', data);
+      
+      if (data.competitors && Array.isArray(data.competitors)) {
+        // Limit to 10 competitors as requested
+        const limitedCompetitors = data.competitors.slice(0, 10);
+        setCompetitors(limitedCompetitors);
+        console.log('✅ Competitors loaded:', limitedCompetitors.length);
+      } else {
+        console.log('❌ No competitors found in response');
+        alert('Bu sorgu için rakip bulunamadı.');
+      }
+    } catch (error) {
+      console.error('❌ Error fetching competitors:', error);
+      alert('Rakipler yüklenirken hata oluştu. Lütfen tekrar deneyin.');
+    } finally {
+      setIsLoadingCompetitors(false);
+    }
+  };
 
 
 
@@ -268,7 +258,7 @@ export default function Home() {
           </div>
 
           <div className="space-y-6">
-            {/* Website URL */}
+            {/* Konu/Sorgu Input */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Konu/Sorgu
@@ -279,12 +269,37 @@ export default function Home() {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Örn: iPhone 15 inceleme, kedi maması karşılaştırması"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-sm bg-gray-50"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-sm bg-white text-gray-900 placeholder-gray-500"
                 />
                 <div className="absolute inset-y-0 right-0 flex items-center pr-3">
                   <span className="text-gray-400">🌐</span>
                 </div>
               </div>
+            </div>
+
+            {/* Rakipleri Çek Button */}
+            <div>
+              <button
+                onClick={fetchCompetitors}
+                disabled={!query.trim() || isLoadingCompetitors}
+                className={`w-full py-3 px-4 rounded-lg font-medium text-sm transition-all flex items-center justify-center ${
+                  !query.trim() || isLoadingCompetitors
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg'
+                }`}
+              >
+                {isLoadingCompetitors ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Rakipler Yükleniyor...
+                  </>
+                ) : (
+                  <>
+                    <span className="mr-2">🔍</span>
+                    Rakipleri Çek
+                  </>
+                )}
+              </button>
             </div>
 
             {/* Subtitles */}
@@ -297,62 +312,55 @@ export default function Home() {
                 onChange={(e) => setSubtitles(e.target.value)}
                 placeholder="Örn: Kedi maması markaları karşılaştırması, En iyi yaş kedi maması, Kedi maması fiyat analizi"
                 rows={3}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-sm bg-gray-50 resize-none"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-sm bg-white text-gray-900 placeholder-gray-500 resize-none"
               />
             </div>
 
             {/* Competitors Section */}
-            {(isLoadingCompetitors || competitors.length > 0) && (
+            {competitors.length > 0 && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-3">
                   Rakip İçerikler
                 </label>
                 
-                {isLoadingCompetitors ? (
-                  <div className="flex items-center justify-center py-8 bg-gray-50 rounded-lg border border-gray-200">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-3"></div>
-                    <span className="text-gray-600">Rakipler yükleniyor...</span>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <p className="text-sm text-gray-600 mb-3">
-                      {competitors.length} rakip bulundu. Analiz için istediğiniz kadarını seçin:
-                    </p>
-                    <div className="grid grid-cols-1 gap-3 max-h-64 overflow-y-auto">
-                      {competitors.map((competitor, index) => (
-                        <div 
-                          key={index} 
-                          className={`border rounded-lg p-3 cursor-pointer transition-all ${
+                <div className="space-y-3">
+                  <p className="text-sm text-gray-600 mb-3">
+                    {competitors.length} rakip bulundu. Analiz için istediğiniz kadarını seçin:
+                  </p>
+                  <div className="grid grid-cols-1 gap-3 max-h-64 overflow-y-auto">
+                    {competitors.map((competitor, index) => (
+                      <div 
+                        key={index} 
+                        className={`border rounded-lg p-3 cursor-pointer transition-all ${
+                          selectedCompetitors.includes(competitor.url)
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 hover:border-gray-300 bg-white'
+                        }`}
+                        onClick={() => toggleCompetitorSelection(competitor.url)}
+                      >
+                        <div className="flex items-start space-x-3">
+                          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
                             selectedCompetitors.includes(competitor.url)
-                              ? 'border-blue-500 bg-blue-50'
-                              : 'border-gray-200 hover:border-gray-300 bg-white'
-                          }`}
-                          onClick={() => toggleCompetitorSelection(competitor.url)}
-                        >
-                          <div className="flex items-start space-x-3">
-                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                              selectedCompetitors.includes(competitor.url)
-                                ? 'bg-blue-500 text-white'
-                                : 'bg-gray-200 text-gray-600'
-                            }`}>
-                              {selectedCompetitors.includes(competitor.url) ? '✓' : index + 1}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h4 className="text-sm font-medium text-gray-900 line-clamp-1">
-                                {competitor.title}
-                              </h4>
-                              <p className="text-xs text-blue-600 truncate mt-1">{competitor.url}</p>
-                              <p className="text-xs text-gray-600 line-clamp-2 mt-1">{competitor.description}</p>
-                            </div>
+                              ? 'bg-blue-500 text-white'
+                              : 'bg-gray-200 text-gray-600'
+                          }`}>
+                            {selectedCompetitors.includes(competitor.url) ? '✓' : index + 1}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-sm font-medium text-gray-900 line-clamp-1">
+                              {competitor.title}
+                            </h4>
+                            <p className="text-xs text-blue-600 truncate mt-1">{competitor.url}</p>
+                            <p className="text-xs text-gray-600 line-clamp-2 mt-1">{competitor.description}</p>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                    <p className="text-xs text-gray-500 mt-2">
-                      Seçilen: {selectedCompetitors.length} rakip
-                    </p>
+                      </div>
+                    ))}
                   </div>
-                )}
+                  <p className="text-xs text-gray-500 mt-2">
+                    Seçilen: {selectedCompetitors.length} rakip
+                  </p>
+                </div>
               </div>
             )}
 
@@ -363,7 +371,7 @@ export default function Home() {
               className={`w-full py-4 px-6 rounded-lg font-medium text-base transition-all flex items-center justify-center ${
                 !query.trim() || isGeneratingBrief
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl'
+                  : 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl'
               }`}
             >
               {isGeneratingBrief ? (
