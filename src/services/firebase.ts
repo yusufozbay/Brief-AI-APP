@@ -21,6 +21,9 @@ export interface SharedBrief {
   competitorTone: string;
   uniqueValue: string;
   competitorAnalysisSummary: string;
+  competitorStrengths: string[];
+  contentGaps: string[];
+  dominantTone: string;
   primaryKeyword: string;
   secondaryKeywords: string[];
   titleSuggestions: {
@@ -44,6 +47,11 @@ export interface SharedBrief {
     supportingSchemas: string[];
     reasoning: string;
   };
+  qualityChecklist: Array<{
+    item: string;
+    status: boolean;
+    note: string;
+  }>;
   competitorAnalysis?: any;
   createdAt: Date;
   sharedAt: Date;
@@ -60,21 +68,48 @@ class FirebaseService {
         throw new Error('Firebase not configured');
       }
 
+      // Helper function to safely serialize objects and remove circular references
+      const sanitizeData = (obj: any): any => {
+        if (obj === null || obj === undefined) return obj;
+        if (typeof obj !== 'object') return obj;
+        if (obj instanceof Date) return obj;
+        if (Array.isArray(obj)) return obj.map(sanitizeData);
+        
+        const sanitized: any = {};
+        for (const key in obj) {
+          if (obj.hasOwnProperty(key)) {
+            try {
+              const value = obj[key];
+              if (typeof value === 'function') continue; // Skip functions
+              if (value === obj) continue; // Skip self-references
+              sanitized[key] = sanitizeData(value);
+            } catch (error) {
+              console.warn(`Skipping property ${key} due to serialization error:`, error);
+            }
+          }
+        }
+        return sanitized;
+      };
+
       // Create a clean brief object without circular references
       const briefToShare = {
-        topic: briefData.topic,
-        userIntent: briefData.userIntent,
-        competitorTone: briefData.competitorTone,
-        uniqueValue: briefData.uniqueValue,
-        competitorAnalysisSummary: briefData.competitorAnalysisSummary,
-        primaryKeyword: briefData.primaryKeyword,
+        topic: briefData.topic || '',
+        userIntent: briefData.userIntent || '',
+        competitorTone: briefData.competitorTone || '',
+        uniqueValue: briefData.uniqueValue || '',
+        competitorAnalysisSummary: briefData.competitorAnalysisSummary || '',
+        competitorStrengths: Array.isArray(briefData.competitorStrengths) ? briefData.competitorStrengths : [],
+        contentGaps: Array.isArray(briefData.contentGaps) ? briefData.contentGaps : [],
+        dominantTone: briefData.dominantTone || '',
+        primaryKeyword: briefData.primaryKeyword || '',
         secondaryKeywords: Array.isArray(briefData.secondaryKeywords) ? briefData.secondaryKeywords : [],
         titleSuggestions: briefData.titleSuggestions || { clickFocused: '', seoFocused: '' },
-        metaDescription: briefData.metaDescription,
-        contentOutline: Array.isArray(briefData.contentOutline) ? briefData.contentOutline : [],
-        faqSection: Array.isArray(briefData.faqSection) ? briefData.faqSection : [],
+        metaDescription: briefData.metaDescription || '',
+        contentOutline: Array.isArray(briefData.contentOutline) ? sanitizeData(briefData.contentOutline) : [],
+        faqSection: Array.isArray(briefData.faqSection) ? sanitizeData(briefData.faqSection) : [],
         schemaStrategy: briefData.schemaStrategy || { mainSchema: '', supportingSchemas: [], reasoning: '' },
-        competitorAnalysis: briefData.competitorAnalysis ? JSON.parse(JSON.stringify(briefData.competitorAnalysis)) : null,
+        qualityChecklist: Array.isArray(briefData.qualityChecklist) ? sanitizeData(briefData.qualityChecklist) : [],
+        competitorAnalysis: briefData.competitorAnalysis ? sanitizeData(briefData.competitorAnalysis) : null,
         createdAt: new Date(),
         sharedAt: new Date()
       };

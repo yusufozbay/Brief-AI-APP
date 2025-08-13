@@ -162,6 +162,9 @@ const SEOAnalyzer: React.FC = () => {
         competitorTone: result.competitorTone,
         uniqueValue: result.uniqueValue,
         competitorAnalysisSummary: result.competitorAnalysisSummary,
+        competitorStrengths: result.competitorStrengths,
+        contentGaps: result.contentGaps,
+        dominantTone: result.dominantTone,
         primaryKeyword: result.primaryKeyword,
         secondaryKeywords: result.secondaryKeywords,
         titleSuggestions: result.titleSuggestions,
@@ -169,6 +172,7 @@ const SEOAnalyzer: React.FC = () => {
         contentOutline: result.contentOutline,
         faqSection: result.faqSection,
         schemaStrategy: result.schemaStrategy,
+        qualityChecklist: result.qualityChecklist,
         competitorAnalysis: result.competitorAnalysis
       });
       
