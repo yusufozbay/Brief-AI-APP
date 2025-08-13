@@ -46,12 +46,16 @@ class GeminiAIService {
 
   initializeAI(apiKey: string) {
     try {
-      console.log('Initializing Gemini AI with key length:', apiKey?.length || 0);
+      console.log('🔧 Initializing Gemini AI with key length:', apiKey?.length || 0);
+      console.log('🔧 API Key starts with:', apiKey?.substring(0, 10) + '...');
       this.genAI = new GoogleGenerativeAI(apiKey);
-      this.model = this.genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
-      console.log('Gemini AI initialized successfully');
+      this.model = this.genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+      console.log('✅ Gemini AI initialized successfully with model: gemini-1.5-pro');
+      console.log('✅ Model object created:', !!this.model);
     } catch (error) {
-      console.error('Gemini AI initialization error:', error);
+      console.error('❌ Gemini AI initialization error:', error);
+      this.model = null;
+      this.genAI = null;
     }
   }
 
@@ -60,20 +64,44 @@ class GeminiAIService {
     selectedCompetitors: CompetitorSelection[],
     competitorAnalysis?: any
   ): Promise<GeminiAnalysisResult> {
+    console.log('=== GEMINI AI GENERATION DEBUG ===');
+    console.log('Model initialized:', !!this.model);
+    console.log('API Key available:', !!import.meta.env.VITE_GEMINI_API_KEY);
+    console.log('Topic:', topic);
+    console.log('Competitors count:', selectedCompetitors?.length || 0);
+    
     if (!this.model) {
-      console.warn('Gemini AI not initialized, using fallback analysis');
-      console.log('API Key available:', !!import.meta.env.VITE_GEMINI_API_KEY);
-      return this.getFallbackAnalysis(topic, selectedCompetitors, competitorAnalysis);
+      console.error('❌ Gemini AI model not initialized! Falling back to static template.');
+      console.log('Attempting to re-initialize...');
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      if (apiKey) {
+        this.initializeAI(apiKey);
+        if (this.model) {
+          console.log('✅ Re-initialization successful, proceeding with AI generation');
+        } else {
+          console.error('❌ Re-initialization failed, using fallback');
+          return this.getFallbackAnalysis(topic, selectedCompetitors, competitorAnalysis);
+        }
+      } else {
+        console.error('❌ No API key available, using fallback');
+        return this.getFallbackAnalysis(topic, selectedCompetitors, competitorAnalysis);
+      }
     }
     
-    console.log('Using Gemini AI for content strategy generation');
+    console.log('✅ Using Gemini AI for dynamic content strategy generation');
 
     try {
       const prompt = this.buildAnalysisPrompt(topic, selectedCompetitors, competitorAnalysis);
+      console.log('📝 Generated prompt length:', prompt.length);
+      console.log('📝 Prompt preview:', prompt.substring(0, 300) + '...');
       
+      console.log('🚀 Calling Gemini AI model...');
       const result = await this.model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
+      
+      console.log('📥 Gemini AI response received, length:', text.length);
+      console.log('📥 Raw response preview:', text.substring(0, 500) + '...');
       
       // Parse the JSON response from Gemini (remove markdown code blocks if present)
       let cleanText = text.trim();
@@ -83,15 +111,23 @@ class GeminiAIService {
         cleanText = cleanText.replace(/```\s*/, '').replace(/\s*```$/, '');
       }
       
-      console.log('Parsing Gemini response:', cleanText.substring(0, 200) + '...');
+      console.log('🔧 Cleaned text for parsing:', cleanText.substring(0, 200) + '...');
       const analysisResult = JSON.parse(cleanText);
+      
+      console.log('✅ Successfully parsed Gemini AI response');
+      console.log('📊 Generated keywords count:', analysisResult.secondaryKeywords?.length || 0);
+      console.log('📊 Generated FAQ count:', analysisResult.faqSection?.length || 0);
+      console.log('📊 Sample FAQ question:', analysisResult.faqSection?.[0]?.question || 'No FAQ found');
+      console.log('📊 Sample FAQ answer length:', analysisResult.faqSection?.[0]?.answer?.length || 0);
       
       return {
         topic,
         ...analysisResult
       };
     } catch (error) {
-      console.error('Gemini AI analysis error:', error);
+      console.error('❌ Gemini AI analysis error:', error);
+      console.error('❌ Error details:', error instanceof Error ? error.message : String(error));
+      console.log('🔄 Falling back to static template due to error');
       return this.getFallbackAnalysis(topic, selectedCompetitors, competitorAnalysis);
     }
   }
@@ -162,7 +198,7 @@ Lütfen aşağıdaki JSON formatında yanıt ver:
 
 ÖNEMLI KURALLAR:
 1. Türkiye pazarına özel örnekler kullan
-2. 2024-2025 güncel trendlerini dahil et
+2. 2025 güncel trendlerini dahil et
 3. E-E-A-T (Experience, Expertise, Authoritativeness, Trustworthiness) prensiplerini uygula
 4. Rakiplerden farklılaşacak özgün değer teklifi sun
 5. Pratik, uygulanabilir öneriler ver
@@ -207,7 +243,7 @@ Lütfen aşağıdaki JSON formatında yanıt ver:
           .replace('yperler', 'yerler');
       }),
       titleSuggestions: {
-        clickFocused: `${topic}: 2024'te Başarı İçin Bilmeniz Gereken Her Şey`,
+        clickFocused: `${topic}: 2025'te Başarı İçin Bilmeniz Gereken Her Şey`,
         seoFocused: `${topic} Rehberi: Tanımı, Avantajları ve Uygulama Stratejileri`
       },
       metaDescription: `${topic} hakkında kapsamlı rehber. Tanımı, avantajları, uygulama stratejileri ve uzman önerileri ile başarıya ulaşın. Türkiye'ye özel örnekler.`,
@@ -256,24 +292,44 @@ Lütfen aşağıdaki JSON formatında yanıt ver:
       ],
       faqSection: [
         {
-          question: `${topic} nedir ve Türkiye'de neden önemlidir?`,
-          answer: `${topic}, Türkiye pazarında [kısa tanım] olup, özellikle [Türkiye'ye özel fayda] sağlar.`
+          question: `${topic} için ideal su sıcaklığı nedir?`,
+          answer: `${topic} için ideal su sıcaklığı 90-96°C arasındadır. Bu sıcaklık kahvenin aromasını en iyi şekilde çıkarır ve acı tadı önler. Türkiye'de çoğu ev tipi su ısıtıcısı bu sıcaklığa ulaşabilir.`
         },
         {
-          question: `${topic}'e Türkiye'de nasıl başlanır?`,
-          answer: "Türkiye'de ilk adım [yerel gereksinimler] olup, ardından [ikinci adım] uygulanmalıdır."
+          question: `Makinesiz ${topic} yapmak mümkün mü?`,
+          answer: `Evet, makinesiz ${topic} yapmak mümkündür. Moka pot, French press veya V60 gibi alternatif yöntemlerle evde kolayca hazırlayabilirsiniz. Bu yöntemler Türkiye'de yaygın olarak kullanılır ve uygun fiyatlıdır.`
         },
         {
-          question: `${topic}'in Türkiye'deki maliyeti nedir?`,
-          answer: "Türkiye'de maliyet [yerel faktörlere] bağlı olarak değişir, ortalama [TL cinsinden aralık] arasındadır."
+          question: `Soğuk demleme ${topic} kaç saatte demlenir?`,
+          answer: `Soğuk demleme ${topic} genellikle 12-24 saat arasında demlenir. Türkiye'nin sıcak iklim koşullarında özellikle yaz aylarında tercih edilen bu yöntem, daha yumuşak ve az asitli bir tat profili sunar.`
         },
         {
-          question: `${topic} için Türkiye'de hangi araçlar kullanılabilir?`,
-          answer: "Türkiye'de erişilebilir temel araçlar [yerel araç listesi] olup, başlangıç için [minimum gereksinimler] yeterlidir."
+          question: `${topic} kreması nasıl elde edilir?`,
+          answer: `${topic} kreması için taze çekilmiş kahve ve doğru basınç gereklidir. Ev tipi süt köpürtücüler veya French press ile de krema elde edebilirsiniz. Türkiye'de yaygın olan UHT süt de iyi sonuç verir.`
         },
         {
-          question: `${topic}'te başarı Türkiye pazarında nasıl ölçülür?`,
-          answer: "Türkiye pazarında başarı [yerel metrikler] ile ölçülür ve [zaman dilimi] içinde sonuçlar görülür."
+          question: `${topic} hangi fincanda servis edilir?`,
+          answer: `${topic} genellikle 60-90ml kapasiteli küçük fincanlarda servis edilir. Türkiye'de geleneksel kahve fincanları da kullanılabilir. Porselen veya seramik fincanlar sıcaklığı daha iyi korur.`
+        },
+        {
+          question: `${topic} ile hangi tatlılar uyumlu?`,
+          answer: `${topic} ile çikolatalı tatlılar, tiramisu, profiterol ve Türk mutfağından baklava, künefe gibi tatlılar çok uyumludur. Kahvenin yoğun tadı tatlıların lezzetini dengeleyerek mükemmel bir uyum yaratır.`
+        },
+        {
+          question: `${topic} için en uygun kahve çekirdeği hangisi?`,
+          answer: `${topic} için Arabica çekirdekleri tercih edilir. Türkiye'de yerel kavurucularda bulunan orta-koyu kavrum çekirdekleri ideal sonuç verir. Brezilya, Kolombiya ve Etiyopya orijinli çekirdekler popülerdir.`
+        },
+        {
+          question: `${topic} yapımında en sık yapılan hatalar neler?`,
+          answer: `En sık yapılan hatalar: çok ince veya kaba öğütme, yanlış su sıcaklığı, eski kahve kullanımı ve yanlış oran. Türkiye'de yaygın hata ayrıca çok uzun demleme süresidir.`
+        },
+        {
+          question: `${topic} için gerekli ekipmanlar neler?`,
+          answer: `Temel ekipmanlar: kahve makinesi veya alternatif demleme aracı, kahve değirmeni, terazi, zamanlayıcı ve kaliteli su. Türkiye'de bu ekipmanlar kolayca bulunabilir ve çeşitli bütçelere uygun seçenekler mevcuttur.`
+        },
+        {
+          question: `${topic} ile normal kahve arasındaki fark nedir?`,
+          answer: `${topic} daha konsantre, yoğun ve kremalıdır. Normal filtre kahveye göre daha kısa sürede hazırlanır ve daha güçlü bir aroma profili sunar. Türkiye'de geleneksel Türk kahvesinden farklı olarak basınçlı demleme yöntemi kullanılır.`
         }
       ],
       schemaStrategy: {
