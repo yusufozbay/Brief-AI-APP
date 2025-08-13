@@ -89,7 +89,6 @@ const SEOAnalyzer: React.FC = () => {
 
   const handleCompetitorsSelected = (competitors: CompetitorSelection[]) => {
     setSelectedCompetitors(competitors);
-    generateFinalAnalysis();
   };
 
   const handleAnalysisComplete = (analysisData: any) => {
