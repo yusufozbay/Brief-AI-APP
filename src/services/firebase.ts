@@ -52,36 +52,76 @@ export interface SharedBrief {
 class FirebaseService {
   async shareBrief(briefData: Omit<SharedBrief, 'id' | 'createdAt' | 'sharedAt'>): Promise<string> {
     try {
-      const briefToShare: Omit<SharedBrief, 'id'> = {
-        ...briefData,
+      console.log('🔥 Starting Firebase share operation...');
+      
+      // Check if Firebase is properly initialized
+      if (!db) {
+        console.error('❌ Firebase database not initialized');
+        throw new Error('Firebase not configured');
+      }
+
+      // Create a clean brief object without circular references
+      const briefToShare = {
+        topic: briefData.topic,
+        userIntent: briefData.userIntent,
+        competitorTone: briefData.competitorTone,
+        uniqueValue: briefData.uniqueValue,
+        competitorAnalysisSummary: briefData.competitorAnalysisSummary,
+        primaryKeyword: briefData.primaryKeyword,
+        secondaryKeywords: Array.isArray(briefData.secondaryKeywords) ? briefData.secondaryKeywords : [],
+        titleSuggestions: briefData.titleSuggestions || { clickFocused: '', seoFocused: '' },
+        metaDescription: briefData.metaDescription,
+        contentOutline: Array.isArray(briefData.contentOutline) ? briefData.contentOutline : [],
+        faqSection: Array.isArray(briefData.faqSection) ? briefData.faqSection : [],
+        schemaStrategy: briefData.schemaStrategy || { mainSchema: '', supportingSchemas: [], reasoning: '' },
+        competitorAnalysis: briefData.competitorAnalysis ? JSON.parse(JSON.stringify(briefData.competitorAnalysis)) : null,
         createdAt: new Date(),
         sharedAt: new Date()
       };
 
+      console.log('🔥 Adding document to Firestore...');
       const docRef = await addDoc(collection(db, 'shared-briefs'), briefToShare);
+      console.log('✅ Brief shared successfully with ID:', docRef.id);
       return docRef.id;
     } catch (error) {
-      console.error('Error sharing brief:', error);
-      throw new Error('Failed to share brief');
+      console.error('❌ Error sharing brief:', error);
+      console.error('❌ Error details:', error instanceof Error ? error.message : String(error));
+      throw new Error('Paylaşım sırasında bir hata oluştu. Lütfen tekrar deneyin.');
     }
   }
 
   async getBrief(briefId: string): Promise<SharedBrief | null> {
     try {
+      console.log('🔥 Getting shared brief with ID:', briefId);
+      
+      if (!db) {
+        console.error('❌ Firebase database not initialized');
+        throw new Error('Firebase not configured');
+      }
+
+      if (!briefId || briefId.trim() === '') {
+        console.error('❌ Invalid brief ID provided');
+        return null;
+      }
+
       const docRef = doc(db, 'shared-briefs', briefId);
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
+        const data = docSnap.data();
+        console.log('✅ Brief found and retrieved successfully');
         return {
           id: docSnap.id,
-          ...docSnap.data()
+          ...data
         } as SharedBrief;
       } else {
+        console.log('ℹ️ Brief not found with ID:', briefId);
         return null;
       }
     } catch (error) {
-      console.error('Error getting brief:', error);
-      return null;
+      console.error('❌ Error getting brief:', error);
+      console.error('❌ Error details:', error instanceof Error ? error.message : String(error));
+      throw new Error('Brief yüklenirken bir hata oluştu.');
     }
   }
 }
