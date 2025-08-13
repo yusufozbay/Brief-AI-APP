@@ -57,8 +57,8 @@ class GeminiAIService {
       console.log('🔧 Initializing Gemini AI with key length:', apiKey?.length || 0);
       console.log('🔧 API Key starts with:', apiKey?.substring(0, 10) + '...');
       this.genAI = new GoogleGenerativeAI(apiKey);
-      this.model = this.genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
-      console.log('✅ Gemini AI initialized successfully with model: gemini-1.5-pro');
+      this.model = this.genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+      console.log('✅ Gemini AI initialized successfully with model: gemini-2.0-flash-exp (latest available)');
       console.log('✅ Model object created:', !!this.model);
     } catch (error) {
       console.error('❌ Gemini AI initialization error:', error);
