@@ -313,7 +313,7 @@ const SEOAnalyzer: React.FC = () => {
         )}
 
         {/* Results */}
-        {currentStep === 'results' && result && (
+        {currentStep === 'results' && (
           <div className="space-y-8">
             {/* Back Navigation and Share Button */}
             <div className="flex justify-between items-center">
@@ -339,7 +339,7 @@ const SEOAnalyzer: React.FC = () => {
                     Strateji oluşturuluyor...
                   </div>
                 )}
-                {!isAnalyzing && (
+                {!isAnalyzing && result && (
                   <button
                     onClick={handleShareBrief}
                     disabled={isSharing}
@@ -356,7 +356,58 @@ const SEOAnalyzer: React.FC = () => {
               </div>
             </div>
 
-            {/* Strategic Overview */}
+            {/* Loading State */}
+            {isAnalyzing && !result && (
+              <div className="bg-white rounded-xl shadow-lg p-12">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-indigo-600 mx-auto mb-6"></div>
+                  <h2 className="text-2xl font-bold text-gray-800 mb-4">
+                    🤖 Gemini 2.5 Pro ile Analiz Ediliyor
+                  </h2>
+                  <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
+                    AI modelimiz rakip analizinizi yapıyor ve size özel içerik stratejinizi hazırlıyor. 
+                    Bu işlem genellikle 30-60 saniye sürer.
+                  </p>
+                  
+                  <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+                    <div className="bg-blue-50 p-6 rounded-lg">
+                      <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                        <Search className="w-6 h-6 text-blue-600" />
+                      </div>
+                      <h3 className="font-semibold text-gray-800 mb-2">Rakip Analizi</h3>
+                      <p className="text-sm text-gray-600">Seçilen rakiplerin içerik stratejileri detaylı olarak inceleniyor</p>
+                    </div>
+                    
+                    <div className="bg-green-50 p-6 rounded-lg">
+                      <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                        <TrendingUp className="w-6 h-6 text-green-600" />
+                      </div>
+                      <h3 className="font-semibold text-gray-800 mb-2">Strateji Geliştirme</h3>
+                      <p className="text-sm text-gray-600">Size özel içerik stratejisi ve anahtar kelime önerileri hazırlanıyor</p>
+                    </div>
+                    
+                    <div className="bg-purple-50 p-6 rounded-lg">
+                      <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                        <FileText className="w-6 h-6 text-purple-600" />
+                      </div>
+                      <h3 className="font-semibold text-gray-800 mb-2">Brief Oluşturma</h3>
+                      <p className="text-sm text-gray-600">Detaylı içerik brifiniz ve SEO önerileri hazırlanıyor</p>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-8 p-4 bg-yellow-50 rounded-lg border-l-4 border-yellow-400">
+                    <p className="text-sm text-gray-700">
+                      💡 <strong>İpucu:</strong> Bu süre zarfında sayfayı kapatmayın. Analiziniz tamamlandığında otomatik olarak sonuçlar görüntülenecek.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Results Content */}
+            {result && (
+              <>
+                {/* Strategic Overview */}
             <div className="bg-white rounded-xl shadow-lg p-8">
               <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
                 <TrendingUp className="w-6 h-6 mr-3 text-indigo-600" />
@@ -580,6 +631,8 @@ const SEOAnalyzer: React.FC = () => {
                 ))}
               </div>
             </div>
+              </>
+            )}
 
             {/* Share Modal */}
             {showShareModal && shareUrl && (
