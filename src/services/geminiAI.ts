@@ -149,8 +149,28 @@ class GeminiAIService {
       `- ${comp.title} (${comp.domain}) - Pozisyon: #${comp.position}\n  Özet: ${comp.snippet}`
     ).join('\n');
 
+    // Enhanced QFO insights integration
+    const qfoInsightsText = competitorAnalysis?.qfoInsights ? `
+🚀 QUERY FAN-OUT (QFO) ANALİZ VERİLERİ:
+- Genişletilmiş sorgular: ${competitorAnalysis.qfoInsights.expandedQueries.join(', ')}
+- Sorgu tipi performansı: ${Object.entries(competitorAnalysis.qfoInsights.queryTypePerformance).map(([type, stats]: [string, any]) => `${type}: %${Math.round(stats.successRate * 100)} başarı`).join(', ')}
+- Tespit edilen içerik boşlukları: ${competitorAnalysis.qfoInsights.contentGaps.join(', ')}
+- Ortak temalar: ${competitorAnalysis.qfoInsights.commonThemes.join(', ')}
+- Önerilen strateji: ${competitorAnalysis.qfoInsights.recommendedStrategy}
+- Rekabet avantajları: ${competitorAnalysis.qfoInsights.competitiveAdvantages.join(', ')}
+- Benzersiz sonuç sayısı: ${competitorAnalysis.qfoInsights.uniqueResults}
+- Genel başarı oranı: %${Math.round(competitorAnalysis.qfoInsights.successRate * 100)}
+
+💡 QFO VERİLERİNE DAYALI STRATEJİK ÖNERİLER:
+- Bu QFO analizi verilerini kullanarak en etkili içerik stratejisini geliştir
+- Genişletilmiş sorguları dikkate alarak anahtar kelime stratejisini optimize et
+- Tespit edilen içerik boşluklarını kapatacak içerik planı oluştur
+- Rekabet avantajlarını vurgulayan benzersiz değer teklifi geliştir
+- Sorgu tipi performansına göre içerik yaklaşımını belirle
+` : '';
+
     return `
-Sen 25 yıllık deneyimli bir SEO uzmanı ve içerik stratejistisin. Türkiye pazarı için "${topic}" konusunda kapsamlı bir içerik stratejisi oluştur.
+Sen 25 yıllık deneyimli bir SEO uzmanı ve içerik stratejistisin. Türkiye pazarı için "${topic}" konusunda QFO (Query Fan-out) analizi verilerini kullanarak en üst düzeyde bir içerik stratejisi oluştur.
 
 RAKIP ANALİZİ:
 ${competitorInfo}
@@ -163,7 +183,18 @@ DETAYLI RAKİP VERİLERİ:
 - İçerik boşlukları: ${competitorAnalysis.contentGaps?.join(', ')}
 ` : ''}
 
-Lütfen aşağıdaki JSON formatında yanıt ver:
+${qfoInsightsText}
+
+🎯 QFO VERİLERİNİ KULLANARAK EN İYİ İÇERİK STRATEJİSİ OLUŞTUR:
+
+Bu QFO analizi verilerini kullanarak:
+1. Genişletilmiş sorguları analiz et ve en etkili anahtar kelime kombinasyonlarını belirle
+2. Tespit edilen içerik boşluklarını kapatacak kapsamlı içerik planı geliştir
+3. Sorgu tipi performansına göre en başarılı içerik yaklaşımını belirle
+4. Rekabet avantajlarını maksimize eden benzersiz değer teklifi oluştur
+5. QFO verilerine dayalı veri odaklı içerik stratejisi geliştir
+
+Lütfen aşağıdaki JSON formatında QFO verilerine dayalı en üst düzeyde bir içerik stratejisi oluştur:
 
 {
   "userIntent": "Kullanıcı niyeti analizi (Informational/Transactional/Navigational)",
@@ -258,6 +289,13 @@ Lütfen aşağıdaki JSON formatında yanıt ver:
 6. İçerik outline'ında en az 6 H2 bölümü olsun
 7. FAQ bölümünde en az 10 soru olsun
 8. Yanıtın sadece JSON formatında olsun, başka açıklama ekleme
+
+🚀 QFO VERİLERİNİ MAKSİMUM ETKİ İÇİN KULLAN:
+- Her QFO analiz verisini dikkate al ve stratejiye entegre et
+- Genişletilmiş sorguları anahtar kelime stratejisine dahil et
+- İçerik boşluklarını kapatacak kapsamlı plan geliştir
+- Sorgu performans verilerini kullanarak en etkili yaklaşımı belirle
+- Rekabet avantajlarını maksimize eden strateji oluştur
 `;
   }
 
@@ -266,9 +304,12 @@ Lütfen aşağıdaki JSON formatında yanıt ver:
     selectedCompetitors: CompetitorSelection[],
     competitorAnalysis?: any
   ): GeminiAnalysisResult {
-    // Enhanced fallback with competitor-specific insights
+    // Enhanced fallback with competitor-specific insights and QFO data
     const competitorDomains = selectedCompetitors.map(c => c.domain).join(', ');
     const avgPosition = Math.round(selectedCompetitors.reduce((sum, c) => sum + c.position, 0) / selectedCompetitors.length);
+    
+    // Check if QFO data is available for enhanced fallback
+    const qfoData = competitorAnalysis?.qfoInsights;
     
     return {
       topic: topic,
@@ -285,7 +326,7 @@ Lütfen aşağıdaki JSON formatında yanıt ver:
         "Kapsamlı konu işleme",
         "Görsel destekli anlatım"
       ],
-      contentGaps: [
+      contentGaps: qfoData?.contentGaps || [
         "Türkiye'ye özel veriler eksik",
         "Güncel 2025 trendleri yetersiz", 
         "Adım adım uygulama rehberi eksik",
@@ -295,7 +336,7 @@ Lütfen aşağıdaki JSON formatında yanıt ver:
       ],
       dominantTone: "Profesyonel ve bilgilendirici",
       primaryKeyword: topic,
-      secondaryKeywords: [
+      secondaryKeywords: (qfoData?.expandedQueries?.slice(1, 9) || [
         `${topic} nedir`,
         `${topic} nasıl yapılır`,
         `${topic} örnekleri`, 
@@ -304,7 +345,7 @@ Lütfen aşağıdaki JSON formatında yanıt ver:
         `${topic} 2024`,
         `${topic} rehberi`,
         `${topic} ipuçları`
-      ].map(keyword => {
+      ]).map(keyword => {
         // Fix common Turkish typos
         return keyword
           .replace('gezilece', 'gezilecek')

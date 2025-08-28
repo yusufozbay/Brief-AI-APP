@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Search, Target, Users, TrendingUp, FileText, CheckCircle, Lightbulb, BarChart3, ArrowRight, Share2, Copy, ExternalLink } from 'lucide-react';
+import { Search, Target, Users, TrendingUp, FileText, CheckCircle, Lightbulb, BarChart3, ArrowRight, Share2, Copy, ExternalLink, Zap } from 'lucide-react';
 import CompetitorSelector from './CompetitorSelector';
+import QueryFanoutAnalyzer from './QueryFanoutAnalyzer';
 import { CompetitorSelection } from '../types/serp';
 import { geminiAIService } from '../services/geminiAI';
 import { firebaseService } from '../services/firebase';
+import { QueryFanoutResult } from '../services/queryFanout';
 
 interface AnalysisResult {
   topic: string;
@@ -61,11 +63,12 @@ interface FAQ {
 const SEOAnalyzer: React.FC = () => {
   const [topic, setTopic] = useState('');
   const [entities, setEntities] = useState('');
-  const [currentStep, setCurrentStep] = useState<'input' | 'competitors' | 'results'>('input');
+  const [currentStep, setCurrentStep] = useState<'input' | 'competitors' | 'qfo' | 'results'>('input');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [selectedCompetitors, setSelectedCompetitors] = useState<CompetitorSelection[]>([]);
   const [competitorAnalysis, setCompetitorAnalysis] = useState<any>(null);
+  const [queryFanoutResult, setQueryFanoutResult] = useState<QueryFanoutResult | null>(null);
   const [isSharing, setIsSharing] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -75,15 +78,25 @@ const SEOAnalyzer: React.FC = () => {
     setCurrentStep('competitors');
   };
 
+  const proceedToQueryFanout = () => {
+    setCurrentStep('qfo');
+  };
+
   const goBackToInput = () => {
     setCurrentStep('input');
     setResult(null);
     setSelectedCompetitors([]);
     setCompetitorAnalysis(null);
+    setQueryFanoutResult(null);
   };
 
   const goBackToCompetitors = () => {
     setCurrentStep('competitors');
+    setResult(null);
+  };
+
+  const goBackToQueryFanout = () => {
+    setCurrentStep('qfo');
     setResult(null);
   };
 
@@ -107,7 +120,7 @@ const SEOAnalyzer: React.FC = () => {
     }
   };
 
-  const generateFinalAnalysis = async (competitorData?: any) => {
+    const generateFinalAnalysis = async (competitorData?: any) => {
     setCurrentStep('results');
     setIsAnalyzing(true);
     
@@ -139,6 +152,26 @@ const SEOAnalyzer: React.FC = () => {
         qualityChecklist: geminiResult.qualityChecklist,
       };
 
+      // Enhance with Query Fan-out insights if available
+      if (queryFanoutResult) {
+        // Merge Query Fan-out insights with AI-generated content gaps
+        const enhancedContentGaps = [
+          ...geminiResult.contentGaps,
+          ...queryFanoutResult.aggregatedData.insights.contentGaps
+        ];
+        
+        // Remove duplicates and limit to top insights
+        analysisResult.contentGaps = [...new Set(enhancedContentGaps)].slice(0, 8);
+        
+        // Add Query Fan-out specific insights to the analysis
+        (analysisResult as any).queryFanoutInsights = {
+          expandedQueries: queryFanoutResult.expandedQueries,
+          queryTypePerformance: queryFanoutResult.aggregatedData.queryTypeAnalysis,
+          recommendedStrategy: queryFanoutResult.aggregatedData.insights.recommendedStrategy,
+          competitiveAdvantages: queryFanoutResult.aggregatedData.insights.competitiveAdvantages
+        };
+      }
+      
       if (competitorData) {
         analysisResult.competitorAnalysis = competitorData;
       }
@@ -152,6 +185,128 @@ const SEOAnalyzer: React.FC = () => {
     }
   };
 
+  /**
+   * Enhanced final analysis that properly integrates QFO data with Gemini AI
+   * This creates an iterative flow where QFO insights directly enhance the AI-generated brief
+   */
+  const generateFinalAnalysisWithQFO = async (competitorData?: any, qfoData?: QueryFanoutResult) => {
+    setCurrentStep('results');
+    setIsAnalyzing(true);
+    
+    try {
+      console.log('🚀 Starting enhanced analysis with QFO data integration...');
+      
+      // Prepare enhanced data for Gemini AI
+      const enhancedCompetitorData = {
+        ...competitorData,
+        qfoInsights: qfoData ? {
+          expandedQueries: qfoData.expandedQueries,
+          queryTypePerformance: qfoData.aggregatedData.queryTypeAnalysis,
+          contentGaps: qfoData.aggregatedData.insights.contentGaps,
+          commonThemes: qfoData.aggregatedData.insights.commonThemes,
+          recommendedStrategy: qfoData.aggregatedData.insights.recommendedStrategy,
+          competitiveAdvantages: qfoData.aggregatedData.insights.competitiveAdvantages,
+          uniqueResults: qfoData.aggregatedData.uniqueResults,
+          successRate: qfoData.successRate
+        } : null
+      };
+
+      console.log('📊 Enhanced competitor data with QFO insights:', enhancedCompetitorData);
+      
+      // Use Gemini AI with enhanced QFO data for superior content strategy generation
+      const geminiResult = await geminiAIService.generateContentStrategy(
+        topic,
+        selectedCompetitors,
+        enhancedCompetitorData
+      );
+      
+      console.log('✅ Gemini AI analysis completed with QFO integration');
+      
+      // Convert Gemini result to our AnalysisResult format
+      const analysisResult: AnalysisResult = {
+        topic: geminiResult.topic,
+        userIntent: geminiResult.userIntent,
+        competitorTone: geminiResult.competitorTone,
+        uniqueValue: geminiResult.uniqueValue,
+        competitorAnalysisSummary: geminiResult.competitorAnalysisSummary,
+        competitorStrengths: geminiResult.competitorStrengths,
+        contentGaps: geminiResult.contentGaps,
+        dominantTone: geminiResult.dominantTone,
+        primaryKeyword: geminiResult.primaryKeyword,
+        secondaryKeywords: geminiResult.secondaryKeywords,
+        titleSuggestions: geminiResult.titleSuggestions,
+        metaDescription: geminiResult.metaDescription,
+        contentOutline: geminiResult.contentOutline,
+        faqSection: geminiResult.faqSection,
+        schemaStrategy: geminiResult.schemaStrategy,
+        qualityChecklist: geminiResult.qualityChecklist,
+      };
+
+      // Enhanced integration of QFO insights
+      if (qfoData) {
+        console.log('🔗 Integrating QFO insights into final analysis...');
+        
+        // Merge and enhance content gaps with QFO data
+        const enhancedContentGaps = [
+          ...geminiResult.contentGaps,
+          ...qfoData.aggregatedData.insights.contentGaps
+        ];
+        
+        // Remove duplicates and prioritize QFO insights
+        const uniqueGaps = [...new Set(enhancedContentGaps)];
+        analysisResult.contentGaps = uniqueGaps.slice(0, 10);
+        
+        // Enhance secondary keywords with QFO query insights
+        if (qfoData.expandedQueries.length > 0) {
+          const qfoKeywords = qfoData.expandedQueries
+            .filter(query => query !== topic)
+            .map(query => query.replace(topic, '').trim())
+            .filter(keyword => keyword.length > 0);
+          
+          analysisResult.secondaryKeywords = [
+            ...analysisResult.secondaryKeywords,
+            ...qfoKeywords
+          ].slice(0, 15); // Limit to top 15 keywords
+        }
+        
+        // Add comprehensive QFO insights to the analysis
+        (analysisResult as any).queryFanoutInsights = {
+          expandedQueries: qfoData.expandedQueries,
+          queryTypePerformance: qfoData.aggregatedData.queryTypeAnalysis,
+          recommendedStrategy: qfoData.aggregatedData.insights.recommendedStrategy,
+          competitiveAdvantages: qfoData.aggregatedData.insights.competitiveAdvantages,
+          contentGaps: qfoData.aggregatedData.insights.contentGaps,
+          commonThemes: qfoData.aggregatedData.insights.commonThemes,
+          executionMetrics: {
+            totalQueries: qfoData.aggregatedData.totalQueries,
+            successfulQueries: qfoData.aggregatedData.successfulQueries,
+            successRate: qfoData.successRate,
+            executionTime: qfoData.executionTime
+          }
+        };
+        
+        console.log('✅ QFO insights successfully integrated');
+      }
+      
+      if (competitorData) {
+        analysisResult.competitorAnalysis = competitorData;
+      }
+      
+      setResult(analysisResult);
+      setIsAnalyzing(false);
+      
+      console.log('🎉 Enhanced analysis with QFO integration completed successfully');
+      
+    } catch (error) {
+      console.error('❌ Enhanced analysis with QFO failed:', error);
+      setIsAnalyzing(false);
+      
+      // Fallback to basic analysis if enhanced analysis fails
+      console.log('🔄 Falling back to basic analysis...');
+      generateFinalAnalysis(competitorData);
+    }
+  };
+
   const resetAnalysis = () => {
     setCurrentStep('input');
     setTopic('');
@@ -159,6 +314,7 @@ const SEOAnalyzer: React.FC = () => {
     setResult(null);
     setSelectedCompetitors([]);
     setCompetitorAnalysis(null);
+    setQueryFanoutResult(null);
     setShareUrl(null);
     setShowShareModal(false);
   };
@@ -225,24 +381,31 @@ const SEOAnalyzer: React.FC = () => {
 
         {/* Progress Steps */}
         <div className="mb-8">
-          <div className="flex items-center justify-center space-x-8">
-            <div className={`flex items-center ${currentStep === 'input' ? 'text-indigo-600' : currentStep === 'competitors' || currentStep === 'results' ? 'text-green-600' : 'text-gray-400'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep === 'input' ? 'bg-indigo-600 text-white' : currentStep === 'competitors' || currentStep === 'results' ? 'bg-green-600 text-white' : 'bg-gray-200'}`}>
+          <div className="flex items-center justify-center space-x-6">
+            <div className={`flex items-center ${currentStep === 'input' ? 'text-indigo-600' : currentStep === 'competitors' || currentStep === 'qfo' || currentStep === 'results' ? 'text-green-600' : 'text-gray-400'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep === 'input' ? 'bg-indigo-600 text-white' : currentStep === 'competitors' || currentStep === 'qfo' || currentStep === 'results' ? 'bg-green-600 text-white' : 'bg-gray-200'}`}>
                 1
               </div>
               <span className="ml-2 font-medium">Konu Girişi</span>
             </div>
             <ArrowRight className="w-5 h-5 text-gray-400" />
-            <div className={`flex items-center ${currentStep === 'competitors' ? 'text-indigo-600' : currentStep === 'results' ? 'text-green-600' : 'text-gray-400'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep === 'competitors' ? 'bg-indigo-600 text-white' : currentStep === 'results' ? 'bg-green-600 text-white' : 'bg-gray-200'}`}>
+            <div className={`flex items-center ${currentStep === 'competitors' ? 'text-indigo-600' : currentStep === 'qfo' || currentStep === 'results' ? 'text-green-600' : 'text-gray-400'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep === 'competitors' ? 'bg-indigo-600 text-white' : currentStep === 'qfo' || currentStep === 'results' ? 'bg-green-600 text-white' : 'bg-gray-200'}`}>
                 2
               </div>
               <span className="ml-2 font-medium">Rakip Seçimi</span>
             </div>
             <ArrowRight className="w-5 h-5 text-gray-400" />
+            <div className={`flex items-center ${currentStep === 'qfo' ? 'text-indigo-600' : currentStep === 'results' ? 'text-green-600' : 'text-gray-400'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep === 'qfo' ? 'bg-indigo-600 text-white' : currentStep === 'results' ? 'bg-green-600 text-white' : 'bg-gray-200'}`}>
+                3
+              </div>
+              <span className="ml-2 font-medium">Query Fan-out</span>
+            </div>
+            <ArrowRight className="w-5 h-5 text-gray-400" />
             <div className={`flex items-center ${currentStep === 'results' ? 'text-indigo-600' : 'text-gray-400'}`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep === 'results' ? 'bg-indigo-600 text-white' : 'bg-gray-200'}`}>
-                3
+                4
               </div>
               <span className="ml-2 font-medium">Strateji Analizi</span>
             </div>
@@ -309,6 +472,51 @@ const SEOAnalyzer: React.FC = () => {
               onCompetitorsSelected={handleCompetitorsSelected}
               onAnalysisComplete={generateFinalAnalysis}
             />
+            
+            {/* Proceed to Query Fan-out Button */}
+            <div className="mt-6 text-center">
+              <button
+                onClick={proceedToQueryFanout}
+                disabled={selectedCompetitors.length === 0}
+                className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center mx-auto"
+              >
+                <Zap className="w-5 h-5 mr-2" />
+                Query Fan-out Analizine Geç
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Query Fan-out Step */}
+        {currentStep === 'qfo' && (
+          <div className="space-y-8">
+            {/* Back Navigation */}
+            <div className="flex justify-between items-center">
+              <button
+                onClick={goBackToCompetitors}
+                className="flex items-center px-4 py-2 text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
+              >
+                <ArrowRight className="w-4 h-4 mr-2 rotate-180" />
+                Rakip Seçimine Geri Dön
+              </button>
+              <button
+                onClick={resetAnalysis}
+                className="flex items-center px-4 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors"
+              >
+                ← Yeni Analiz Başlat
+              </button>
+            </div>
+
+            {/* Query Fan-out Analyzer */}
+            <QueryFanoutAnalyzer
+              topic={topic}
+              competitors={selectedCompetitors}
+              onAnalysisComplete={(fanoutResult) => {
+                setQueryFanoutResult(fanoutResult);
+                // Proceed to final analysis with QFO data
+                generateFinalAnalysisWithQFO(competitorAnalysis, fanoutResult);
+              }}
+            />
           </div>
         )}
 
@@ -319,11 +527,11 @@ const SEOAnalyzer: React.FC = () => {
             <div className="flex justify-between items-center">
               <div className="flex items-center space-x-4">
                 <button
-                  onClick={goBackToCompetitors}
+                  onClick={goBackToQueryFanout}
                   className="flex items-center px-4 py-2 text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
                 >
                   <ArrowRight className="w-4 h-4 mr-2 rotate-180" />
-                  Rakip Seçimine Geri Dön
+                  Query Fan-out Analizine Geri Dön
                 </button>
                 <button
                   onClick={resetAnalysis}
@@ -474,6 +682,66 @@ const SEOAnalyzer: React.FC = () => {
                         <li key={index} className="flex items-center text-sm text-gray-700">
                           <Lightbulb className="w-4 h-4 text-yellow-500 mr-2 flex-shrink-0" />
                           {gap}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Query Fan-out Insights */}
+            {(result as any).queryFanoutInsights && (
+              <div className="bg-white rounded-xl shadow-lg p-8">
+                <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                  <Zap className="w-6 h-6 mr-3 text-indigo-600" />
+                  Query Fan-out Analiz Sonuçları
+                </h2>
+                
+                <div className="grid md:grid-cols-2 gap-6 mb-6">
+                  <div className="bg-indigo-50 p-6 rounded-lg">
+                    <h3 className="font-semibold text-gray-800 mb-3">Genişletilmiş Sorgular</h3>
+                    <div className="space-y-2">
+                      {(result as any).queryFanoutInsights.expandedQueries.map((query: string, index: number) => (
+                        <div key={index} className="flex items-center text-sm text-gray-700">
+                          <Search className="w-4 h-4 text-indigo-500 mr-2 flex-shrink-0" />
+                          {query}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="bg-green-50 p-6 rounded-lg">
+                    <h3 className="font-semibold text-gray-800 mb-3">Önerilen Strateji</h3>
+                    <p className="text-gray-700 text-sm">
+                      {(result as any).queryFanoutInsights.recommendedStrategy}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="font-semibold text-gray-800 mb-3">Sorgu Tipi Performansı</h3>
+                    <div className="space-y-3">
+                      {Object.entries((result as any).queryFanoutInsights.queryTypePerformance).map(([type, stats]: [string, any]) => (
+                        <div key={type} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <span className="font-medium text-gray-700 capitalize">{type}</span>
+                          <div className="text-sm text-gray-600">
+                            <span className="mr-3">Başarı: {Math.round(stats.successRate * 100)}%</span>
+                            <span>Sayı: {stats.count}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-semibold text-gray-800 mb-3">Rekabet Avantajları</h3>
+                    <ul className="space-y-2">
+                      {(result as any).queryFanoutInsights.competitiveAdvantages.map((advantage: string, index: number) => (
+                        <li key={index} className="flex items-center text-sm text-gray-700">
+                          <TrendingUp className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
+                          {advantage}
                         </li>
                       ))}
                     </ul>
