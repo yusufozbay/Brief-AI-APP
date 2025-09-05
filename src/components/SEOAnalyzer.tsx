@@ -109,21 +109,12 @@ const SEOAnalyzer: React.FC = () => {
 
   const handleCompetitorsSelected = (competitors: CompetitorSelection[]) => {
     setSelectedCompetitors(competitors);
-    
-    // Automatically trigger QFO-enhanced analysis immediately when any competitor is selected
-    if (competitors.length >= 1) {
-      // Start analysis immediately with just 1 competitor
-      generateFinalAnalysisWithQFO(competitorAnalysis);
-    }
+    // No automatic analysis - user must manually start
   };
 
   const handleAnalysisComplete = (analysisData: any) => {
     setCompetitorAnalysis(analysisData);
-    
-    // Automatically trigger QFO-enhanced analysis immediately when competitor analysis is complete
-    if (analysisData && selectedCompetitors.length >= 1) {
-      generateFinalAnalysisWithQFO(analysisData);
-    }
+    // No automatic analysis - user must manually start
   };
 
     const generateFinalAnalysis = async (competitorData?: any) => {
@@ -573,16 +564,30 @@ const SEOAnalyzer: React.FC = () => {
               onAnalysisComplete={generateFinalAnalysis}
             />
             
-            {/* Automatic QFO Integration Info */}
+            {/* Manual Analysis Start Button */}
+            {selectedCompetitors.length > 0 && (
+              <div className="mt-6 flex justify-center">
+                <button
+                  onClick={() => generateFinalAnalysisWithQFO(competitorAnalysis)}
+                  disabled={isAnalyzing}
+                  className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center space-x-3"
+                >
+                  <Zap className="h-6 w-6" />
+                  <span>Query Fan-Out ile Gelişmiş Analizi Başlat</span>
+                </button>
+              </div>
+            )}
+
+            {/* QFO Integration Info */}
             <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200 max-w-2xl mx-auto">
               <div className="flex items-start space-x-3">
                 <div className="p-2 bg-green-100 rounded-lg">
                   <Zap className="h-5 w-5 text-green-600" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-semibold text-green-900 mb-1">Otomatik Query Fan-Out Entegrasyonu</h4>
+                  <h4 className="text-sm font-semibold text-green-900 mb-1">Query Fan-Out Entegrasyonu</h4>
                   <p className="text-xs text-green-700 mb-2">
-                    İlk rakip seçildiğinde analiz otomatik olarak Query Fan-Out tekniği ile zenginleştirilir:
+                    Analiz Query Fan-Out tekniği ile zenginleştirilir:
                   </p>
                   <ul className="text-xs text-green-600 space-y-1">
                     <li>• Semantik sorgu genişletme ve analiz</li>
