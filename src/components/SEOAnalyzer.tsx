@@ -110,20 +110,18 @@ const SEOAnalyzer: React.FC = () => {
   const handleCompetitorsSelected = (competitors: CompetitorSelection[]) => {
     setSelectedCompetitors(competitors);
     
-    // Automatically trigger QFO-enhanced analysis when competitors are selected
-    if (competitors.length > 0) {
-      // Small delay to ensure UI updates
-      setTimeout(() => {
-        generateFinalAnalysisWithQFO(competitorAnalysis);
-      }, 500);
+    // Automatically trigger QFO-enhanced analysis immediately when any competitor is selected
+    if (competitors.length >= 1) {
+      // Start analysis immediately with just 1 competitor
+      generateFinalAnalysisWithQFO(competitorAnalysis);
     }
   };
 
   const handleAnalysisComplete = (analysisData: any) => {
     setCompetitorAnalysis(analysisData);
     
-    // Automatically trigger QFO-enhanced analysis when competitor analysis is complete
-    if (analysisData && selectedCompetitors.length > 0) {
+    // Automatically trigger QFO-enhanced analysis immediately when competitor analysis is complete
+    if (analysisData && selectedCompetitors.length >= 1) {
       generateFinalAnalysisWithQFO(analysisData);
     }
   };
@@ -584,7 +582,7 @@ const SEOAnalyzer: React.FC = () => {
                 <div>
                   <h4 className="text-sm font-semibold text-green-900 mb-1">Otomatik Query Fan-Out Entegrasyonu</h4>
                   <p className="text-xs text-green-700 mb-2">
-                    Analiz otomatik olarak Query Fan-Out tekniği ile zenginleştirilir:
+                    İlk rakip seçildiğinde analiz otomatik olarak Query Fan-Out tekniği ile zenginleştirilir:
                   </p>
                   <ul className="text-xs text-green-600 space-y-1">
                     <li>• Semantik sorgu genişletme ve analiz</li>
