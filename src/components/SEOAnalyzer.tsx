@@ -491,7 +491,7 @@ const SEOAnalyzer: React.FC = () => {
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep === 'competitors' ? 'bg-indigo-600 text-white' : currentStep === 'results' ? 'bg-green-600 text-white' : 'bg-gray-200'}`}>
                 2
               </div>
-              <span className="ml-2 font-medium">Rakip Analizi & QFO Entegrasyonu</span>
+              <span className="ml-2 font-medium">Rakip Analizi</span>
             </div>
             <ArrowRight className="w-5 h-5 text-gray-400" />
             <div className={`flex items-center ${currentStep === 'results' ? 'text-indigo-600' : 'text-gray-400'}`}>
@@ -564,7 +564,7 @@ const SEOAnalyzer: React.FC = () => {
               onAnalysisComplete={generateFinalAnalysis}
             />
             
-            {/* Manual Analysis Start Button */}
+            {/* Analysis Start Button - QFO Integrated */}
             {selectedCompetitors.length > 0 && (
               <div className="mt-6 flex justify-center">
                 <button
@@ -573,31 +573,10 @@ const SEOAnalyzer: React.FC = () => {
                   className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center space-x-3"
                 >
                   <Zap className="h-6 w-6" />
-                  <span>Query Fan-Out ile Gelişmiş Analizi Başlat</span>
+                  <span>Gelişmiş Analizi Başlat</span>
                 </button>
               </div>
             )}
-
-            {/* QFO Integration Info */}
-            <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200 max-w-2xl mx-auto">
-              <div className="flex items-start space-x-3">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <Zap className="h-5 w-5 text-green-600" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-green-900 mb-1">Query Fan-Out Entegrasyonu</h4>
-                  <p className="text-xs text-green-700 mb-2">
-                    Analiz Query Fan-Out tekniği ile zenginleştirilir:
-                  </p>
-                  <ul className="text-xs text-green-600 space-y-1">
-                    <li>• Semantik sorgu genişletme ve analiz</li>
-                    <li>• Paralel işleme ile hızlı sonuçlar</li>
-                    <li>• İçerik boşlukları tespiti</li>
-                    <li>• AI-optimized brief önerileri</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
           </div>
         )}
 
@@ -652,11 +631,11 @@ const SEOAnalyzer: React.FC = () => {
                 <div className="text-center">
                   <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-indigo-600 mx-auto mb-6"></div>
                   <h2 className="text-2xl font-bold text-gray-800 mb-4">
-                    🚀 Query Fan-Out ile Gelişmiş Analiz
+                    🚀 Gelişmiş Analiz
                   </h2>
                   <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
-                    AI modelimiz Query Fan-Out tekniği ile rakip analizinizi yapıyor ve size özel içerik stratejinizi hazırlıyor. 
-                    Semantik sorgu genişletme, paralel işleme ve içerik boşlukları analizi dahil.
+                    AI modelimiz rakip analizinizi yapıyor ve size özel içerik stratejinizi hazırlıyor. 
+                    Gelişmiş analiz teknikleri ile kapsamlı brief oluşturuyor.
                   </p>
                   
                   <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
@@ -672,7 +651,7 @@ const SEOAnalyzer: React.FC = () => {
                       <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-4">
                         <Zap className="w-6 h-6 text-green-600" />
                       </div>
-                      <h3 className="font-semibold text-gray-800 mb-2">Query Fan-Out</h3>
+                      <h3 className="font-semibold text-gray-800 mb-2">AI Optimizasyonu</h3>
                       <p className="text-sm text-gray-600">Semantik sorgu genişletme ve paralel analiz yapıyoruz</p>
                     </div>
                     
@@ -705,9 +684,9 @@ const SEOAnalyzer: React.FC = () => {
                         <Zap className="h-6 w-6 text-green-600" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold text-green-900">Query Fan-Out Enhanced Analysis</h3>
+                        <h3 className="text-lg font-semibold text-green-900">AI Enhanced Analysis</h3>
                         <p className="text-green-700 text-sm">
-                          Bu analiz Query Fan-Out tekniği ile zenginleştirilmiştir. 
+                          Bu analiz gelişmiş AI teknikleri ile zenginleştirilmiştir. 
                           {result.qfoInsights?.semanticQueries?.length || 0} semantik sorgu analiz edildi ve 
                           {result.qfoInsights?.contentGaps?.length || 0} içerik boşluğu tespit edildi.
                         </p>
