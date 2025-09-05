@@ -1,6 +1,21 @@
 import { CompetitorSelection } from '../types/serp';
 import { geminiAIService } from './geminiAI';
 import { dataForSEOService } from './dataForSEO';
+import { semanticExpander } from './semanticExpander';
+import { parallelProcessor } from './parallelProcessor';
+import { cacheService } from './cacheService';
+import { 
+  FanOutRequest, 
+  FanOutResult, 
+  SemanticContext, 
+  RefinedQuery, 
+  SemanticContentGap, 
+  BriefRecommendation, 
+  ProcessingMetadata,
+  QueryResult,
+  BriefQueryResult,
+  BriefOpportunity
+} from '../types/queryFanout';
 
 export interface QueryFanoutResult {
   primaryQuery: string;
@@ -23,6 +38,89 @@ export interface QueryExpansion {
 export class QueryFanoutService {
   private maxParallelQueries = 5;
   private queryTimeout = 30000; // 30 seconds
+  private semanticExpander = semanticExpander;
+  private parallelProcessor = parallelProcessor;
+  private cacheService = cacheService;
+
+  /**
+   * Enhanced Query Fan-out method for Brief AI integration
+   */
+  async executeBriefFanOut(request: FanOutRequest): Promise<FanOutResult> {
+    const startTime = Date.now();
+    const cacheKey = this.cacheService.generateCacheKey('brief_fanout', {
+      content: request.mainContent.substring(0, 100),
+      audience: request.targetAudience,
+      type: request.contentType,
+      analysis: request.analysisType
+    });
+
+    // Check cache first
+    const cached = await this.cacheService.getCachedResult(cacheKey);
+    if (cached) {
+      return cached.data;
+    }
+
+    try {
+      // Step 1: Analyze semantic context
+      const semanticContext = await this.semanticExpander.analyzeSemanticContext(
+        request.mainContent,
+        request.mainContent
+      );
+
+      // Step 2: Generate semantic queries
+      const semanticQueries = await this.semanticExpander.generateSemanticQueries(semanticContext);
+
+      // Step 3: Execute parallel processing
+      const parallelResults = await this.parallelProcessor.executeParallelBriefAnalysis(semanticQueries);
+
+      // Step 4: Process brief-specific queries
+      const briefResults = await this.parallelProcessor.processBriefQueries(semanticQueries);
+
+      // Step 5: Synthesize opportunities
+      const opportunities = await this.parallelProcessor.synthesizeBriefOpportunities(briefResults);
+
+      // Step 6: Identify content gaps
+      const contentGaps = await this.semanticExpander.identifyContentGaps(
+        request.mainContent,
+        semanticQueries
+      );
+
+      // Step 7: Generate brief recommendations
+      const briefRecommendations = this.generateBriefRecommendations(opportunities, semanticContext);
+
+      // Step 8: Enhance content
+      const enhancedContent = await this.enhanceContentWithFanOut(
+        request.mainContent,
+        semanticQueries,
+        opportunities
+      );
+
+      const result: FanOutResult = {
+        enhancedContent,
+        semanticQueries,
+        contentGaps,
+        briefRecommendations,
+        metadata: {
+          startTime,
+          endTime: Date.now(),
+          totalQueries: semanticQueries.length,
+          successfulQueries: parallelResults.filter(r => r.success).length,
+          failedQueries: parallelResults.filter(r => !r.success).length,
+          cacheHits: 0,
+          apiCalls: parallelResults.length,
+          processingTime: Date.now() - startTime
+        }
+      };
+
+      // Cache the result
+      await this.cacheService.setCachedResult(cacheKey, result);
+
+      return result;
+    } catch (error) {
+      console.error('Brief Fan-Out execution failed:', error);
+      return this.getFallbackFanOutResult(request, startTime);
+    }
+  }
 
   /**
    * Main Query Fan-out method that expands a single query into multiple related queries
@@ -522,6 +620,120 @@ export class QueryFanoutService {
       recommendedStrategy: 'Focus on comprehensive content creation',
       competitiveAdvantages: ['Türkiye odaklı içerik', 'Güncel bilgiler']
     };
+  }
+
+  // New methods for Brief AI integration
+
+  /**
+   * Generates brief recommendations based on opportunities and context
+   */
+  private generateBriefRecommendations(
+    opportunities: BriefOpportunity[],
+    context: SemanticContext
+  ): BriefRecommendation[] {
+    const recommendations: BriefRecommendation[] = [];
+    
+    // Group opportunities by brief type
+    const groupedOpportunities = opportunities.reduce((acc, opp) => {
+      if (!acc[opp.briefType]) {
+        acc[opp.briefType] = [];
+      }
+      acc[opp.briefType].push(opp);
+      return acc;
+    }, {} as Record<string, BriefOpportunity[]>);
+
+    // Generate recommendations for each brief type
+    Object.entries(groupedOpportunities).forEach(([briefType, opps]) => {
+      const topOpportunity = opps.sort((a, b) => b.opportunityScore - a.opportunityScore)[0];
+      
+      if (topOpportunity) {
+        recommendations.push({
+          type: briefType as BriefRecommendation['type'],
+          priority: Math.round(topOpportunity.opportunityScore * 10),
+          title: `Enhanced ${briefType} brief for ${topOpportunity.query}`,
+          description: topOpportunity.recommendedAction,
+          keyPoints: [
+            `Focus on ${topOpportunity.query}`,
+            `Target ${context.context.audience} audience`,
+            `Maintain ${context.context.tone} tone`
+          ],
+          estimatedEffort: this.estimateEffort(topOpportunity.opportunityScore)
+        });
+      }
+    });
+
+    return recommendations.sort((a, b) => b.priority - a.priority);
+  }
+
+  /**
+   * Enhances content using Query Fan-Out insights
+   */
+  private async enhanceContentWithFanOut(
+    originalContent: string,
+    queries: RefinedQuery[],
+    opportunities: BriefOpportunity[]
+  ): Promise<string> {
+    try {
+      // Use Gemini AI to enhance content based on fan-out insights
+      const prompt = `Enhance this brief content using Query Fan-Out analysis:
+
+Original Content: ${originalContent}
+
+Query Fan-Out Insights:
+- Semantic Queries: ${queries.map(q => q.query).join(', ')}
+- Top Opportunities: ${opportunities.slice(0, 3).map(o => o.query).join(', ')}
+- Content Gaps: ${queries.filter(q => q.semanticRelevance > 0.7).map(q => q.query).join(', ')}
+
+Please enhance the content to:
+1. Address identified content gaps
+2. Incorporate semantic query insights
+3. Improve clarity and completeness
+4. Maintain professional tone
+
+Return the enhanced content directly without additional formatting.`;
+
+      const response = await geminiAIService.generateContentStrategy(
+        originalContent,
+        [],
+        { contentEnhancement: true }
+      );
+
+      return response.topic || originalContent;
+    } catch (error) {
+      console.warn('Content enhancement failed, returning original:', error);
+      return originalContent;
+    }
+  }
+
+  /**
+   * Provides fallback result for Brief Fan-Out
+   */
+  private getFallbackFanOutResult(request: FanOutRequest, startTime: number): FanOutResult {
+    return {
+      enhancedContent: request.mainContent,
+      semanticQueries: [],
+      contentGaps: [],
+      briefRecommendations: [],
+      metadata: {
+        startTime,
+        endTime: Date.now(),
+        totalQueries: 0,
+        successfulQueries: 0,
+        failedQueries: 0,
+        cacheHits: 0,
+        apiCalls: 0,
+        processingTime: Date.now() - startTime
+      }
+    };
+  }
+
+  /**
+   * Estimates effort required for brief recommendation
+   */
+  private estimateEffort(opportunityScore: number): string {
+    if (opportunityScore > 0.8) return 'High effort (2-3 days)';
+    if (opportunityScore > 0.6) return 'Medium effort (1-2 days)';
+    return 'Low effort (few hours)';
   }
 }
 

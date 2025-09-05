@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { Search, Target, Users, TrendingUp, FileText, CheckCircle, Lightbulb, BarChart3, ArrowRight, Share2, Copy, ExternalLink, Zap } from 'lucide-react';
 import CompetitorSelector from './CompetitorSelector';
 import QueryFanoutAnalyzer from './QueryFanoutAnalyzer';
+import QueryFanOutPanel from './QueryFanOutPanel';
 import { CompetitorSelection } from '../types/serp';
 import { geminiAIService } from '../services/geminiAI';
 import { firebaseService } from '../services/firebase';
 import { QueryFanoutResult } from '../services/queryFanout';
+import { FanOutResult, BriefRecommendation } from '../types/queryFanout';
 
 interface AnalysisResult {
   topic: string;
@@ -69,6 +71,9 @@ const SEOAnalyzer: React.FC = () => {
   const [selectedCompetitors, setSelectedCompetitors] = useState<CompetitorSelection[]>([]);
   const [competitorAnalysis, setCompetitorAnalysis] = useState<any>(null);
   const [queryFanoutResult, setQueryFanoutResult] = useState<QueryFanoutResult | null>(null);
+  const [enhancedFanOutResult, setEnhancedFanOutResult] = useState<FanOutResult | null>(null);
+  const [briefRecommendations, setBriefRecommendations] = useState<BriefRecommendation[]>([]);
+  const [enhancedContent, setEnhancedContent] = useState<string>('');
   const [isSharing, setIsSharing] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -182,6 +187,38 @@ const SEOAnalyzer: React.FC = () => {
       console.error('Gemini AI analysis failed:', error);
       setIsAnalyzing(false);
       // Could show an error message to the user here
+    }
+  };
+
+  /**
+   * Enhanced final analysis with Query Fan-Out enhanced content
+   */
+  const generateFinalAnalysisWithEnhancedContent = async (competitorData?: any, enhancedContent?: string) => {
+    setCurrentStep('results');
+    setIsAnalyzing(true);
+    
+    try {
+      console.log('🚀 Starting enhanced analysis with Query Fan-Out enhanced content...');
+      
+      // Use enhanced content for analysis
+      const analysisResult = await geminiAIService.generateContentStrategy(
+        enhancedContent || topic,
+        selectedCompetitors,
+        {
+          ...competitorData,
+          enhancedContent: enhancedContent,
+          queryFanOutEnhanced: true
+        }
+      );
+      
+      setResult(analysisResult);
+      console.log('✅ Enhanced analysis completed successfully');
+    } catch (error) {
+      console.error('❌ Enhanced analysis failed:', error);
+      // Fallback to regular analysis
+      generateFinalAnalysis(competitorData);
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -507,16 +544,34 @@ const SEOAnalyzer: React.FC = () => {
               </button>
             </div>
 
-            {/* Query Fan-out Analyzer */}
-            <QueryFanoutAnalyzer
-              topic={topic}
-              competitors={selectedCompetitors}
-              onAnalysisComplete={(fanoutResult) => {
-                setQueryFanoutResult(fanoutResult);
-                // Proceed to final analysis with QFO data
-                generateFinalAnalysisWithQFO(competitorAnalysis, fanoutResult);
+            {/* Enhanced Query Fan-out Panel */}
+            <QueryFanOutPanel
+              content={topic}
+              targetAudience="general"
+              contentType="brief"
+              onEnhancedContent={(content) => {
+                setEnhancedContent(content);
+                // Proceed to final analysis with enhanced content
+                generateFinalAnalysisWithEnhancedContent(competitorAnalysis, content);
+              }}
+              onRecommendations={(recommendations) => {
+                setBriefRecommendations(recommendations);
               }}
             />
+
+            {/* Legacy Query Fan-out Analyzer (for backward compatibility) */}
+            <div className="mt-8">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Legacy Query Fan-out Analysis</h3>
+              <QueryFanoutAnalyzer
+                topic={topic}
+                competitors={selectedCompetitors}
+                onAnalysisComplete={(fanoutResult) => {
+                  setQueryFanoutResult(fanoutResult);
+                  // Proceed to final analysis with QFO data
+                  generateFinalAnalysisWithQFO(competitorAnalysis, fanoutResult);
+                }}
+              />
+            </div>
           </div>
         )}
 
