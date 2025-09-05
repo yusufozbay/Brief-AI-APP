@@ -167,6 +167,7 @@ class GeminiAIService {
 - Tespit edilen içerik boşluklarını kapatacak içerik planı oluştur
 - Rekabet avantajlarını vurgulayan benzersiz değer teklifi geliştir
 - Sorgu tipi performansına göre içerik yaklaşımını belirle
+- QFO verilerini kullanarak daha kapsamlı ve etkili brief oluştur
 ` : '';
 
     return `
