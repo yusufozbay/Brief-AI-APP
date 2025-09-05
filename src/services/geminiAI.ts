@@ -42,7 +42,16 @@ interface GeminiAnalysisResult {
 
 class GeminiAIService {
   private genAI: GoogleGenerativeAI | null = null;
-  private model: any = null;
+  private models: { [key: string]: any } = {};
+  private currentModelIndex: number = 0;
+  private modelOrder: string[] = [
+    'gemini-2.5-pro',
+    'gemini-2.5-flash', 
+    'gemini-2.0-pro',
+    'gemini-2.0-flash',
+    'gemini-1.5-pro',
+    'gemini-1.5-flash'
+  ];
 
   constructor() {
     // Initialize with environment variable or allow manual setting
@@ -57,14 +66,71 @@ class GeminiAIService {
       console.log('🔧 Initializing Gemini AI with key length:', apiKey?.length || 0);
       console.log('🔧 API Key starts with:', apiKey?.substring(0, 10) + '...');
       this.genAI = new GoogleGenerativeAI(apiKey);
-      this.model = this.genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
-      console.log('✅ Gemini AI initialized successfully with model: gemini-2.0-flash-exp (latest available)');
-      console.log('✅ Model object created:', !!this.model);
+      
+      // Initialize all models for fallback
+      this.modelOrder.forEach(modelName => {
+        try {
+          this.models[modelName] = this.genAI!.getGenerativeModel({ model: modelName });
+          console.log(`✅ Model ${modelName} initialized successfully`);
+        } catch (error) {
+          console.warn(`⚠️ Failed to initialize model ${modelName}:`, error);
+          this.models[modelName] = null;
+        }
+      });
+      
+      console.log('✅ Gemini AI initialized with fallback models');
+      console.log('✅ Available models:', Object.keys(this.models).filter(key => this.models[key] !== null));
     } catch (error) {
       console.error('❌ Gemini AI initialization error:', error);
-      this.model = null;
+      this.models = {};
       this.genAI = null;
     }
+  }
+
+  private getCurrentModel() {
+    const availableModels = this.modelOrder.filter(model => this.models[model] !== null);
+    if (availableModels.length === 0) {
+      throw new Error('No Gemini models available');
+    }
+    
+    const currentModel = availableModels[this.currentModelIndex % availableModels.length];
+    console.log(`🔄 Using model: ${currentModel} (index: ${this.currentModelIndex})`);
+    return this.models[currentModel];
+  }
+
+  private async tryWithFallback<T>(operation: (model: any) => Promise<T>): Promise<T> {
+    const maxRetries = this.modelOrder.length;
+    let lastError: Error | null = null;
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const model = this.getCurrentModel();
+        const result = await operation(model);
+        console.log(`✅ Operation successful with model at index ${this.currentModelIndex}`);
+        return result;
+      } catch (error: any) {
+        lastError = error;
+        console.warn(`⚠️ Attempt ${attempt + 1} failed with model at index ${this.currentModelIndex}:`, error.message);
+        
+        // Check if it's a quota error
+        if (error.message?.includes('quota') || error.message?.includes('429')) {
+          console.log(`🔄 Quota exceeded, switching to next model...`);
+          this.currentModelIndex = (this.currentModelIndex + 1) % this.modelOrder.length;
+          
+          // Add delay for quota reset
+          if (attempt < maxRetries - 1) {
+            const delay = Math.min(1000 * Math.pow(2, attempt), 10000); // Exponential backoff, max 10s
+            console.log(`⏳ Waiting ${delay}ms before trying next model...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
+        } else {
+          // For non-quota errors, try next model immediately
+          this.currentModelIndex = (this.currentModelIndex + 1) % this.modelOrder.length;
+        }
+      }
+    }
+
+    throw new Error(`All Gemini models failed. Last error: ${lastError?.message || 'Unknown error'}`);
   }
 
   async generateContentStrategy(
@@ -73,46 +139,36 @@ class GeminiAIService {
     competitorAnalysis?: any
   ): Promise<GeminiAnalysisResult> {
     console.log('=== GEMINI AI GENERATION DEBUG ===');
-    console.log('Model initialized:', !!this.model);
+    console.log('Available models:', Object.keys(this.models).filter(key => this.models[key] !== null));
     console.log('API Key available:', !!import.meta.env.VITE_GEMINI_API_KEY);
     console.log('Topic:', topic);
     console.log('Competitors count:', selectedCompetitors?.length || 0);
     
-    if (!this.model) {
-      console.error('❌ Gemini AI model not initialized! Falling back to static template.');
-      console.log('Attempting to re-initialize...');
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      if (apiKey) {
-        this.initializeAI(apiKey);
-        if (this.model) {
-          console.log('✅ Re-initialization successful, proceeding with AI generation');
-        } else {
-          console.error('❌ Re-initialization failed, using fallback');
-          return this.getFallbackAnalysis(topic, selectedCompetitors, competitorAnalysis);
-        }
-      } else {
-        console.error('❌ No API key available, using fallback');
-        return this.getFallbackAnalysis(topic, selectedCompetitors, competitorAnalysis);
-      }
+    if (Object.keys(this.models).filter(key => this.models[key] !== null).length === 0) {
+      console.error('❌ No Gemini AI models available! Falling back to static template.');
+      return this.getFallbackAnalysis(topic, selectedCompetitors, competitorAnalysis);
     }
     
-    console.log('✅ Using Gemini AI for dynamic content strategy generation');
+    console.log('✅ Using Gemini AI with fallback system for dynamic content strategy generation');
 
     try {
       const prompt = this.buildAnalysisPrompt(topic, selectedCompetitors, competitorAnalysis);
       console.log('📝 Generated prompt length:', prompt.length);
       console.log('📝 Prompt preview:', prompt.substring(0, 300) + '...');
       
-      console.log('🚀 Calling Gemini AI model...');
-      const result = await this.model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
+      console.log('🚀 Calling Gemini AI with fallback system...');
       
-      console.log('📥 Gemini AI response received, length:', text.length);
-      console.log('📥 Raw response preview:', text.substring(0, 500) + '...');
+      const result = await this.tryWithFallback(async (model) => {
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        return response.text();
+      });
+      
+      console.log('📥 Gemini AI response received, length:', result.length);
+      console.log('📥 Raw response preview:', result.substring(0, 500) + '...');
       
       // Parse the JSON response from Gemini (remove markdown code blocks if present)
-      let cleanText = text.trim();
+      let cleanText = result.trim();
       if (cleanText.startsWith('```json')) {
         cleanText = cleanText.replace(/```json\s*/, '').replace(/\s*```$/, '');
       } else if (cleanText.startsWith('```')) {
