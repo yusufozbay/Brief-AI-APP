@@ -16,8 +16,9 @@ VITE_GEMINI_API_KEY=AIzaSyASpxSW2hfE5L39449DcrlfHQwqr211EdU
 VITE_DATAFORSEO_LOGIN=your_dataforseo_login
 VITE_DATAFORSEO_PASSWORD=your_dataforseo_password
 ```
-**Description**: DataForSEO API credentials for competitor analysis and SERP data
+**Description**: DataForSEO API credentials for competitor analysis and SERP data (used by serverless function)
 **Required**: YES - For competitor selection and analysis features
+**Note**: These credentials are securely handled by the serverless function to avoid CORS issues
 
 ### 3. Firebase Configuration (OPTIONAL - for sharing functionality)
 ```
@@ -85,3 +86,10 @@ If competitor selection doesn't work:
 - Verify `VITE_DATAFORSEO_LOGIN` and `VITE_DATAFORSEO_PASSWORD` are correct
 - Check that your DataForSEO account has sufficient credits
 - Ensure the credentials have API access permissions
+- Check browser console for CORS errors (should be resolved with serverless function)
+
+### CORS Errors (RESOLVED)
+If you see CORS errors in the browser console:
+- This has been resolved by implementing a Netlify serverless function
+- The function acts as a proxy between your frontend and DataForSEO API
+- No client-side configuration needed - the serverless function handles authentication securely

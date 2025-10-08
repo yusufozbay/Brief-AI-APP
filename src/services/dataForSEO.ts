@@ -1,31 +1,10 @@
 import axios from 'axios';
 import { DataForSEOResponse, SERPResult, CompetitorSelection } from '../types/serp';
 
-// DataForSEO API configuration
-const DATAFORSEO_API_BASE = 'https://api.dataforseo.com/v3';
-
-interface DataForSEOCredentials {
-  login: string;
-  password: string;
-}
+// Use Netlify serverless function instead of direct API calls to avoid CORS issues
+const DATAFORSEO_PROXY_URL = '/.netlify/functions/dataforseo-proxy';
 
 class DataForSEOService {
-  private credentials: DataForSEOCredentials = {
-    login: 'yusuf@admonato.com',
-    password: 'ea73b2041365858f'
-  };
-
-  setCredentials(login: string, password: string) {
-    this.credentials = { login, password };
-  }
-
-  private getAuthHeaders() {
-    const auth = btoa(`${this.credentials.login}:${this.credentials.password}`);
-    return {
-      'Authorization': `Basic ${auth}`,
-      'Content-Type': 'application/json'
-    };
-  }
 
   async fetchSERPResults(keyword: string, location: string = 'Turkey', language: string = 'tr'): Promise<CompetitorSelection[]> {
     try {
@@ -38,9 +17,13 @@ class DataForSEOService {
       }];
 
       const response = await axios.post<DataForSEOResponse>(
-        `${DATAFORSEO_API_BASE}/serp/google/organic/live/advanced`,
+        DATAFORSEO_PROXY_URL,
         requestData,
-        { headers: this.getAuthHeaders() }
+        { 
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
       );
 
       if (response.data.status_code === 20000 && response.data.tasks.length > 0) {
