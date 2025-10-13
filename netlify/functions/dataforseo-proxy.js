@@ -1,5 +1,3 @@
-const fetch = require('node-fetch');
-
 exports.handler = async (event, context) => {
   // Handle CORS preflight requests
   if (event.httpMethod === 'OPTIONS') {
@@ -48,7 +46,7 @@ exports.handler = async (event, context) => {
     // Create authorization header
     const auth = Buffer.from(`${login}:${password}`).toString('base64');
 
-    // Make request to DataForSEO API
+    // Make request to DataForSEO API using native fetch (available in Node.js 18+)
     const response = await fetch('https://api.dataforseo.com/v3/serp/google/organic/live/advanced', {
       method: 'POST',
       headers: {
@@ -57,6 +55,28 @@ exports.handler = async (event, context) => {
       },
       body: JSON.stringify(requestData),
     });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('DataForSEO API Error:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText
+      });
+      
+      return {
+        statusCode: response.status,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          error: 'DataForSEO API error',
+          status: response.status,
+          details: errorText
+        }),
+      };
+    }
 
     const data = await response.json();
 
@@ -72,14 +92,23 @@ exports.handler = async (event, context) => {
   } catch (error) {
     console.error('DataForSEO Proxy Error:', error);
     
+    // Provide more detailed error information for debugging
+    const errorDetails = {
+      message: error.message,
+      name: error.name,
+      stack: error.stack,
+      hasCredentials: !!(process.env.VITE_DATAFORSEO_LOGIN && process.env.VITE_DATAFORSEO_PASSWORD)
+    };
+    
     return {
       statusCode: 500,
       headers: {
         'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({ 
         error: 'Internal server error',
-        details: error.message 
+        details: errorDetails
       }),
     };
   }
