@@ -42,6 +42,7 @@ interface GeminiAnalysisResult {
 
 class GeminiAIService {
   private genAI: GoogleGenerativeAI | null = null;
+  private isGenerating: boolean = false;
   private models: { [key: string]: any } = {};
   private currentModelIndex: number = 0;
   private modelOrder: string[] = [
@@ -138,6 +139,15 @@ class GeminiAIService {
     selectedCompetitors: CompetitorSelection[],
     competitorAnalysis?: any
   ): Promise<GeminiAnalysisResult> {
+    
+    // Prevent multiple simultaneous calls
+    if (this.isGenerating) {
+      console.log('⚠️ Generation already in progress, skipping duplicate call');
+      return this.getFallbackAnalysis(topic, selectedCompetitors, competitorAnalysis);
+    }
+    
+    this.isGenerating = true;
+    
     console.log('=== GEMINI AI GENERATION DEBUG ===');
     console.log('Available models:', Object.keys(this.models).filter(key => this.models[key] !== null));
     console.log('API Key available:', !!import.meta.env.VITE_GEMINI_API_KEY);
@@ -146,6 +156,7 @@ class GeminiAIService {
     
     if (Object.keys(this.models).filter(key => this.models[key] !== null).length === 0) {
       console.error('❌ No Gemini AI models available! Falling back to static template.');
+      this.isGenerating = false;
       return this.getFallbackAnalysis(topic, selectedCompetitors, competitorAnalysis);
     }
     
@@ -193,6 +204,8 @@ class GeminiAIService {
       console.error('❌ Error details:', error instanceof Error ? error.message : String(error));
       console.log('🔄 Falling back to static template due to error');
       return this.getFallbackAnalysis(topic, selectedCompetitors, competitorAnalysis);
+    } finally {
+      this.isGenerating = false;
     }
   }
 
@@ -402,7 +415,7 @@ Lütfen aşağıdaki JSON formatında QFO verilerine dayalı en üst düzeyde bi
         `${topic} 2024`,
         `${topic} rehberi`,
         `${topic} ipuçları`
-      ]).map(keyword => {
+      ]).map((keyword: string) => {
         // Fix common Turkish typos
         return keyword
           .replace('gezilece', 'gezilecek')

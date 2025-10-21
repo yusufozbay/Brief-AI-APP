@@ -422,31 +422,46 @@ const SEOAnalyzer: React.FC = () => {
     
     setIsSharing(true);
     try {
-      const briefId = await firebaseService.shareBrief({
+      // Validate that we have essential data before sharing
+      if (!result.topic || !result.primaryKeyword) {
+        alert('Brief eksik veriler içeriyor. Lütfen analizi tamamlayın.');
+        return;
+      }
+      
+      console.log('📤 Preparing brief for sharing...', {
         topic: result.topic,
-        userIntent: result.userIntent,
-        competitorTone: result.competitorTone,
-        uniqueValue: result.uniqueValue,
-        competitorAnalysisSummary: result.competitorAnalysisSummary,
-        competitorStrengths: result.competitorStrengths,
-        contentGaps: result.contentGaps,
-        dominantTone: result.dominantTone,
-        primaryKeyword: result.primaryKeyword,
-        secondaryKeywords: result.secondaryKeywords,
-        titleSuggestions: result.titleSuggestions,
-        metaDescription: result.metaDescription,
-        contentOutline: result.contentOutline,
-        faqSection: result.faqSection,
-        schemaStrategy: result.schemaStrategy,
-        qualityChecklist: result.qualityChecklist,
-        competitorAnalysis: result.competitorAnalysis
+        hasKeywords: !!result.secondaryKeywords?.length,
+        hasOutline: !!result.contentOutline?.length,
+        hasFAQ: !!result.faqSection?.length
+      });
+      
+      const briefId = await firebaseService.shareBrief({
+        topic: result.topic || 'Untitled Brief',
+        userIntent: result.userIntent || '',
+        competitorTone: result.competitorTone || '',
+        uniqueValue: result.uniqueValue || '',
+        competitorAnalysisSummary: result.competitorAnalysisSummary || '',
+        competitorStrengths: result.competitorStrengths || [],
+        contentGaps: result.contentGaps || [],
+        dominantTone: result.dominantTone || '',
+        primaryKeyword: result.primaryKeyword || '',
+        secondaryKeywords: result.secondaryKeywords || [],
+        titleSuggestions: result.titleSuggestions || { clickFocused: '', seoFocused: '' },
+        metaDescription: result.metaDescription || '',
+        contentOutline: result.contentOutline || [],
+        faqSection: result.faqSection || [],
+        schemaStrategy: result.schemaStrategy || { mainSchema: '', supportingSchemas: [], reasoning: '' },
+        qualityChecklist: result.qualityChecklist || [],
+        competitorAnalysis: result.competitorAnalysis || null
       });
       
       const url = `${window.location.origin}/share/${briefId}`;
       setShareUrl(url);
       setShowShareModal(true);
+      console.log('✅ Brief shared successfully:', url);
     } catch (error) {
-      console.error('Error sharing brief:', error);
+      console.error('❌ Error sharing brief:', error);
+      console.error('❌ Error details:', error instanceof Error ? error.message : String(error));
       alert('Paylaşım sırasında bir hata oluştu. Lütfen tekrar deneyin.');
     } finally {
       setIsSharing(false);

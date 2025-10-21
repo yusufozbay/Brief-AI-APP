@@ -13,7 +13,9 @@ class DataForSEOService {
         location_code: 2792, // Turkey location code
         language_code: language,
         device: 'mobile',
-        os: 'android'
+        os: 'android',
+        depth: 10, // Limit to 10 results to avoid Google's num=100 removal issue
+        max_crawl_pages: 1 // Only crawl first page
       }];
 
       const response = await axios.post<DataForSEOResponse>(
