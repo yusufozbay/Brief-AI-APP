@@ -3,6 +3,13 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
+    // Token usage collection (existing structure)
+    match /tokenUsage/{codeId} {
+      allow read: if true; // Allow reading for validation
+      allow update: if true; // Allow updating token usage
+      allow create, delete: if false; // Only admin can create/delete
+    }
+    
     // Referral codes collection - admin only
     match /referral-codes/{codeId} {
       allow read: if true; // Allow reading for validation

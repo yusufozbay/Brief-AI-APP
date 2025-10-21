@@ -132,7 +132,6 @@ const ReferralCodeInput: React.FC<ReferralCodeInputProps> = ({
       <div className="mt-4 text-sm text-gray-500">
         <p>• Referans kodunuzu yukarıdaki alana girin</p>
         <p>• Kod doğrulandıktan sonra brief oluşturmaya başlayabilirsiniz</p>
-        <p>• Her brief oluşturma 1 kredi kullanır</p>
       </div>
     </div>
   );

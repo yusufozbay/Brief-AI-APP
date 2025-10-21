@@ -113,21 +113,47 @@ class ReferralService {
    */
   async validateReferralCode(code: string): Promise<ReferralCode | null> {
     try {
-      const docRef = doc(db, 'referral-codes', code);
-      const docSnap = await getDoc(docRef);
+      // Try both collections: tokenUsage (existing) and referral-codes (new)
+      let docRef = doc(db, 'tokenUsage', code);
+      let docSnap = await getDoc(docRef);
+      
+      if (!docSnap.exists()) {
+        // Try referral-codes collection as fallback
+        docRef = doc(db, 'referral-codes', code);
+        docSnap = await getDoc(docRef);
+      }
       
       if (!docSnap.exists()) {
         return null;
       }
 
       const data = docSnap.data();
-      return {
-        id: docSnap.id,
-        ...data,
-        createdAt: data.createdAt?.toDate() || new Date(),
-        updatedAt: data.updatedAt?.toDate() || new Date(),
-        lastUsedAt: data.lastUsedAt?.toDate()
-      } as ReferralCode;
+      
+      // Handle both data structures
+      if (data.tokenLimit !== undefined) {
+        // Existing tokenUsage structure
+        return {
+          id: docSnap.id,
+          code: docSnap.id,
+          clientName: 'Client',
+          clientEmail: 'client@example.com',
+          creditLimit: data.tokenLimit || 1000000,
+          creditsUsed: data.totalTokens || 0,
+          creditsRemaining: (data.tokenLimit || 1000000) - (data.totalTokens || 0),
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        } as ReferralCode;
+      } else {
+        // New referral-codes structure
+        return {
+          id: docSnap.id,
+          ...data,
+          createdAt: data.createdAt?.toDate() || new Date(),
+          updatedAt: data.updatedAt?.toDate() || new Date(),
+          lastUsedAt: data.lastUsedAt?.toDate()
+        } as ReferralCode;
+      }
     } catch (error) {
       console.error('❌ Error validating referral code:', error);
       return null;
@@ -166,16 +192,28 @@ class ReferralService {
         return false;
       }
 
-      const docRef = doc(db, 'referral-codes', code);
-      await updateDoc(docRef, {
-        creditsUsed: increment(creditsUsed),
-        creditsRemaining: increment(-creditsUsed),
-        lastUsedAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
-
-      console.log('✅ Credits used for referral code:', code);
-      return true;
+      // Try to update in tokenUsage collection first (existing structure)
+      try {
+        const tokenDocRef = doc(db, 'tokenUsage', code);
+        await updateDoc(tokenDocRef, {
+          totalTokens: increment(creditsUsed)
+        });
+        console.log('✅ Credits used in tokenUsage for referral code:', code);
+        return true;
+      } catch (tokenError) {
+        console.log('TokenUsage update failed, trying referral-codes collection...');
+        
+        // Fallback to referral-codes collection
+        const docRef = doc(db, 'referral-codes', code);
+        await updateDoc(docRef, {
+          creditsUsed: increment(creditsUsed),
+          creditsRemaining: increment(-creditsUsed),
+          lastUsedAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+        console.log('✅ Credits used in referral-codes for referral code:', code);
+        return true;
+      }
     } catch (error) {
       console.error('❌ Error using credits:', error);
       return false;
