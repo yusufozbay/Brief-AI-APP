@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Search, Target, Users, TrendingUp, FileText, CheckCircle, Lightbulb, BarChart3, ArrowRight, Share2, Copy, ExternalLink, Zap } from 'lucide-react';
 import CompetitorSelector from './CompetitorSelector';
+import ReferralCodeInput from './ReferralCodeInput';
 import { CompetitorSelection } from '../types/serp';
 import { geminiAIService } from '../services/geminiAI';
 import { firebaseService } from '../services/firebase';
+import { referralService } from '../services/referralService';
 import { QueryFanoutResult } from '../services/queryFanout';
 import { queryFanoutService } from '../services/queryFanout';
 import { FanOutResult, BriefRecommendation } from '../types/queryFanout';
@@ -82,10 +84,24 @@ const SEOAnalyzer: React.FC = () => {
   const [isSharing, setIsSharing] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
+  
+  // Referral code state
+  const [referralCode, setReferralCode] = useState<string | null>(null);
+  const [isCodeValidated, setIsCodeValidated] = useState(false);
 
   const proceedToCompetitorSelection = () => {
-    if (!topic.trim()) return;
+    if (!topic.trim() || !isCodeValidated) return;
     setCurrentStep('competitors');
+  };
+
+  const handleReferralCodeValidated = (code: string, credits: number) => {
+    setReferralCode(code);
+    setIsCodeValidated(true);
+  };
+
+  const handleReferralCodeInvalid = () => {
+    setIsCodeValidated(false);
+    setReferralCode(null);
   };
 
 
@@ -102,26 +118,32 @@ const SEOAnalyzer: React.FC = () => {
     setResult(null);
   };
 
-  const goBackToQueryFanout = () => {
-    setCurrentStep('qfo');
-    setResult(null);
-  };
-
   const handleCompetitorsSelected = (competitors: CompetitorSelection[]) => {
     setSelectedCompetitors(competitors);
     // No automatic analysis - user must manually start
   };
 
-  const handleAnalysisComplete = (analysisData: any) => {
-    setCompetitorAnalysis(analysisData);
-    // No automatic analysis - user must manually start
-  };
-
     const generateFinalAnalysis = async (competitorData?: any) => {
+    if (!referralCode) {
+      alert('Referans kodu gerekli!');
+      return;
+    }
+
     setCurrentStep('results');
     setIsAnalyzing(true);
     
     try {
+      // Use credits for the analysis
+      const creditsUsed = await referralService.useCredits(referralCode, 1);
+      if (!creditsUsed) {
+        alert('Yetersiz kredi! Lütfen referans kodunuzu kontrol edin.');
+        setIsAnalyzing(false);
+        return;
+      }
+
+      // Update remaining credits
+      setRemainingCredits(prev => prev - 1);
+      
       // Use Gemini AI for actual content strategy generation
       const geminiResult = await geminiAIService.generateContentStrategy(
         topic,
@@ -174,6 +196,24 @@ const SEOAnalyzer: React.FC = () => {
       }
       
       setResult(analysisResult);
+      
+      // Store the generated brief
+      try {
+        const clientIP = await referralService.getClientIP();
+        await referralService.storeGeneratedBrief(
+          referralCode,
+          topic,
+          analysisResult.primaryKeyword || topic,
+          analysisResult,
+          clientIP,
+          navigator.userAgent
+        );
+        console.log('✅ Brief stored successfully');
+      } catch (error) {
+        console.error('❌ Error storing brief:', error);
+        // Don't fail the analysis if storage fails
+      }
+      
       setIsAnalyzing(false);
     } catch (error) {
       console.error('Gemini AI analysis failed:', error);
@@ -518,6 +558,14 @@ const SEOAnalyzer: React.FC = () => {
           </div>
         </div>
 
+        {/* Referral Code Input */}
+        {currentStep === 'input' && (
+          <ReferralCodeInput 
+            onCodeValidated={handleReferralCodeValidated}
+            onCodeInvalid={handleReferralCodeInvalid}
+          />
+        )}
+
         {/* Step 1: Input Form */}
         {currentStep === 'input' && (
           <div className="bg-white rounded-xl shadow-lg p-8 mb-8">
@@ -552,12 +600,18 @@ const SEOAnalyzer: React.FC = () => {
             
             <button
               onClick={proceedToCompetitorSelection}
-              disabled={!topic.trim()}
+              disabled={!topic.trim() || !isCodeValidated}
               className="mt-6 w-full bg-indigo-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
             >
               <ArrowRight className="w-5 h-5 mr-2" />
               SERP Analizi ve Rakip Seçimine Geç
             </button>
+            
+            {!isCodeValidated && (
+              <p className="text-sm text-red-600 text-center mt-2">
+                Devam etmek için geçerli bir referans kodu girmelisiniz
+              </p>
+            )}
           </div>
         )}
 

@@ -65,7 +65,10 @@ class GeminiAIService {
   initializeAI(apiKey: string) {
     try {
       console.log('🔧 Initializing Gemini AI with key length:', apiKey?.length || 0);
-      console.log('🔧 API Key starts with:', apiKey?.substring(0, 10) + '...');
+      // SECURITY: Don't log API key parts in production
+      if (import.meta.env.DEV) {
+        console.log('🔧 API Key starts with:', apiKey?.substring(0, 10) + '...');
+      }
       this.genAI = new GoogleGenerativeAI(apiKey);
       
       // Initialize all models for fallback
