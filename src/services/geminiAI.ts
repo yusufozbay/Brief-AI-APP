@@ -212,6 +212,69 @@ class GeminiAIService {
     }
   }
 
+  /**
+   * Determine content type based on keyword analysis
+   */
+  private determineContentType(topic: string): string {
+    const commercialKeywords = [
+      'güneş gözlüğü', 'ayakkabı', 'telefon', 'laptop', 'bilgisayar', 'saat', 'çanta', 'elbise',
+      'tişört', 'pantolon', 'mont', 'ceket', 'ayakkabı', 'terlik', 'spor ayakkabı', 'takı',
+      'yüzük', 'kolye', 'küpe', 'bilezik', 'parfüm', 'kozmetik', 'makyaj', 'krem', 'şampuan',
+      'rayban', 'nike', 'adidas', 'puma', 'converse', 'vans', 'iphone', 'samsung', 'huawei',
+      'macbook', 'dell', 'hp', 'asus', 'lenovo', 'rolex', 'omega', 'cartier', 'tiffany',
+      'chanel', 'dior', 'gucci', 'prada', 'louis vuitton', 'hermes', 'versace', 'armani'
+    ];
+
+    const informationalKeywords = [
+      'nedir', 'nasıl', 'neden', 'ne zaman', 'nerede', 'kim', 'hangi', 'rehber', 'kılavuz',
+      'ipucu', 'tavsiye', 'öneri', 'yöntem', 'teknik', 'strateji', 'pazarlama', 'seo', 'dijital',
+      'yazılım', 'programlama', 'tasarım', 'grafik', 'fotoğraf', 'video', 'müzik', 'sanat',
+      'edebiyat', 'tarih', 'coğrafya', 'bilim', 'teknoloji', 'sağlık', 'beslenme', 'spor',
+      'eğitim', 'öğrenme', 'geliştirme', 'iş', 'kariyer', 'finans', 'ekonomi', 'hukuk'
+    ];
+
+    const topicLower = topic.toLowerCase();
+    
+    // Check for commercial intent
+    const hasCommercialKeyword = commercialKeywords.some(keyword => 
+      topicLower.includes(keyword.toLowerCase())
+    );
+    
+    // Check for informational intent
+    const hasInformationalKeyword = informationalKeywords.some(keyword => 
+      topicLower.includes(keyword.toLowerCase())
+    );
+
+    if (hasCommercialKeyword && !hasInformationalKeyword) {
+      return `
+KATEGORİ/ÜRÜN SAYFASI İÇERİĞİ OLUŞTUR:
+- Bu bir ticari/ürün odaklı anahtar kelime
+- Kategori sayfası veya ürün sayfası içeriği oluştur
+- Ürün özellikleri, fiyat bilgileri, karşılaştırmalar vurgula
+- Satın alma niyetini destekleyen içerik yapısı kullan
+- Ürün kategorileri, filtreler, sıralama seçenekleri dahil et
+- Müşteri yorumları ve değerlendirmeler bölümü ekle
+- Satın alma rehberi ve karşılaştırma tabloları oluştur
+- Schema: Product, Offer, AggregateRating, Review kullan
+- Call-to-action'ları satın alma odaklı yap
+- Fiyat karşılaştırmaları ve kampanya bilgileri ekle
+`;
+    } else {
+      return `
+BLOG MAKALESİ İÇERİĞİ OLUŞTUR:
+- Bu bir bilgilendirici anahtar kelime
+- Blog makalesi veya rehber içeriği oluştur
+- Eğitici ve bilgilendirici içerik yapısı kullan
+- Adım adım rehberler ve nasıl yapılır bölümleri ekle
+- Uzman görüşleri ve deneyimleri vurgula
+- İpuçları, tavsiyeler ve best practice'ler dahil et
+- Schema: Article, HowTo, FAQPage kullan
+- Call-to-action'ları bilgi paylaşımı odaklı yap
+- Kaynak ve referans bilgileri ekle
+`;
+    }
+  }
+
   private buildAnalysisPrompt(
     topic: string,
     selectedCompetitors: CompetitorSelection[],
@@ -245,6 +308,10 @@ class GeminiAIService {
     return `
 Sen 25 yıllık deneyimli bir SEO uzmanı ve içerik stratejistisin. Türkiye pazarı için "${topic}" konusunda QFO (Query Fan-out) analizi verilerini kullanarak en üst düzeyde bir içerik stratejisi oluştur.
 
+ÖNEMLİ: Anahtar kelimeyi analiz et ve içerik türünü belirle:
+- Eğer "${topic}" ticari/ürün odaklı ise (örn: "rayban güneş gözlüğü", "iphone 15", "nike ayakkabı") → KATEGORİ/ÜRÜN SAYFASI içeriği oluştur
+- Eğer "${topic}" bilgilendirici ise (örn: "seo nedir", "dijital pazarlama", "yazılım geliştirme") → BLOG MAKALESİ içeriği oluştur
+
 RAKIP ANALİZİ:
 ${competitorInfo}
 
@@ -258,14 +325,17 @@ DETAYLI RAKİP VERİLERİ:
 
 ${qfoInsightsText}
 
-🎯 QFO VERİLERİNİ KULLANARAK EN İYİ İÇERİK STRATEJİSİ OLUŞTUR:
+🎯 İÇERİK TÜRÜNE GÖRE STRATEJİ BELİRLE:
 
-Bu QFO analizi verilerini kullanarak:
-1. Genişletilmiş sorguları analiz et ve en etkili anahtar kelime kombinasyonlarını belirle
-2. Tespit edilen içerik boşluklarını kapatacak kapsamlı içerik planı geliştir
-3. Sorgu tipi performansına göre en başarılı içerik yaklaşımını belirle
-4. Rekabet avantajlarını maksimize eden benzersiz değer teklifi oluştur
-5. QFO verilerine dayalı veri odaklı içerik stratejisi geliştir
+${this.determineContentType(topic)}
+
+💡 QFO VERİLERİNE DAYALI STRATEJİK ÖNERİLER:
+- Bu QFO analizi verilerini kullanarak en etkili içerik stratejisini geliştir
+- Genişletilmiş sorguları dikkate alarak anahtar kelime stratejisini optimize et
+- Tespit edilen içerik boşluklarını kapatacak içerik planı oluştur
+- Rekabet avantajlarını vurgulayan benzersiz değer teklifi geliştir
+- Sorgu tipi performansına göre içerik yaklaşımını belirle
+- QFO verilerini kullanarak daha kapsamlı ve etkili brief oluştur
 
 Lütfen aşağıdaki JSON formatında QFO verilerine dayalı en üst düzeyde bir içerik stratejisi oluştur:
 

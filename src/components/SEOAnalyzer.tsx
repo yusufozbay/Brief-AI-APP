@@ -527,7 +527,7 @@ const SEOAnalyzer: React.FC = () => {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
             <BarChart3 className="w-12 h-12 text-indigo-600 mr-3" />
-            <h1 className="text-4xl font-bold text-gray-800">Brief AI</h1>
+            <h1 className="text-4xl font-bold text-gray-800">Mosanta Brief AI</h1>
           </div>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Create AI-Driven Content Briefs

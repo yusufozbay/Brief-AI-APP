@@ -89,7 +89,7 @@ const SharedBriefViewer: React.FC = () => {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
             <BarChart3 className="w-8 h-8 text-indigo-600 mr-3" />
-            <h1 className="text-3xl font-bold text-gray-800">Brief AI</h1>
+            <h1 className="text-3xl font-bold text-gray-800">Mosanta Brief AI</h1>
           </div>
           <p className="text-lg text-gray-600">Paylaşılan İçerik Brief'i</p>
         </div>
