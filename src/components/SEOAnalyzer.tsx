@@ -141,8 +141,7 @@ const SEOAnalyzer: React.FC = () => {
         return;
       }
 
-      // Update remaining credits
-      setRemainingCredits(prev => prev - 1);
+      console.log('✅ Credits used successfully for referral code:', referralCode);
       
       // Use Gemini AI for actual content strategy generation
       const geminiResult = await geminiAIService.generateContentStrategy(
@@ -199,8 +198,9 @@ const SEOAnalyzer: React.FC = () => {
       
       // Store the generated brief
       try {
+        console.log('📤 Storing generated brief for referral code:', referralCode);
         const clientIP = await referralService.getClientIP();
-        await referralService.storeGeneratedBrief(
+        const briefId = await referralService.storeGeneratedBrief(
           referralCode,
           topic,
           analysisResult.primaryKeyword || topic,
@@ -208,10 +208,11 @@ const SEOAnalyzer: React.FC = () => {
           clientIP,
           navigator.userAgent
         );
-        console.log('✅ Brief stored successfully');
+        console.log('✅ Brief stored successfully with ID:', briefId);
       } catch (error) {
         console.error('❌ Error storing brief:', error);
-        // Don't fail the analysis if storage fails
+        // Don't fail the analysis if storage fails, but log it
+        alert('Brief oluşturuldu ancak kaydedilemedi. Lütfen tekrar deneyin.');
       }
       
       setIsAnalyzing(false);
@@ -472,7 +473,8 @@ const SEOAnalyzer: React.FC = () => {
         topic: result.topic,
         hasKeywords: !!result.secondaryKeywords?.length,
         hasOutline: !!result.contentOutline?.length,
-        hasFAQ: !!result.faqSection?.length
+        hasFAQ: !!result.faqSection?.length,
+        referralCode: referralCode
       });
       
       const briefId = await firebaseService.shareBrief({

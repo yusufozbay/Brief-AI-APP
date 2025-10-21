@@ -198,21 +198,27 @@ class ReferralService {
         await updateDoc(tokenDocRef, {
           totalTokens: increment(creditsUsed)
         });
-        console.log('✅ Credits used in tokenUsage for referral code:', code);
+        console.log('✅ Credits used in tokenUsage for referral code:', code, 'Credits used:', creditsUsed);
         return true;
       } catch (tokenError) {
-        console.log('TokenUsage update failed, trying referral-codes collection...');
+        console.error('❌ TokenUsage update failed:', tokenError);
+        console.log('Trying referral-codes collection as fallback...');
         
         // Fallback to referral-codes collection
-        const docRef = doc(db, 'referral-codes', code);
-        await updateDoc(docRef, {
-          creditsUsed: increment(creditsUsed),
-          creditsRemaining: increment(-creditsUsed),
-          lastUsedAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        });
-        console.log('✅ Credits used in referral-codes for referral code:', code);
-        return true;
+        try {
+          const docRef = doc(db, 'referral-codes', code);
+          await updateDoc(docRef, {
+            creditsUsed: increment(creditsUsed),
+            creditsRemaining: increment(-creditsUsed),
+            lastUsedAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          });
+          console.log('✅ Credits used in referral-codes for referral code:', code);
+          return true;
+        } catch (refError) {
+          console.error('❌ Both tokenUsage and referral-codes updates failed:', refError);
+          return false;
+        }
       }
     } catch (error) {
       console.error('❌ Error using credits:', error);

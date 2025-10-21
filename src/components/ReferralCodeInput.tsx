@@ -98,9 +98,6 @@ const ReferralCodeInput: React.FC<ReferralCodeInputProps> = ({
           <CheckCircle className="w-5 h-5" />
           <div>
             <p className="font-medium">Kod geçerli!</p>
-            <p className="text-sm">
-              Kalan kredi: <span className="font-semibold">{remainingCredits}</span>
-            </p>
           </div>
         </div>
       )}
