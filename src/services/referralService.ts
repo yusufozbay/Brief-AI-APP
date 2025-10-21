@@ -51,6 +51,22 @@ export interface BriefUsage {
 class ReferralService {
   
   /**
+   * Test Firebase connectivity
+   */
+  async testFirebaseConnection(): Promise<boolean> {
+    try {
+      console.log('🔍 Testing Firebase connection...');
+      const testDocRef = doc(db, 'tokenUsage', 'test');
+      const testDoc = await getDoc(testDocRef);
+      console.log('✅ Firebase connection successful');
+      return true;
+    } catch (error) {
+      console.error('❌ Firebase connection failed:', error);
+      return false;
+    }
+  }
+  
+  /**
    * Generate a unique referral code
    */
   private generateReferralCode(): string {
@@ -186,22 +202,40 @@ class ReferralService {
    */
   async useCredits(code: string, creditsUsed: number = 1): Promise<boolean> {
     try {
+      console.log('🔍 Starting useCredits for code:', code, 'credits:', creditsUsed);
+      
       const referralCode = await this.validateReferralCode(code);
+      console.log('🔍 Validated referral code:', referralCode);
       
       if (!referralCode || !referralCode.isActive || referralCode.creditsRemaining < creditsUsed) {
+        console.log('❌ Referral code validation failed:', {
+          exists: !!referralCode,
+          isActive: referralCode?.isActive,
+          creditsRemaining: referralCode?.creditsRemaining,
+          creditsNeeded: creditsUsed
+        });
         return false;
       }
 
       // Try to update in tokenUsage collection first (existing structure)
       try {
+        console.log('🔍 Attempting to update tokenUsage collection...');
         const tokenDocRef = doc(db, 'tokenUsage', code);
+        console.log('🔍 Document reference created:', tokenDocRef.path);
+        
         await updateDoc(tokenDocRef, {
           totalTokens: increment(creditsUsed)
         });
+        
         console.log('✅ Credits used in tokenUsage for referral code:', code, 'Credits used:', creditsUsed);
         return true;
       } catch (tokenError) {
         console.error('❌ TokenUsage update failed:', tokenError);
+        console.error('❌ TokenError details:', {
+          code: tokenError.code,
+          message: tokenError.message,
+          stack: tokenError.stack
+        });
         console.log('Trying referral-codes collection as fallback...');
         
         // Fallback to referral-codes collection
@@ -353,3 +387,12 @@ class ReferralService {
 }
 
 export const referralService = new ReferralService();
+
+// Test Firebase connection on service initialization
+referralService.testFirebaseConnection().then(success => {
+  if (success) {
+    console.log('✅ ReferralService initialized successfully');
+  } else {
+    console.error('❌ ReferralService initialization failed - Firebase not connected');
+  }
+});

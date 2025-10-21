@@ -13,6 +13,17 @@ const firebaseConfig = {
 // Check if Firebase is properly configured
 if (!firebaseConfig.apiKey || firebaseConfig.apiKey === 'demo-api-key') {
   console.error('❌ Firebase not properly configured! Check environment variables.');
+  console.error('❌ Current config:', {
+    apiKey: firebaseConfig.apiKey ? 'SET' : 'NOT SET',
+    authDomain: firebaseConfig.authDomain ? 'SET' : 'NOT SET',
+    projectId: firebaseConfig.projectId ? 'SET' : 'NOT SET',
+    storageBucket: firebaseConfig.storageBucket ? 'SET' : 'NOT SET',
+    messagingSenderId: firebaseConfig.messagingSenderId ? 'SET' : 'NOT SET',
+    appId: firebaseConfig.appId ? 'SET' : 'NOT SET'
+  });
+} else {
+  console.log('✅ Firebase configuration loaded successfully');
+  console.log('✅ Project ID:', firebaseConfig.projectId);
 }
 
 // Initialize Firebase only if it hasn't been initialized already
