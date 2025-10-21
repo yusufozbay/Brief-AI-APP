@@ -198,21 +198,21 @@ class ReferralService {
   }
 
   /**
-   * Use credits for a brief generation
+   * Use credits for a brief generation with actual token usage
    */
-  async useCredits(code: string, creditsUsed: number = 1): Promise<boolean> {
+  async useCredits(code: string, actualTokenUsage: number): Promise<boolean> {
     try {
-      console.log('🔍 Starting useCredits for code:', code, 'credits:', creditsUsed);
+      console.log('🔍 Starting useCredits for code:', code, 'actual tokens:', actualTokenUsage);
       
       const referralCode = await this.validateReferralCode(code);
       console.log('🔍 Validated referral code:', referralCode);
       
-      if (!referralCode || !referralCode.isActive || referralCode.creditsRemaining < creditsUsed) {
+      if (!referralCode || !referralCode.isActive || referralCode.creditsRemaining < actualTokenUsage) {
         console.log('❌ Referral code validation failed:', {
           exists: !!referralCode,
           isActive: referralCode?.isActive,
           creditsRemaining: referralCode?.creditsRemaining,
-          creditsNeeded: creditsUsed
+          tokensNeeded: actualTokenUsage
         });
         return false;
       }
@@ -224,10 +224,10 @@ class ReferralService {
         console.log('🔍 Document reference created:', tokenDocRef.path);
         
         await updateDoc(tokenDocRef, {
-          totalTokens: increment(creditsUsed)
+          totalTokens: increment(actualTokenUsage)
         });
         
-        console.log('✅ Credits used in tokenUsage for referral code:', code, 'Credits used:', creditsUsed);
+        console.log('✅ Credits used in tokenUsage for referral code:', code, 'Tokens used:', actualTokenUsage);
         return true;
       } catch (tokenError) {
         console.error('❌ TokenUsage update failed:', tokenError);
@@ -242,8 +242,8 @@ class ReferralService {
         try {
           const docRef = doc(db, 'referral-codes', code);
           await updateDoc(docRef, {
-            creditsUsed: increment(creditsUsed),
-            creditsRemaining: increment(-creditsUsed),
+            creditsUsed: increment(actualTokenUsage),
+            creditsRemaining: increment(-actualTokenUsage),
             lastUsedAt: serverTimestamp(),
             updatedAt: serverTimestamp()
           });

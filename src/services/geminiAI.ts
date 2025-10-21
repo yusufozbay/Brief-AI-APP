@@ -38,6 +38,13 @@ interface GeminiAnalysisResult {
     status: boolean;
     note: string;
   }>;
+  tokenUsage?: {
+    promptTokens: number;
+    thinkingTokens: number;
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+  };
 }
 
 class GeminiAIService {
@@ -175,14 +182,22 @@ class GeminiAIService {
       const result = await this.tryWithFallback(async (model) => {
         const result = await model.generateContent(prompt);
         const response = await result.response;
-        return response.text();
+        
+        // Extract token usage information
+        const usageMetadata = result.response.usageMetadata;
+        console.log('📊 Token usage metadata:', usageMetadata);
+        
+        return {
+          text: response.text(),
+          usageMetadata: usageMetadata
+        };
       });
       
-      console.log('📥 Gemini AI response received, length:', result.length);
-      console.log('📥 Raw response preview:', result.substring(0, 500) + '...');
+      console.log('📥 Gemini AI response received, length:', result.text.length);
+      console.log('📥 Raw response preview:', result.text.substring(0, 500) + '...');
       
       // Parse the JSON response from Gemini (remove markdown code blocks if present)
-      let cleanText = result.trim();
+      let cleanText = result.text.trim();
       if (cleanText.startsWith('```json')) {
         cleanText = cleanText.replace(/```json\s*/, '').replace(/\s*```$/, '');
       } else if (cleanText.startsWith('```')) {
@@ -198,9 +213,14 @@ class GeminiAIService {
       console.log('📊 Sample FAQ question:', analysisResult.faqSection?.[0]?.question || 'No FAQ found');
       console.log('📊 Sample FAQ answer length:', analysisResult.faqSection?.[0]?.answer?.length || 0);
       
+      // Calculate token usage
+      const tokenUsage = this.calculateTokenUsage(result.usageMetadata, prompt);
+      console.log('📊 Calculated token usage:', tokenUsage);
+      
       return {
         topic,
-        ...analysisResult
+        ...analysisResult,
+        tokenUsage
       };
     } catch (error) {
       console.error('❌ Gemini AI analysis error:', error);
@@ -209,6 +229,67 @@ class GeminiAIService {
       return this.getFallbackAnalysis(topic, selectedCompetitors, competitorAnalysis);
     } finally {
       this.isGenerating = false;
+    }
+  }
+
+  /**
+   * Calculate token usage from Gemini AI response
+   */
+  private calculateTokenUsage(usageMetadata: any, prompt: string): {
+    promptTokens: number;
+    thinkingTokens: number;
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+  } {
+    try {
+      // Extract token counts from usage metadata
+      const promptTokens = usageMetadata?.promptTokenCount || 0;
+      const candidatesTokenCount = usageMetadata?.candidatesTokenCount || 0;
+      const totalTokenCount = usageMetadata?.totalTokenCount || 0;
+      
+      // Calculate thinking tokens (if available)
+      const thinkingTokens = usageMetadata?.thinkingTokenCount || 0;
+      
+      // Calculate input tokens (prompt + thinking)
+      const inputTokens = promptTokens + thinkingTokens;
+      
+      // Calculate output tokens
+      const outputTokens = candidatesTokenCount;
+      
+      // Total tokens
+      const totalTokens = totalTokenCount || (inputTokens + outputTokens);
+      
+      console.log('📊 Token breakdown:', {
+        promptTokens,
+        thinkingTokens,
+        inputTokens,
+        outputTokens,
+        totalTokens,
+        promptLength: prompt.length
+      });
+      
+      return {
+        promptTokens,
+        thinkingTokens,
+        inputTokens,
+        outputTokens,
+        totalTokens
+      };
+    } catch (error) {
+      console.error('❌ Error calculating token usage:', error);
+      
+      // Fallback calculation based on text length
+      const estimatedPromptTokens = Math.ceil(prompt.length / 4); // Rough estimation
+      const estimatedOutputTokens = 2000; // Estimated output for brief generation
+      
+      return {
+        promptTokens: estimatedPromptTokens,
+        thinkingTokens: 0,
+        inputTokens: estimatedPromptTokens,
+        outputTokens: estimatedOutputTokens,
+        totalTokens: estimatedPromptTokens + estimatedOutputTokens
+      };
     }
   }
 

@@ -133,22 +133,26 @@ const SEOAnalyzer: React.FC = () => {
     setIsAnalyzing(true);
     
     try {
-      // Use credits for the analysis
-      const creditsUsed = await referralService.useCredits(referralCode, 1);
-      if (!creditsUsed) {
-        alert('Yetersiz kredi! Lütfen referans kodunuzu kontrol edin.');
-        setIsAnalyzing(false);
-        return;
-      }
-
-      console.log('✅ Credits used successfully for referral code:', referralCode);
-      
       // Use Gemini AI for actual content strategy generation
       const geminiResult = await geminiAIService.generateContentStrategy(
         topic,
         selectedCompetitors,
         competitorData
       );
+      
+      // Extract actual token usage from Gemini response
+      const actualTokenUsage = geminiResult.tokenUsage?.totalTokens || 1000; // Fallback to 1000 if not available
+      console.log('📊 Actual token usage from Gemini:', actualTokenUsage);
+      
+      // Use credits for the analysis with actual token usage
+      const creditsUsed = await referralService.useCredits(referralCode, actualTokenUsage);
+      if (!creditsUsed) {
+        alert('Yetersiz kredi! Lütfen referans kodunuzu kontrol edin.');
+        setIsAnalyzing(false);
+        return;
+      }
+
+      console.log('✅ Credits used successfully for referral code:', referralCode, 'Tokens:', actualTokenUsage);
       
       // Convert Gemini result to our AnalysisResult format
       const analysisResult: AnalysisResult = {
