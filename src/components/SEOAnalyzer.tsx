@@ -6,9 +6,9 @@ import { CompetitorSelection } from '../types/serp';
 import { geminiAIService } from '../services/geminiAI';
 import { firebaseService } from '../services/firebase';
 import { referralService } from '../services/referralService';
+import { incrementTokenUsageWithComprehensiveDetails, TokenUsage, AnalysisDetails } from '../services/tokenUsageService';
 import { QueryFanoutResult } from '../services/queryFanout';
 import { queryFanoutService } from '../services/queryFanout';
-import { FanOutResult, BriefRecommendation } from '../types/queryFanout';
 
 interface AnalysisResult {
   topic: string;
@@ -94,7 +94,7 @@ const SEOAnalyzer: React.FC = () => {
     setCurrentStep('competitors');
   };
 
-  const handleReferralCodeValidated = (code: string, credits: number) => {
+  const handleReferralCodeValidated = (code: string) => {
     setReferralCode(code);
     setIsCodeValidated(true);
   };
@@ -153,6 +153,34 @@ const SEOAnalyzer: React.FC = () => {
       }
 
       console.log('✅ Credits used successfully for referral code:', referralCode, 'Tokens:', actualTokenUsage);
+      
+      // Track comprehensive token usage in Firebase
+      if (geminiResult.tokenUsage && geminiResult.tokenUsage.totalTokens > 0) {
+        try {
+          const tokenUsage: TokenUsage = {
+            promptTokens: geminiResult.tokenUsage.promptTokens,
+            candidatesTokens: geminiResult.tokenUsage.candidatesTokens,
+            totalTokens: geminiResult.tokenUsage.totalTokens,
+            thoughtsTokens: geminiResult.tokenUsage.thoughtsTokens,
+            cachedTokens: geminiResult.tokenUsage.cachedTokens
+          };
+
+          const analysisDetails: AnalysisDetails = {
+            url: window.location.href,
+            analysisType: 'single',
+            status: 'completed',
+            model: 'gemini-2.5-pro',
+            step: 'comprehensive-analysis'
+          };
+
+          // Use referral code as userId for token tracking
+          await incrementTokenUsageWithComprehensiveDetails(referralCode, tokenUsage, analysisDetails);
+          console.log('✅ Token usage tracked successfully in Firebase');
+        } catch (tokenError) {
+          console.error('❌ Error tracking token usage:', tokenError);
+          // Don't fail the entire analysis if token tracking fails
+        }
+      }
       
       // Convert Gemini result to our AnalysisResult format
       const analysisResult: AnalysisResult = {
@@ -222,8 +250,36 @@ const SEOAnalyzer: React.FC = () => {
       setIsAnalyzing(false);
     } catch (error) {
       console.error('Gemini AI analysis failed:', error);
+      
+      // Track failed analysis in Firebase
+      if (referralCode) {
+        try {
+          const tokenUsage: TokenUsage = {
+            promptTokens: 0,
+            candidatesTokens: 0,
+            totalTokens: 0,
+            thoughtsTokens: 0,
+            cachedTokens: 0
+          };
+
+          const analysisDetails: AnalysisDetails = {
+            url: window.location.href,
+            analysisType: 'single',
+            status: 'failed',
+            error: error instanceof Error ? error.message : String(error),
+            model: 'gemini-2.5-pro',
+            step: 'comprehensive-analysis'
+          };
+
+          await incrementTokenUsageWithComprehensiveDetails(referralCode, tokenUsage, analysisDetails);
+          console.log('✅ Failed analysis tracked in Firebase');
+        } catch (tokenError) {
+          console.error('❌ Error tracking failed analysis:', tokenError);
+        }
+      }
+      
+      alert('Analiz sırasında bir hata oluştu. Lütfen tekrar deneyin.');
       setIsAnalyzing(false);
-      // Could show an error message to the user here
     }
   };
 
@@ -272,6 +328,34 @@ const SEOAnalyzer: React.FC = () => {
         selectedCompetitors,
         enhancedCompetitorData
       );
+      
+      console.log('✅ Main analysis completed, tracking token usage...');
+      
+      // Track token usage for main analysis
+      if (analysisResult.tokenUsage && analysisResult.tokenUsage.totalTokens > 0 && referralCode) {
+        try {
+          const tokenUsage: TokenUsage = {
+            promptTokens: analysisResult.tokenUsage.promptTokens,
+            candidatesTokens: analysisResult.tokenUsage.candidatesTokens,
+            totalTokens: analysisResult.tokenUsage.totalTokens,
+            thoughtsTokens: analysisResult.tokenUsage.thoughtsTokens,
+            cachedTokens: analysisResult.tokenUsage.cachedTokens
+          };
+
+          const analysisDetails: AnalysisDetails = {
+            url: window.location.href,
+            analysisType: 'single',
+            status: 'completed',
+            model: 'gemini-2.5-pro',
+            step: 'enhanced-analysis-with-qfo'
+          };
+
+          await incrementTokenUsageWithComprehensiveDetails(referralCode, tokenUsage, analysisDetails);
+          console.log('✅ Enhanced analysis token usage tracked successfully in Firebase');
+        } catch (tokenError) {
+          console.error('❌ Error tracking enhanced analysis token usage:', tokenError);
+        }
+      }
 
       // Wait for QFO results and enhance the analysis
       const qfoResult = await qfoPromise;
@@ -322,6 +406,34 @@ const SEOAnalyzer: React.FC = () => {
       console.log('✅ Enhanced analysis with QFO completed successfully');
     } catch (error) {
       console.error('❌ Enhanced analysis failed:', error);
+      
+      // Track failed enhanced analysis in Firebase
+      if (referralCode) {
+        try {
+          const tokenUsage: TokenUsage = {
+            promptTokens: 0,
+            candidatesTokens: 0,
+            totalTokens: 0,
+            thoughtsTokens: 0,
+            cachedTokens: 0
+          };
+
+          const analysisDetails: AnalysisDetails = {
+            url: window.location.href,
+            analysisType: 'single',
+            status: 'failed',
+            error: error instanceof Error ? error.message : String(error),
+            model: 'gemini-2.5-pro',
+            step: 'enhanced-analysis-with-qfo'
+          };
+
+          await incrementTokenUsageWithComprehensiveDetails(referralCode, tokenUsage, analysisDetails);
+          console.log('✅ Failed enhanced analysis tracked in Firebase');
+        } catch (tokenError) {
+          console.error('❌ Error tracking failed enhanced analysis:', tokenError);
+        }
+      }
+      
       // Fallback to regular analysis
       generateFinalAnalysis(competitorData);
     } finally {
@@ -332,6 +444,7 @@ const SEOAnalyzer: React.FC = () => {
   /**
    * Legacy QFO integration method (kept for backward compatibility)
    */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const generateFinalAnalysisWithQFO_Legacy = async (competitorData?: any, qfoData?: QueryFanoutResult) => {
     setCurrentStep('results');
     setIsAnalyzing(true);

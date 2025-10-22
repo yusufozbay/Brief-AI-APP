@@ -40,10 +40,10 @@ interface GeminiAnalysisResult {
   }>;
   tokenUsage?: {
     promptTokens: number;
-    thinkingTokens: number;
-    inputTokens: number;
-    outputTokens: number;
+    candidatesTokens: number;
     totalTokens: number;
+    thoughtsTokens?: number;
+    cachedTokens?: number;
   };
 }
 
@@ -237,44 +237,39 @@ class GeminiAIService {
    */
   private calculateTokenUsage(usageMetadata: any, prompt: string): {
     promptTokens: number;
-    thinkingTokens: number;
-    inputTokens: number;
-    outputTokens: number;
+    candidatesTokens: number;
     totalTokens: number;
+    thoughtsTokens?: number;
+    cachedTokens?: number;
   } {
     try {
       // Extract token counts from usage metadata
       const promptTokens = usageMetadata?.promptTokenCount || 0;
-      const candidatesTokenCount = usageMetadata?.candidatesTokenCount || 0;
-      const totalTokenCount = usageMetadata?.totalTokenCount || 0;
+      const candidatesTokens = usageMetadata?.candidatesTokenCount || 0;
+      const totalTokens = usageMetadata?.totalTokenCount || 0;
       
-      // Calculate thinking tokens (if available)
-      const thinkingTokens = usageMetadata?.thinkingTokenCount || 0;
+      // Extract thinking tokens (if available)
+      const thoughtsTokens = usageMetadata?.thinkingTokenCount || 0;
       
-      // Calculate input tokens (prompt + thinking)
-      const inputTokens = promptTokens + thinkingTokens;
-      
-      // Calculate output tokens
-      const outputTokens = candidatesTokenCount;
-      
-      // Total tokens
-      const totalTokens = totalTokenCount || (inputTokens + outputTokens);
+      // Extract cached tokens (if available)
+      const cachedTokens = usageMetadata?.cachedContentTokenCount || 0;
       
       console.log('📊 Token breakdown:', {
         promptTokens,
-        thinkingTokens,
-        inputTokens,
-        outputTokens,
+        candidatesTokens,
         totalTokens,
-        promptLength: prompt.length
+        thoughtsTokens,
+        cachedTokens,
+        promptLength: prompt.length,
+        usageMetadata: usageMetadata
       });
       
       return {
         promptTokens,
-        thinkingTokens,
-        inputTokens,
-        outputTokens,
-        totalTokens
+        candidatesTokens,
+        totalTokens: totalTokens || (promptTokens + candidatesTokens),
+        thoughtsTokens,
+        cachedTokens
       };
     } catch (error) {
       console.error('❌ Error calculating token usage:', error);
@@ -285,10 +280,10 @@ class GeminiAIService {
       
       return {
         promptTokens: estimatedPromptTokens,
-        thinkingTokens: 0,
-        inputTokens: estimatedPromptTokens,
-        outputTokens: estimatedOutputTokens,
-        totalTokens: estimatedPromptTokens + estimatedOutputTokens
+        candidatesTokens: estimatedOutputTokens,
+        totalTokens: estimatedPromptTokens + estimatedOutputTokens,
+        thoughtsTokens: 0,
+        cachedTokens: 0
       };
     }
   }
