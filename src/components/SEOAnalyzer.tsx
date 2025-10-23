@@ -656,31 +656,6 @@ const SEOAnalyzer: React.FC = () => {
           </p>
         </div>
 
-        {/* Progress Steps */}
-        <div className="mb-8">
-          <div className="flex items-center justify-center space-x-6">
-            <div className={`flex items-center ${currentStep === 'input' ? 'text-indigo-600' : currentStep === 'qfo' || currentStep === 'results' ? 'text-green-600' : 'text-gray-400'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep === 'input' ? 'bg-indigo-600 text-white' : currentStep === 'qfo' || currentStep === 'results' ? 'bg-green-600 text-white' : 'bg-gray-200'}`}>
-                1
-              </div>
-              <span className="ml-2 font-medium">Konu Girişi</span>
-            </div>
-            <ArrowRight className="w-5 h-5 text-gray-400" />
-            <div className={`flex items-center ${currentStep === 'qfo' ? 'text-indigo-600' : currentStep === 'results' ? 'text-green-600' : 'text-gray-400'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep === 'qfo' ? 'bg-indigo-600 text-white' : currentStep === 'results' ? 'bg-green-600 text-white' : 'bg-gray-200'}`}>
-                2
-              </div>
-              <span className="ml-2 font-medium">Gelişmiş Analiz</span>
-            </div>
-            <ArrowRight className="w-5 h-5 text-gray-400" />
-            <div className={`flex items-center ${currentStep === 'results' ? 'text-indigo-600' : 'text-gray-400'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep === 'results' ? 'bg-indigo-600 text-white' : 'bg-gray-200'}`}>
-                3
-              </div>
-              <span className="ml-2 font-medium">Brief Sonuçları</span>
-            </div>
-          </div>
-        </div>
 
         {/* Referral Code Input */}
         {currentStep === 'input' && (

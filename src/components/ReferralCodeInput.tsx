@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { referralService } from '../services/referralService';
 import { CreditCard, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 
@@ -15,6 +15,15 @@ const ReferralCodeInput: React.FC<ReferralCodeInputProps> = ({
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<'idle' | 'valid' | 'invalid' | 'error'>('idle');
   const [remainingCredits, setRemainingCredits] = useState(0);
+
+  // Auto-validate code when it changes
+  useEffect(() => {
+    if (code.trim().length >= 5) { // Minimum code length
+      validateCode();
+    } else {
+      setStatus('idle');
+    }
+  }, [code]);
 
   const validateCode = async () => {
     if (!code.trim()) {
@@ -43,12 +52,6 @@ const ReferralCodeInput: React.FC<ReferralCodeInputProps> = ({
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      validateCode();
-    }
-  };
-
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
       <div className="flex items-center gap-3 mb-4">
@@ -71,7 +74,6 @@ const ReferralCodeInput: React.FC<ReferralCodeInputProps> = ({
               setCode(e.target.value.toUpperCase());
               setStatus('idle');
             }}
-            onKeyPress={handleKeyPress}
             placeholder="REF12345"
             className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
               status === 'valid' ? 'border-green-500 bg-green-50' :
@@ -83,13 +85,11 @@ const ReferralCodeInput: React.FC<ReferralCodeInputProps> = ({
           />
         </div>
         
-        <button
-          onClick={validateCode}
-          disabled={loading || !code.trim()}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {loading ? 'Kontrol Ediliyor...' : 'Doğrula'}
-        </button>
+        {loading && (
+          <div className="flex items-center justify-center px-6 py-3">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+          </div>
+        )}
       </div>
 
       {/* Status Messages */}
@@ -128,7 +128,6 @@ const ReferralCodeInput: React.FC<ReferralCodeInputProps> = ({
 
       <div className="mt-4 text-sm text-gray-500">
         <p>• Referans kodunuzu yukarıdaki alana girin</p>
-        <p>• Kod doğrulandıktan sonra brief oluşturmaya başlayabilirsiniz</p>
       </div>
     </div>
   );

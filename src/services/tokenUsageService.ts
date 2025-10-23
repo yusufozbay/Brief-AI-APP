@@ -205,9 +205,18 @@ export async function incrementTokenUsageWithComprehensiveDetails(
     [`monthlyUsage.${getCurrentMonth()}`]: currentMonthly
   };
 
-  // CRITICAL FIX: NEVER modify totalTokens - it should only be updated by referralService.useCredits()
-  // The comprehensive tracking should only add analysis details, not modify token counts
-  console.log('📊 NOT modifying totalTokens - it should be managed by referralService.useCredits()');
+  // CRITICAL FIX: Update totalTokens to properly sum all usage
+  // Since referralService.useCredits() is not working properly, we need to handle totalTokens here
+  if (data.totalTokens !== undefined) {
+    // totalTokens exists, increment it
+    updates.totalTokens = increment(tokenUsage.totalTokens);
+    console.log('📊 Incrementing totalTokens by:', tokenUsage.totalTokens, 'Current total:', data.totalTokens);
+  } else {
+    // totalTokens doesn't exist, set it
+    updates.totalTokens = tokenUsage.totalTokens;
+    console.log('📊 Setting totalTokens to:', tokenUsage.totalTokens);
+  }
+  
   console.log('📊 Current totalTokens in document:', data.totalTokens);
   console.log('📊 Updates to be applied:', updates);
 
