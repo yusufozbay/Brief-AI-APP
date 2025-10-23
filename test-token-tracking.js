@@ -1,5 +1,5 @@
 // Test script to verify token calculation and Firebase storage
-import { incrementTokenUsageWithComprehensiveDetails, TokenUsage, AnalysisDetails, getUserTokenData } from './src/services/tokenUsageService';
+import { incrementTokenUsageWithComprehensiveDetails, getUserTokenData } from './src/services/tokenUsageService.js';
 
 async function testTokenTracking() {
   console.log('🧪 Testing token calculation and Firebase storage...');
@@ -7,7 +7,7 @@ async function testTokenTracking() {
   try {
     // Test data
     const testUserId = 'test-user-123';
-    const testTokenUsage: TokenUsage = {
+    const testTokenUsage = {
       promptTokens: 1500,
       candidatesTokens: 800,
       totalTokens: 2300,
@@ -15,7 +15,7 @@ async function testTokenTracking() {
       cachedTokens: 50
     };
     
-    const testAnalysisDetails: AnalysisDetails = {
+    const testAnalysisDetails = {
       url: 'https://test.example.com',
       analysisType: 'single',
       status: 'completed',

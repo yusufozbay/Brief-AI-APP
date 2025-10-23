@@ -46,7 +46,7 @@ export interface AnalysisRecord {
   candidatesTokens: number;
   thoughtsTokens?: number;
   cachedTokens?: number;
-  error?: string;
+  error?: string | null;
   model?: string;
   step?: string;
 }
@@ -123,6 +123,7 @@ export async function canUseTokens(userId: string, tokens: number): Promise<bool
 
 /**
  * Main comprehensive token tracking system
+ * Note: This function assumes totalTokens has already been updated by referralService.useCredits()
  */
 export async function incrementTokenUsageWithComprehensiveDetails(
   userId: string,
@@ -144,14 +145,15 @@ export async function incrementTokenUsageWithComprehensiveDetails(
     candidatesTokens: tokenUsage.candidatesTokens,
     thoughtsTokens: tokenUsage.thoughtsTokens || 0,
     cachedTokens: tokenUsage.cachedTokens || 0,
-    error: analysisDetails.error || undefined,
+    error: analysisDetails.error || null,
     model: analysisDetails.model || 'unknown',
     step: analysisDetails.step || 'unknown'
   };
 
   if (!snap.exists()) {
-    // Create new user data
-    const newUserData: UserTokenData = {
+    // This shouldn't happen if referralService.useCredits() was called first
+    console.warn('Document does not exist, creating with comprehensive tracking');
+    const newUserData = {
       totalTokens: tokenUsage.totalTokens,
       tokenLimit: DEFAULT_TOKEN_LIMIT,
       analyses: [newAnalysis],
@@ -168,30 +170,33 @@ export async function incrementTokenUsageWithComprehensiveDetails(
     return tokenUsage.totalTokens;
   }
 
-  // Update existing user
-  const data = snap.data() as UserTokenData;
-  const limit = data.tokenLimit || DEFAULT_TOKEN_LIMIT;
-
-  if ((data.totalTokens + tokenUsage.totalTokens) > limit) {
-    throw new Error('Token limit reached. Please pay');
-  }
-
+  // Update existing user - only add analysis details, don't modify totalTokens
+  const data = snap.data();
+  
   // Calculate current daily and monthly usage
   const currentDate = getCurrentDate();
   const currentMonth = getCurrentMonth();
   const currentDaily = (data.dailyUsage?.[currentDate] || 0) + tokenUsage.totalTokens;
   const currentMonthly = (data.monthlyUsage?.[currentMonth] || 0) + tokenUsage.totalTokens;
 
-  const updates = {
-    totalTokens: increment(tokenUsage.totalTokens),
+  // Prepare updates - only add analysis tracking, don't modify totalTokens
+  const updates: any = {
     lastUpdated: serverTimestamp(),
-    analyses: arrayUnion(newAnalysis),
     [`dailyUsage.${getCurrentDate()}`]: currentDaily,
     [`monthlyUsage.${getCurrentMonth()}`]: currentMonthly
   };
 
+  // Only add analyses array if it doesn't exist or if we want to track detailed analysis
+  if (data.analyses && Array.isArray(data.analyses)) {
+    // Document has analyses array, add to it
+    updates.analyses = arrayUnion(newAnalysis);
+  } else {
+    // Document doesn't have analyses array, create it
+    updates.analyses = [newAnalysis];
+  }
+
   await updateDoc(ref, updates);
-  return data.totalTokens + tokenUsage.totalTokens;
+  return data.totalTokens || 0;
 }
 
 /**

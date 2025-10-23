@@ -57,7 +57,7 @@ class ReferralService {
     try {
       console.log('🔍 Testing Firebase connection...');
       const testDocRef = doc(db, 'tokenUsage', 'test');
-      const testDoc = await getDoc(testDocRef);
+      await getDoc(testDocRef);
       console.log('✅ Firebase connection successful');
       return true;
     } catch (error) {
@@ -87,7 +87,7 @@ class ReferralService {
     creditLimit: number = 10
   ): Promise<ReferralCode> {
     try {
-      let code: string;
+      let code: string = '';
       let isUnique = false;
       
       // Generate unique code
@@ -223,18 +223,34 @@ class ReferralService {
         const tokenDocRef = doc(db, 'tokenUsage', code);
         console.log('🔍 Document reference created:', tokenDocRef.path);
         
-        await updateDoc(tokenDocRef, {
-          totalTokens: increment(actualTokenUsage)
-        });
+        // Check if document exists first
+        const docSnap = await getDoc(tokenDocRef);
         
-        console.log('✅ Credits used in tokenUsage for referral code:', code, 'Tokens used:', actualTokenUsage);
+        if (!docSnap.exists()) {
+          // Document doesn't exist, create it
+          console.log('🔍 Document does not exist, creating new document...');
+          await setDoc(tokenDocRef, {
+            totalTokens: actualTokenUsage,
+            tokenLimit: 1000000, // Default token limit
+            lastUpdated: serverTimestamp()
+          });
+          console.log('✅ New tokenUsage document created for referral code:', code, 'Tokens:', actualTokenUsage);
+        } else {
+          // Document exists, update it
+          await updateDoc(tokenDocRef, {
+            totalTokens: increment(actualTokenUsage),
+            lastUpdated: serverTimestamp()
+          });
+          console.log('✅ TokenUsage document updated for referral code:', code, 'Tokens used:', actualTokenUsage);
+        }
+        
         return true;
       } catch (tokenError) {
         console.error('❌ TokenUsage update failed:', tokenError);
         console.error('❌ TokenError details:', {
-          code: tokenError.code,
-          message: tokenError.message,
-          stack: tokenError.stack
+          code: (tokenError as any)?.code,
+          message: (tokenError as any)?.message,
+          stack: (tokenError as any)?.stack
         });
         console.log('Trying referral-codes collection as fallback...');
         
