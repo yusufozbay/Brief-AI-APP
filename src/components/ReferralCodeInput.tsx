@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { referralService } from '../services/referralService';
 import { CreditCard, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 
@@ -16,18 +16,9 @@ const ReferralCodeInput: React.FC<ReferralCodeInputProps> = ({
   const [status, setStatus] = useState<'idle' | 'valid' | 'invalid' | 'error'>('idle');
   const [remainingCredits, setRemainingCredits] = useState(0);
 
-  // Auto-validate code when it changes
-  useEffect(() => {
-    if (code.trim().length >= 5) { // Minimum code length
-      validateCode();
-    } else {
+  const validateCode = useCallback(async () => {
+    if (!code.trim() || code.trim().length < 3) {
       setStatus('idle');
-    }
-  }, [code]);
-
-  const validateCode = async () => {
-    if (!code.trim()) {
-      setStatus('error');
       return;
     }
 
@@ -50,7 +41,20 @@ const ReferralCodeInput: React.FC<ReferralCodeInputProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [code, onCodeValidated, onCodeInvalid]);
+
+  // Auto-validate code when it changes (with debounce)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (code.trim().length >= 3) {
+        validateCode();
+      } else {
+        setStatus('idle');
+      }
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timer);
+  }, [code, validateCode]);
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
@@ -72,7 +76,6 @@ const ReferralCodeInput: React.FC<ReferralCodeInputProps> = ({
             value={code}
             onChange={(e) => {
               setCode(e.target.value.toUpperCase());
-              setStatus('idle');
             }}
             placeholder="REF12345"
             className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
