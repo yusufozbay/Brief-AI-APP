@@ -170,7 +170,7 @@ export async function incrementTokenUsageWithComprehensiveDetails(
     return tokenUsage.totalTokens;
   }
 
-  // Update existing user - only add analysis details, don't modify totalTokens
+  // Update existing user - preserve totalTokens and add analysis details
   const data = snap.data();
   
   // Calculate current daily and monthly usage
@@ -179,12 +179,16 @@ export async function incrementTokenUsageWithComprehensiveDetails(
   const currentDaily = (data.dailyUsage?.[currentDate] || 0) + tokenUsage.totalTokens;
   const currentMonthly = (data.monthlyUsage?.[currentMonth] || 0) + tokenUsage.totalTokens;
 
-  // Prepare updates - only add analysis tracking, don't modify totalTokens
+  // Prepare updates - preserve totalTokens and add analysis tracking
   const updates: any = {
     lastUpdated: serverTimestamp(),
     [`dailyUsage.${getCurrentDate()}`]: currentDaily,
     [`monthlyUsage.${getCurrentMonth()}`]: currentMonthly
   };
+
+  // Don't modify totalTokens - it should already be updated by referralService.useCredits()
+  console.log('📊 Current totalTokens in document:', data.totalTokens);
+  console.log('📊 Expected totalTokens after referral service update:', data.totalTokens + tokenUsage.totalTokens);
 
   // Only add analyses array if it doesn't exist or if we want to track detailed analysis
   if (data.analyses && Array.isArray(data.analyses)) {
