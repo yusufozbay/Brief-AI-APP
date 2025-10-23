@@ -10,3 +10,7 @@
 
 [build.environment]
   NODE_VERSION = "18"
+
+# Increase function timeout to 60 seconds
+[functions]
+  timeout = 60

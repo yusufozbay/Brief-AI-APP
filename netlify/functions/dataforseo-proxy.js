@@ -47,6 +47,9 @@ exports.handler = async (event, context) => {
     const auth = Buffer.from(`${login}:${password}`).toString('base64');
 
     // Make request to DataForSEO API using native fetch (available in Node.js 18+)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 50000); // 50 second timeout
+    
     const response = await fetch('https://api.dataforseo.com/v3/serp/google/organic/live/advanced', {
       method: 'POST',
       headers: {
@@ -54,7 +57,10 @@ exports.handler = async (event, context) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(requestData),
+      signal: controller.signal
     });
+    
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -91,6 +97,21 @@ exports.handler = async (event, context) => {
 
   } catch (error) {
     console.error('DataForSEO Proxy Error:', error);
+    
+    // Handle timeout errors specifically
+    if (error.name === 'AbortError') {
+      return {
+        statusCode: 504,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          error: 'Request timeout - DataForSEO API took too long to respond',
+          timeout: true
+        }),
+      };
+    }
     
     // Provide more detailed error information for debugging
     const errorDetails = {
