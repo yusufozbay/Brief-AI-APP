@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Search, Target, Users, TrendingUp, FileText, CheckCircle, Lightbulb, BarChart3, ArrowRight, Share2, Copy, ExternalLink, Zap } from 'lucide-react';
-import CompetitorSelector from './CompetitorSelector';
 import ReferralCodeInput from './ReferralCodeInput';
 import { CompetitorSelection } from '../types/serp';
 import { geminiAIService } from '../services/geminiAI';
@@ -9,6 +8,7 @@ import { referralService } from '../services/referralService';
 import { incrementTokenUsageWithComprehensiveDetails, TokenUsage, AnalysisDetails } from '../services/tokenUsageService';
 import { QueryFanoutResult } from '../services/queryFanout';
 import { queryFanoutService } from '../services/queryFanout';
+import { dataForSEOService } from '../services/dataForSEO';
 
 interface AnalysisResult {
   topic: string;
@@ -75,11 +75,10 @@ interface FAQ {
 const SEOAnalyzer: React.FC = () => {
   const [topic, setTopic] = useState('');
   const [entities, setEntities] = useState('');
-  const [currentStep, setCurrentStep] = useState<'input' | 'competitors' | 'qfo' | 'results'>('input');
+  const [currentStep, setCurrentStep] = useState<'input' | 'qfo' | 'results'>('input');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [selectedCompetitors, setSelectedCompetitors] = useState<CompetitorSelection[]>([]);
-  const [competitorAnalysis, setCompetitorAnalysis] = useState<any>(null);
   const [queryFanoutResult, setQueryFanoutResult] = useState<QueryFanoutResult | null>(null);
   const [isSharing, setIsSharing] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
@@ -89,9 +88,23 @@ const SEOAnalyzer: React.FC = () => {
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const [isCodeValidated, setIsCodeValidated] = useState(false);
 
-  const proceedToCompetitorSelection = () => {
+  const proceedToAnalysis = async () => {
     if (!topic.trim() || !isCodeValidated) return;
-    setCurrentStep('competitors');
+    
+    setIsAnalyzing(true);
+    try {
+      // Automatically fetch and select competitors
+      const competitors = await dataForSEOService.fetchSERPResults(topic);
+      setSelectedCompetitors(competitors);
+      
+      // Proceed directly to QFO analysis
+      setCurrentStep('qfo');
+    } catch (error) {
+      console.error('Error fetching competitors:', error);
+      alert('Rakip analizi sırasında hata oluştu. Lütfen tekrar deneyin.');
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const handleReferralCodeValidated = (code: string) => {
@@ -109,18 +122,7 @@ const SEOAnalyzer: React.FC = () => {
     setCurrentStep('input');
     setResult(null);
     setSelectedCompetitors([]);
-    setCompetitorAnalysis(null);
     setQueryFanoutResult(null);
-  };
-
-  const goBackToCompetitors = () => {
-    setCurrentStep('competitors');
-    setResult(null);
-  };
-
-  const handleCompetitorsSelected = (competitors: CompetitorSelection[]) => {
-    setSelectedCompetitors(competitors);
-    // No automatic analysis - user must manually start
   };
 
     const generateFinalAnalysis = async (competitorData?: any) => {
@@ -569,7 +571,6 @@ const SEOAnalyzer: React.FC = () => {
     setEntities('');
     setResult(null);
     setSelectedCompetitors([]);
-    setCompetitorAnalysis(null);
     setQueryFanoutResult(null);
     setShareUrl(null);
     setShowShareModal(false);
@@ -654,25 +655,25 @@ const SEOAnalyzer: React.FC = () => {
         {/* Progress Steps */}
         <div className="mb-8">
           <div className="flex items-center justify-center space-x-6">
-            <div className={`flex items-center ${currentStep === 'input' ? 'text-indigo-600' : currentStep === 'competitors' || currentStep === 'results' ? 'text-green-600' : 'text-gray-400'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep === 'input' ? 'bg-indigo-600 text-white' : currentStep === 'competitors' || currentStep === 'results' ? 'bg-green-600 text-white' : 'bg-gray-200'}`}>
+            <div className={`flex items-center ${currentStep === 'input' ? 'text-indigo-600' : currentStep === 'qfo' || currentStep === 'results' ? 'text-green-600' : 'text-gray-400'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep === 'input' ? 'bg-indigo-600 text-white' : currentStep === 'qfo' || currentStep === 'results' ? 'bg-green-600 text-white' : 'bg-gray-200'}`}>
                 1
               </div>
               <span className="ml-2 font-medium">Konu Girişi</span>
             </div>
             <ArrowRight className="w-5 h-5 text-gray-400" />
-            <div className={`flex items-center ${currentStep === 'competitors' ? 'text-indigo-600' : currentStep === 'results' ? 'text-green-600' : 'text-gray-400'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep === 'competitors' ? 'bg-indigo-600 text-white' : currentStep === 'results' ? 'bg-green-600 text-white' : 'bg-gray-200'}`}>
+            <div className={`flex items-center ${currentStep === 'qfo' ? 'text-indigo-600' : currentStep === 'results' ? 'text-green-600' : 'text-gray-400'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep === 'qfo' ? 'bg-indigo-600 text-white' : currentStep === 'results' ? 'bg-green-600 text-white' : 'bg-gray-200'}`}>
                 2
               </div>
-              <span className="ml-2 font-medium">Rakip Analizi</span>
+              <span className="ml-2 font-medium">Gelişmiş Analiz</span>
             </div>
             <ArrowRight className="w-5 h-5 text-gray-400" />
             <div className={`flex items-center ${currentStep === 'results' ? 'text-indigo-600' : 'text-gray-400'}`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep === 'results' ? 'bg-indigo-600 text-white' : 'bg-gray-200'}`}>
                 3
               </div>
-              <span className="ml-2 font-medium">Gelişmiş Brief Sonuçları</span>
+              <span className="ml-2 font-medium">Brief Sonuçları</span>
             </div>
           </div>
         </div>
@@ -718,12 +719,21 @@ const SEOAnalyzer: React.FC = () => {
             </div>
             
             <button
-              onClick={proceedToCompetitorSelection}
-              disabled={!topic.trim() || !isCodeValidated}
+              onClick={proceedToAnalysis}
+              disabled={!topic.trim() || !isCodeValidated || isAnalyzing}
               className="mt-6 w-full bg-indigo-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
             >
-              <ArrowRight className="w-5 h-5 mr-2" />
-              SERP Analizi ve Rakip Seçimine Geç
+              {isAnalyzing ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                  Rakip Analizi Yapılıyor...
+                </>
+              ) : (
+                <>
+                  <ArrowRight className="w-5 h-5 mr-2" />
+                  Analizi Başlat
+                </>
+              )}
             </button>
             
             {!isCodeValidated && (
@@ -734,39 +744,6 @@ const SEOAnalyzer: React.FC = () => {
           </div>
         )}
 
-        {/* Competitor Selection Step */}
-        {currentStep === 'competitors' && (
-          <div>
-            <div className="mb-6">
-              <button
-                onClick={goBackToInput}
-                className="flex items-center text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
-              >
-                <ArrowRight className="w-4 h-4 mr-2 rotate-180" />
-                Konu Girişine Geri Dön
-              </button>
-            </div>
-            <CompetitorSelector
-              keyword={topic}
-              onCompetitorsSelected={handleCompetitorsSelected}
-              onAnalysisComplete={generateFinalAnalysis}
-            />
-            
-            {/* Analysis Start Button - QFO Integrated */}
-            {selectedCompetitors.length > 0 && (
-              <div className="mt-6 flex justify-center">
-                <button
-                  onClick={() => generateFinalAnalysisWithQFO(competitorAnalysis)}
-                  disabled={isAnalyzing}
-                  className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center space-x-3"
-                >
-                  <Zap className="h-6 w-6" />
-                  <span>Gelişmiş Analizi Başlat</span>
-                </button>
-              </div>
-            )}
-          </div>
-        )}
 
 
         {/* Results */}
@@ -776,11 +753,11 @@ const SEOAnalyzer: React.FC = () => {
             <div className="flex justify-between items-center">
               <div className="flex items-center space-x-4">
                 <button
-                  onClick={goBackToCompetitors}
+                  onClick={goBackToInput}
                   className="flex items-center px-4 py-2 text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
                 >
                   <ArrowRight className="w-4 h-4 mr-2 rotate-180" />
-                  Rakip Seçimine Geri Dön
+                  Konu Girişine Geri Dön
                 </button>
                 <button
                   onClick={resetAnalysis}
