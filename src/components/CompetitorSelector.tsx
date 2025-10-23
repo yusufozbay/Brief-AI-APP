@@ -33,6 +33,11 @@ const CompetitorSelector: React.FC<CompetitorSelectorProps> = ({
     try {
       const results = await dataForSEOService.fetchSERPResults(keyword);
       setSerpResults(results);
+      
+      // Automatically select all competitors and notify parent component
+      const selectedCompetitors = results.filter(result => result.selected);
+      setSelectedCompetitors(selectedCompetitors);
+      onCompetitorsSelected(selectedCompetitors);
     } catch (error) {
       console.error('SERP fetch error:', error);
     } finally {

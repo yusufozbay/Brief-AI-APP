@@ -55,7 +55,7 @@ class DataForSEOService {
         domain: item.domain,
         snippet: item.snippet || '',
         position: item.rank_absolute || index + 1,
-        selected: false
+        selected: true // Automatically select all competitors
       }));
   }
 
@@ -80,7 +80,7 @@ class DataForSEOService {
       domain: domain,
       snippet: `${keyword} hakkında detaylı bilgi, stratejiler ve uygulama örnekleri. Uzmanlar tarafından hazırlanmış kapsamlı içerik.`,
       position: index + 1,
-      selected: false
+      selected: true // Automatically select all competitors
     }));
   }
 
