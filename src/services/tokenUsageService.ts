@@ -152,7 +152,9 @@ export async function incrementTokenUsageWithComprehensiveDetails(
 
   if (!snap.exists()) {
     // This shouldn't happen if referralService.useCredits() was called first
-    console.warn('Document does not exist, creating with comprehensive tracking');
+    console.warn('⚠️ Document does not exist, creating with comprehensive tracking');
+    console.warn('⚠️ This suggests referralService.useCredits() failed or was not called');
+    
     const newUserData = {
       totalTokens: tokenUsage.totalTokens,
       tokenLimit: DEFAULT_TOKEN_LIMIT,
@@ -167,17 +169,34 @@ export async function incrementTokenUsageWithComprehensiveDetails(
     };
 
     await setDoc(ref, newUserData);
+    console.log('✅ Created new document with totalTokens:', tokenUsage.totalTokens);
     return tokenUsage.totalTokens;
   }
 
   // Update existing user - preserve totalTokens and add analysis details
   const data = snap.data();
   
+  console.log('📊 Document exists, current data:', {
+    totalTokens: data.totalTokens,
+    tokenLimit: data.tokenLimit,
+    analysesCount: data.analyses?.length || 0,
+    dailyUsage: data.dailyUsage,
+    monthlyUsage: data.monthlyUsage
+  });
+  
   // Calculate current daily and monthly usage
   const currentDate = getCurrentDate();
   const currentMonth = getCurrentMonth();
   const currentDaily = (data.dailyUsage?.[currentDate] || 0) + tokenUsage.totalTokens;
   const currentMonthly = (data.monthlyUsage?.[currentMonth] || 0) + tokenUsage.totalTokens;
+
+  console.log('📊 Usage calculations:', {
+    currentDate,
+    currentMonth,
+    currentDaily,
+    currentMonthly,
+    tokenUsage: tokenUsage.totalTokens
+  });
 
   // Prepare updates - preserve totalTokens and add analysis tracking
   const updates: any = {
@@ -189,6 +208,7 @@ export async function incrementTokenUsageWithComprehensiveDetails(
   // Don't modify totalTokens - it should already be updated by referralService.useCredits()
   console.log('📊 Current totalTokens in document:', data.totalTokens);
   console.log('📊 Expected totalTokens after referral service update:', data.totalTokens + tokenUsage.totalTokens);
+  console.log('📊 Updates to be applied:', updates);
 
   // Only add analyses array if it doesn't exist or if we want to track detailed analysis
   if (data.analyses && Array.isArray(data.analyses)) {
@@ -200,6 +220,18 @@ export async function incrementTokenUsageWithComprehensiveDetails(
   }
 
   await updateDoc(ref, updates);
+  console.log('✅ Document updated successfully');
+  
+  // Verify the update by reading the document again
+  const updatedSnap = await getDoc(ref);
+  const updatedData = updatedSnap.data();
+  console.log('📊 Document after update:', {
+    totalTokens: updatedData?.totalTokens,
+    dailyUsage: updatedData?.dailyUsage,
+    monthlyUsage: updatedData?.monthlyUsage,
+    analysesCount: updatedData?.analyses?.length || 0
+  });
+  
   return data.totalTokens || 0;
 }
 
