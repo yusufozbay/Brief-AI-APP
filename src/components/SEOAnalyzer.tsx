@@ -92,16 +92,20 @@ const SEOAnalyzer: React.FC = () => {
     if (!topic.trim() || !isCodeValidated) return;
     
     setIsAnalyzing(true);
+    setCurrentStep('qfo'); // Show loading UI immediately
+    
     try {
       // Automatically fetch and select competitors
       const competitors = await dataForSEOService.fetchSERPResults(topic);
       setSelectedCompetitors(competitors);
       
-      // Proceed directly to QFO analysis
-      setCurrentStep('qfo');
+      // Start the actual analysis
+      await generateFinalAnalysisWithQFO();
+      
     } catch (error) {
-      console.error('Error fetching competitors:', error);
-      alert('Rakip analizi sırasında hata oluştu. Lütfen tekrar deneyin.');
+      console.error('Error during analysis:', error);
+      alert('Analiz sırasında hata oluştu. Lütfen tekrar deneyin.');
+      setCurrentStep('input'); // Go back to input on error
     } finally {
       setIsAnalyzing(false);
     }
@@ -744,7 +748,43 @@ const SEOAnalyzer: React.FC = () => {
           </div>
         )}
 
-
+        {/* QFO Analysis Step */}
+        {currentStep === 'qfo' && (
+          <div className="bg-white rounded-xl shadow-lg p-8">
+            <div className="text-center">
+              <div className="mb-6">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-100 rounded-full mb-4">
+                  <Zap className="w-8 h-8 text-indigo-600" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">Gelişmiş Analiz Yapılıyor</h2>
+                <p className="text-gray-600">
+                  <strong>{topic}</strong> konusu için rakip analizi ve AI destekli içerik stratejisi oluşturuluyor...
+                </p>
+              </div>
+              
+              <div className="space-y-4 mb-8">
+                <div className="flex items-center justify-center space-x-4">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-sm text-gray-600">Rakip analizi tamamlandı</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-3 h-3 bg-indigo-500 rounded-full animate-pulse"></div>
+                    <span className="text-sm text-gray-600">AI analizi yapılıyor...</span>
+                  </div>
+                </div>
+                
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="bg-indigo-600 h-2 rounded-full animate-pulse" style={{ width: '60%' }}></div>
+                </div>
+              </div>
+              
+              <div className="text-sm text-gray-500">
+                Bu işlem birkaç dakika sürebilir. Lütfen sayfayı kapatmayın.
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Results */}
         {currentStep === 'results' && (
