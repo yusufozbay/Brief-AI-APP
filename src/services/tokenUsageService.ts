@@ -198,16 +198,17 @@ export async function incrementTokenUsageWithComprehensiveDetails(
     tokenUsage: tokenUsage.totalTokens
   });
 
-  // Prepare updates - preserve totalTokens and add analysis tracking
+  // Prepare updates - ensure totalTokens is at root level, add analysis tracking
   const updates: any = {
     lastUpdated: serverTimestamp(),
     [`dailyUsage.${getCurrentDate()}`]: currentDaily,
     [`monthlyUsage.${getCurrentMonth()}`]: currentMonthly
   };
 
-  // Don't modify totalTokens - it should already be updated by referralService.useCredits()
+  // CRITICAL FIX: NEVER modify totalTokens - it should only be updated by referralService.useCredits()
+  // The comprehensive tracking should only add analysis details, not modify token counts
+  console.log('📊 NOT modifying totalTokens - it should be managed by referralService.useCredits()');
   console.log('📊 Current totalTokens in document:', data.totalTokens);
-  console.log('📊 Expected totalTokens after referral service update:', data.totalTokens + tokenUsage.totalTokens);
   console.log('📊 Updates to be applied:', updates);
 
   // Only add analyses array if it doesn't exist or if we want to track detailed analysis
