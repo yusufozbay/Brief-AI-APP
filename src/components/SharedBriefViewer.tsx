@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { BarChart3, Lightbulb, FileText, Target } from 'lucide-react';
+import { BarChart3, Lightbulb, FileText, Target, CheckCircle } from 'lucide-react';
 import { firebaseService, SharedBrief } from '../services/firebase';
 
 const SharedBriefViewer: React.FC = () => {
@@ -251,11 +251,32 @@ const SharedBriefViewer: React.FC = () => {
             </div>
           </div>
 
+          {/* Quality Checklist */}
+          {brief.qualityChecklist && brief.qualityChecklist.length > 0 && (
+            <div className="bg-white rounded-xl shadow-lg p-8">
+              <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                <CheckCircle className="w-6 h-6 mr-3 text-green-600" />
+                Yayın Öncesi Kalite Kontrol Listesi
+              </h2>
+              
+              <div className="grid md:grid-cols-2 gap-4">
+                {brief.qualityChecklist.map((checkItem, index) => (
+                  <div key={index} className="flex items-start p-3 bg-gray-50 rounded-lg">
+                    <CheckCircle className={`w-5 h-5 mr-3 flex-shrink-0 mt-0.5 ${checkItem.status ? 'text-green-500' : 'text-gray-400'}`} />
+                    <div className="flex-1">
+                      <span className="text-gray-700 font-medium">{checkItem.item}</span>
+                      {checkItem.note && (
+                        <p className="text-sm text-gray-600 mt-1">{checkItem.note}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Footer */}
           <div className="text-center py-8">
-            <p className="text-gray-500 text-sm mb-4">
-              Bu brief {new Date(brief.sharedAt).toLocaleDateString('tr-TR')} tarihinde paylaşıldı
-            </p>
             <a
               href="/"
               className="inline-flex items-center px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"

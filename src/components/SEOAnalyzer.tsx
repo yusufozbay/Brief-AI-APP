@@ -856,25 +856,6 @@ const SEOAnalyzer: React.FC = () => {
             {/* Results Content */}
             {result && (
               <>
-                {/* QFO Enhancement Indicator */}
-                {result.qfoEnhanced && (
-                  <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-xl p-6 mb-8">
-                    <div className="flex items-center space-x-3">
-                      <div className="p-3 bg-green-100 rounded-lg">
-                        <Zap className="h-6 w-6 text-green-600" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-green-900">AI Enhanced Analysis</h3>
-                        <p className="text-green-700 text-sm">
-                          Bu analiz gelişmiş AI teknikleri ile zenginleştirilmiştir. 
-                          {result.qfoInsights?.semanticQueries?.length || 0} semantik sorgu analiz edildi ve 
-                          {result.qfoInsights?.contentGaps?.length || 0} içerik boşluğu tespit edildi.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
                 {/* Strategic Overview */}
             <div className="bg-white rounded-xl shadow-lg p-8">
               <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
