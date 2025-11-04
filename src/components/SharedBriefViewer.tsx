@@ -98,25 +98,32 @@ const SharedBriefViewer: React.FC = () => {
         <div className="space-y-8">
           {/* Topic and Overview */}
           <div className="bg-white rounded-xl shadow-lg p-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+            <h2 className="text-2xl font-bold text-gray-800 mb-2 flex items-center">
               <Target className="w-6 h-6 mr-3 text-indigo-600" />
-              {brief.topic}
+              AI Destekli Stratejik Analiz
             </h2>
+            <p className="text-lg text-gray-600 mb-6">{brief.topic}</p>
             
             <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="font-semibold text-gray-800 mb-2">Kullanıcı Niyeti</h3>
-                <p className="text-gray-600">{brief.userIntent}</p>
+              <div className="bg-blue-50 p-6 rounded-lg">
+                <h3 className="font-semibold text-gray-800 mb-3">Kullanıcı Niyeti</h3>
+                <p className="text-gray-700">{brief.userIntent}</p>
               </div>
-              <div>
-                <h3 className="font-semibold text-gray-800 mb-2">Rakip Ton Analizi</h3>
-                <p className="text-gray-600">{brief.competitorTone}</p>
+              <div className="bg-green-50 p-6 rounded-lg">
+                <h3 className="font-semibold text-gray-800 mb-3">Rakip Ton Analizi</h3>
+                <p className="text-gray-700">{brief.competitorTone}</p>
               </div>
             </div>
             
-            <div className="mt-6">
-              <h3 className="font-semibold text-gray-800 mb-2">Özgün Değer Teklifi</h3>
-              <p className="text-gray-600">{brief.uniqueValue}</p>
+            <div className="mt-6 bg-yellow-50 p-6 rounded-lg border-l-4 border-yellow-400">
+              <h3 className="font-semibold text-gray-800 mb-3 flex items-center">
+                <Lightbulb className="w-5 h-5 mr-2 text-yellow-600" />
+                Özgün Değer Teklifi (UVP)
+              </h3>
+              {brief.competitorAnalysisSummary && (
+                <p className="text-gray-700 mb-3"><strong>Rekabet Analizi:</strong> {brief.competitorAnalysisSummary}</p>
+              )}
+              <p className="text-gray-700"><strong>Sizin Benzersiz Değeriniz:</strong> {brief.uniqueValue}</p>
             </div>
           </div>
 
@@ -126,8 +133,8 @@ const SharedBriefViewer: React.FC = () => {
             
             <div className="mb-6">
               <h3 className="font-semibold text-gray-800 mb-3">Ana Anahtar Kelime</h3>
-              <div className="bg-indigo-50 rounded-lg p-3 inline-block">
-                <span className="text-indigo-800 font-medium">{brief.primaryKeyword}</span>
+              <div className="bg-indigo-100 p-3 rounded-lg inline-block">
+                <span className="font-mono text-indigo-800">{brief.primaryKeyword}</span>
               </div>
             </div>
 
@@ -144,23 +151,24 @@ const SharedBriefViewer: React.FC = () => {
 
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <h3 className="font-semibold text-gray-800 mb-2">Başlık Önerisi 1 (Tıklama Odaklı)</h3>
-                <div className="bg-green-50 rounded-lg p-3">
+                <h3 className="font-semibold text-gray-800 mb-3">Başlık Önerisi 1 (Tıklama Odaklı)</h3>
+                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
                   <p className="text-green-800">{brief.titleSuggestions.clickFocused}</p>
                 </div>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-800 mb-2">Başlık Önerisi 2 (SEO Odaklı)</h3>
-                <div className="bg-blue-50 rounded-lg p-3">
+                <h3 className="font-semibold text-gray-800 mb-3">Başlık Önerisi 2 (SEO Odaklı)</h3>
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                   <p className="text-blue-800">{brief.titleSuggestions.seoFocused}</p>
                 </div>
               </div>
             </div>
 
             <div className="mt-6">
-              <h3 className="font-semibold text-gray-800 mb-2">Meta Açıklama</h3>
-              <div className="bg-gray-50 rounded-lg p-3">
+              <h3 className="font-semibold text-gray-800 mb-3">AI Tarafından Geliştirilen Özgün Değer Teklifi</h3>
+              <div className="bg-gray-50 p-4 rounded-lg border">
                 <p className="text-gray-700">{brief.metaDescription}</p>
+                <p className="text-sm text-gray-500 mt-2">Karakter sayısı: {brief.metaDescription.length}/155</p>
               </div>
             </div>
           </div>
