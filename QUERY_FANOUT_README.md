@@ -61,12 +61,15 @@ Create a `.env` file with the following variables:
 
 ```bash
 # Required
-VITE_GEMINI_API_KEY=your_gemini_api_key_here
+VITE_WORKER_BRIDGE_URL=https://briefai.ysfzby.workers.dev
 
 # Optional
-VITE_OPENAI_API_KEY=your_openai_api_key_here
-VITE_DATAFORSEO_LOGIN=your_dataforseo_login
-VITE_DATAFORSEO_PASSWORD=your_dataforseo_password
+OPENAI_API_KEY=your_openai_api_key_here
+DATAFORSEO_LOGIN=your_dataforseo_login
+DATAFORSEO_PASSWORD=your_dataforseo_password
+
+# Cloudflare Worker secret
+GEMINI_API_KEY=your_gemini_api_key_here
 
 # Configuration
 VITE_QUERY_FANOUT_ENABLED=true

@@ -25,8 +25,8 @@ exports.handler = async (event, context) => {
 
   try {
     // Get credentials from environment variables
-    const login = process.env.VITE_DATAFORSEO_LOGIN;
-    const password = process.env.VITE_DATAFORSEO_PASSWORD;
+    const login = process.env.DATAFORSEO_LOGIN;
+    const password = process.env.DATAFORSEO_PASSWORD;
 
     if (!login || !password) {
       return {
@@ -118,7 +118,7 @@ exports.handler = async (event, context) => {
       message: error.message,
       name: error.name,
       stack: error.stack,
-      hasCredentials: !!(process.env.VITE_DATAFORSEO_LOGIN && process.env.VITE_DATAFORSEO_PASSWORD)
+      hasCredentials: !!(process.env.DATAFORSEO_LOGIN && process.env.DATAFORSEO_PASSWORD)
     };
     
     return {

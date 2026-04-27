@@ -1,4 +1,3 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { CompetitorSelection } from '../types/serp';
 
 interface GeminiAnalysisResult {
@@ -48,11 +47,11 @@ interface GeminiAnalysisResult {
 }
 
 class GeminiAIService {
-  private genAI: GoogleGenerativeAI | null = null;
   private isGenerating: boolean = false;
-  private models: { [key: string]: any } = {};
   private currentModelIndex: number = 0;
+  private workerBridgeUrl: string = (import.meta.env.VITE_WORKER_BRIDGE_URL || '').replace(/\/$/, '');
   private modelOrder: string[] = [
+    'gemini-3.1-pro-preview',
     'gemini-2.5-pro',
     'gemini-2.5-flash', 
     'gemini-2.0-pro',
@@ -62,62 +61,57 @@ class GeminiAIService {
   ];
 
   constructor() {
-    // Initialize with environment variable or allow manual setting
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    if (apiKey) {
-      this.initializeAI(apiKey);
+    if (!this.workerBridgeUrl) {
+      console.warn('⚠️ VITE_WORKER_BRIDGE_URL is not configured. Gemini calls may fall back to static template.');
     }
   }
 
-  initializeAI(apiKey: string) {
-    try {
-      console.log('🔧 Initializing Gemini AI with key length:', apiKey?.length || 0);
-      // SECURITY: Don't log API key parts in production
-      if (import.meta.env.DEV) {
-        console.log('🔧 API Key starts with:', apiKey?.substring(0, 10) + '...');
-      }
-      this.genAI = new GoogleGenerativeAI(apiKey);
-      
-      // Initialize all models for fallback
-      this.modelOrder.forEach(modelName => {
-        try {
-          this.models[modelName] = this.genAI!.getGenerativeModel({ model: modelName });
-          console.log(`✅ Model ${modelName} initialized successfully`);
-        } catch (error) {
-          console.warn(`⚠️ Failed to initialize model ${modelName}:`, error);
-          this.models[modelName] = null;
-        }
-      });
-      
-      console.log('✅ Gemini AI initialized with fallback models');
-      console.log('✅ Available models:', Object.keys(this.models).filter(key => this.models[key] !== null));
-    } catch (error) {
-      console.error('❌ Gemini AI initialization error:', error);
-      this.models = {};
-      this.genAI = null;
-    }
+  initializeAI(_apiKey: string) {
+    // Kept for compatibility. API key is no longer used client-side.
+    console.log('ℹ️ initializeAI() is deprecated. Gemini calls now use Cloudflare Worker bridge.');
   }
 
-  private getCurrentModel() {
-    const availableModels = this.modelOrder.filter(model => this.models[model] !== null);
-    if (availableModels.length === 0) {
-      throw new Error('No Gemini models available');
+  private getBridgeBaseUrl(): string {
+    if (!this.workerBridgeUrl) {
+      throw new Error('VITE_WORKER_BRIDGE_URL is not configured');
     }
-    
-    const currentModel = availableModels[this.currentModelIndex % availableModels.length];
-    console.log(`🔄 Using model: ${currentModel} (index: ${this.currentModelIndex})`);
-    return this.models[currentModel];
+    return this.workerBridgeUrl;
   }
 
-  private async tryWithFallback<T>(operation: (model: any) => Promise<T>): Promise<T> {
+  private async callWorkerForContent(prompt: string, model: string): Promise<{ text: string; usageMetadata: any }> {
+    const response = await fetch(`${this.getBridgeBaseUrl()}/api/gemini/content-strategy`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ prompt, model })
+    });
+
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(payload?.error || `Worker Gemini call failed with status ${response.status}`);
+    }
+
+    if (!payload?.text || typeof payload.text !== 'string') {
+      throw new Error('Worker Gemini response missing text payload');
+    }
+
+    return {
+      text: payload.text,
+      usageMetadata: payload.usageMetadata || null
+    };
+  }
+
+  private async tryWithFallback<T>(operation: (modelName: string) => Promise<T>): Promise<T> {
     const maxRetries = this.modelOrder.length;
     let lastError: Error | null = null;
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
-        const model = this.getCurrentModel();
-        const result = await operation(model);
-        console.log(`✅ Operation successful with model at index ${this.currentModelIndex}`);
+        const modelName = this.modelOrder[this.currentModelIndex % this.modelOrder.length];
+        console.log(`🔄 Trying Worker Gemini model: ${modelName} (index: ${this.currentModelIndex})`);
+        const result = await operation(modelName);
+        console.log(`✅ Operation successful with model ${modelName}`);
         return result;
       } catch (error: any) {
         lastError = error;
@@ -159,38 +153,23 @@ class GeminiAIService {
     this.isGenerating = true;
     
     console.log('=== GEMINI AI GENERATION DEBUG ===');
-    console.log('Available models:', Object.keys(this.models).filter(key => this.models[key] !== null));
-    console.log('API Key available:', !!import.meta.env.VITE_GEMINI_API_KEY);
+    console.log('Worker bridge configured:', !!this.workerBridgeUrl);
     console.log('Topic:', topic);
     console.log('Competitors count:', selectedCompetitors?.length || 0);
-    
-    if (Object.keys(this.models).filter(key => this.models[key] !== null).length === 0) {
-      console.error('❌ No Gemini AI models available! Falling back to static template.');
-      this.isGenerating = false;
-      return this.getFallbackAnalysis(topic, selectedCompetitors, competitorAnalysis);
-    }
-    
-    console.log('✅ Using Gemini AI with fallback system for dynamic content strategy generation');
+
+    console.log('✅ Using Worker-bridged Gemini with model fallback system for dynamic content strategy generation');
 
     try {
       const prompt = this.buildAnalysisPrompt(topic, selectedCompetitors, competitorAnalysis);
       console.log('📝 Generated prompt length:', prompt.length);
       console.log('📝 Prompt preview:', prompt.substring(0, 300) + '...');
       
-      console.log('🚀 Calling Gemini AI with fallback system...');
-      
-      const result = await this.tryWithFallback(async (model) => {
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        
-        // Extract token usage information
-        const usageMetadata = result.response.usageMetadata;
-        console.log('📊 Token usage metadata:', usageMetadata);
-        
-        return {
-          text: response.text(),
-          usageMetadata: usageMetadata
-        };
+      console.log('🚀 Calling Worker Gemini endpoint with fallback models...');
+
+      const result = await this.tryWithFallback(async (modelName) => {
+        const workerResult = await this.callWorkerForContent(prompt, modelName);
+        console.log('📊 Token usage metadata:', workerResult.usageMetadata);
+        return workerResult;
       });
       
       console.log('📥 Gemini AI response received, length:', result.text.length);

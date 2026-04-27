@@ -6,10 +6,10 @@ Create a `.env` file in the project root with the following variables:
 
 ```bash
 # Gemini AI API Configuration
-VITE_GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_API_KEY=your_gemini_api_key_here
 
 # OpenAI API Configuration (Optional)
-VITE_OPENAI_API_KEY=your_openai_api_key_here
+OPENAI_API_KEY=your_openai_api_key_here
 
 # Brief AI Configuration
 VITE_BRIEF_AI_API_URL=https://api.briefai.com
@@ -23,8 +23,8 @@ VITE_CIRCUIT_BREAKER_THRESHOLD=5
 VITE_CIRCUIT_BREAKER_TIMEOUT=60000
 
 # DataForSEO Configuration
-VITE_DATAFORSEO_LOGIN=your_dataforseo_login
-VITE_DATAFORSEO_PASSWORD=your_dataforseo_password
+DATAFORSEO_LOGIN=your_dataforseo_login
+DATAFORSEO_PASSWORD=your_dataforseo_password
 
 # Firebase Configuration
 VITE_FIREBASE_API_KEY=your_firebase_api_key

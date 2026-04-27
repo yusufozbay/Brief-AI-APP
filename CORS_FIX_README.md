@@ -43,8 +43,8 @@ Implemented a Netlify serverless function that acts as a proxy between the front
 Make sure these environment variables are set in your Netlify project:
 
 ```bash
-VITE_DATAFORSEO_LOGIN=your_dataforseo_login
-VITE_DATAFORSEO_PASSWORD=your_dataforseo_password
+DATAFORSEO_LOGIN=your_dataforseo_login
+DATAFORSEO_PASSWORD=your_dataforseo_password
 ```
 
 ## How It Works
@@ -88,7 +88,7 @@ VITE_DATAFORSEO_PASSWORD=your_dataforseo_password
 - Ensure environment variables are set in Netlify
 
 ### If DataForSEO calls fail:
-- Verify `VITE_DATAFORSEO_LOGIN` and `VITE_DATAFORSEO_PASSWORD` are correct
+- Verify `DATAFORSEO_LOGIN` and `DATAFORSEO_PASSWORD` are correct
 - Check Netlify function logs for authentication errors
 - Ensure your DataForSEO account has sufficient credits
 

@@ -4,23 +4,31 @@
 
 To deploy Brief AI to Netlify, you need to configure the following environment variables in your Netlify project settings:
 
-### 1. Gemini AI Configuration (REQUIRED)
+### 1. Cloudflare Worker Bridge URL (REQUIRED)
 ```
-VITE_GEMINI_API_KEY=AIzaSyASpxSW2hfE5L39449DcrlfHQwqr211EdU
+VITE_WORKER_BRIDGE_URL=https://briefai.ysfzby.workers.dev
 ```
-**Description**: Google Gemini AI API key for dynamic content generation
-**Required**: YES - Without this, the app will fall back to static templates
+**Description**: Cloudflare Worker bridge endpoint used for Gemini and DataForSEO API calls
+**Required**: YES - Without this, app will fall back to Netlify function for DataForSEO and static templates for Gemini
 
-### 2. DataForSEO Configuration (REQUIRED)
+### 2. DataForSEO Configuration (Worker Secret)
 ```
-VITE_DATAFORSEO_LOGIN=your_dataforseo_login
-VITE_DATAFORSEO_PASSWORD=your_dataforseo_password
+DATAFORSEO_LOGIN=your_dataforseo_login
+DATAFORSEO_PASSWORD=your_dataforseo_password
 ```
-**Description**: DataForSEO API credentials for competitor analysis and SERP data (used by serverless function)
+**Description**: DataForSEO credentials used by Cloudflare Worker
 **Required**: YES - For competitor selection and analysis features
-**Note**: These credentials are securely handled by the serverless function to avoid CORS issues
+**Note**: Do not expose these as `VITE_*` variables.
 
-### 3. Firebase Configuration (OPTIONAL - for sharing functionality)
+### 3. Gemini Configuration (Worker Secret)
+```
+GEMINI_API_KEY=your_gemini_api_key
+```
+**Description**: Gemini API key used by Cloudflare Worker
+**Required**: YES - For AI-generated content strategy
+**Note**: Do not expose this as any client-side `VITE_*` variable.
+
+### 4. Firebase Configuration (OPTIONAL - for sharing functionality)
 ```
 VITE_FIREBASE_API_KEY=your_firebase_api_key
 VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
@@ -29,7 +37,7 @@ VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
 VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 VITE_FIREBASE_APP_ID=1:your_sender_id:web:your_app_id
 ```
-**Description**: Firebase configuration for brief sharing functionality
+**Description**: Firebase web config for brief sharing, referral, and token usage features
 **Required**: NO - App will work without sharing if not configured
 
 ## How to Set Environment Variables in Netlify
@@ -52,8 +60,8 @@ VITE_FIREBASE_APP_ID=1:your_sender_id:web:your_app_id
 
 - Never commit API keys to your repository
 - All environment variables starting with `VITE_` are exposed to the client
-- Firebase configuration is safe to expose as it's designed for client-side use
-- Keep your DataForSEO and Gemini API keys secure
+- Firebase web configuration is safe to expose as it's designed for client-side use
+- Keep Gemini and DataForSEO credentials only in Cloudflare Worker Secrets
 
 ## Deployment URL
 
@@ -61,8 +69,8 @@ Your app will be available at: https://content-brief-ai-app.netlify.app/
 
 ## Features Status
 
-- ✅ **Dynamic Content Generation**: Requires `VITE_GEMINI_API_KEY`
-- ✅ **Competitor Analysis**: Requires `VITE_DATAFORSEO_LOGIN` and `VITE_DATAFORSEO_PASSWORD`
+- ✅ **Dynamic Content Generation**: Requires Worker `GEMINI_API_KEY` + Netlify `VITE_WORKER_BRIDGE_URL`
+- ✅ **Competitor Analysis**: Requires Worker `DATAFORSEO_LOGIN`/`DATAFORSEO_PASSWORD` + Netlify `VITE_WORKER_BRIDGE_URL`
 - ✅ **Brief Sharing**: Requires Firebase configuration (optional)
 - ✅ **NOINDEX for Shared Briefs**: Automatic (no configuration needed)
 - ✅ **2025 Content Updates**: Automatic (no configuration needed)
@@ -71,9 +79,9 @@ Your app will be available at: https://content-brief-ai-app.netlify.app/
 
 ### Static Template Content
 If you see generic content like "Detaylı yanıt" instead of AI-generated content:
-- Check that `VITE_GEMINI_API_KEY` is correctly set
-- Verify the API key is valid and has quota
-- Check browser console for Gemini AI errors
+- Check that `VITE_WORKER_BRIDGE_URL` is correctly set
+- Verify Worker `GEMINI_API_KEY` secret is valid and has quota
+- Check Worker logs for `/api/gemini/content-strategy` errors
 
 ### Sharing Not Working
 If the "Briefi Paylaş" button doesn't work:
@@ -83,13 +91,13 @@ If the "Briefi Paylaş" button doesn't work:
 
 ### Competitor Selection Issues
 If competitor selection doesn't work:
-- Verify `VITE_DATAFORSEO_LOGIN` and `VITE_DATAFORSEO_PASSWORD` are correct
+- Verify Worker `DATAFORSEO_LOGIN` and `DATAFORSEO_PASSWORD` secrets are correct
 - Check that your DataForSEO account has sufficient credits
 - Ensure the credentials have API access permissions
-- Check browser console for CORS errors (should be resolved with serverless function)
+- Check Worker logs for `/api/dataforseo/serp` errors
 
 ### CORS Errors (RESOLVED)
 If you see CORS errors in the browser console:
-- This has been resolved by implementing a Netlify serverless function
-- The function acts as a proxy between your frontend and DataForSEO API
-- No client-side configuration needed - the serverless function handles authentication securely
+- This is handled by the Cloudflare Worker bridge
+- Verify your app domain is included in Worker `ALLOWED_ORIGINS`
+- Verify `VITE_WORKER_BRIDGE_URL` points to the active Worker deployment

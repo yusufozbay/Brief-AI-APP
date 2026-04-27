@@ -8,16 +8,16 @@
 const https = require('https');
 
 // You can test with your actual credentials or use these placeholders
-const LOGIN = process.env.VITE_DATAFORSEO_LOGIN || 'your_login';
-const PASSWORD = process.env.VITE_DATAFORSEO_PASSWORD || 'your_password';
+const LOGIN = process.env.DATAFORSEO_LOGIN || 'your_login';
+const PASSWORD = process.env.DATAFORSEO_PASSWORD || 'your_password';
 
 console.log('Testing DataForSEO API connectivity...');
 console.log('Login:', LOGIN);
 console.log('Password:', PASSWORD ? '***' : 'NOT SET');
 
 if (LOGIN === 'your_login' || PASSWORD === 'your_password') {
-  console.log('\n❌ Please set VITE_DATAFORSEO_LOGIN and VITE_DATAFORSEO_PASSWORD environment variables');
-  console.log('Example: VITE_DATAFORSEO_LOGIN=your_login VITE_DATAFORSEO_PASSWORD=your_password node test-dataforseo.js');
+  console.log('\n❌ Please set DATAFORSEO_LOGIN and DATAFORSEO_PASSWORD environment variables');
+  console.log('Example: DATAFORSEO_LOGIN=your_login DATAFORSEO_PASSWORD=your_password node test-dataforseo.js');
   process.exit(1);
 }
 
