@@ -49,7 +49,7 @@ interface GeminiAnalysisResult {
 class GeminiAIService {
   private isGenerating: boolean = false;
   private currentModelIndex: number = 0;
-  private workerBridgeUrl: string = (import.meta.env.VITE_WORKER_BRIDGE_URL || '').replace(/\/$/, '');
+  private workerBridgeUrl: string = (import.meta.env.WORKER_BRIDGE_URL || '').replace(/\/$/, '');
   private modelOrder: string[] = [
     'gemini-3.1-pro-preview',
     'gemini-2.5-pro',
@@ -62,7 +62,7 @@ class GeminiAIService {
 
   constructor() {
     if (!this.workerBridgeUrl) {
-      console.warn('⚠️ VITE_WORKER_BRIDGE_URL is not configured. Gemini calls may fall back to static template.');
+      console.warn('⚠️ WORKER_BRIDGE_URL is not configured. Gemini calls may fall back to static template.');
     }
   }
 
@@ -73,7 +73,7 @@ class GeminiAIService {
 
   private getBridgeBaseUrl(): string {
     if (!this.workerBridgeUrl) {
-      throw new Error('VITE_WORKER_BRIDGE_URL is not configured');
+      throw new Error('WORKER_BRIDGE_URL is not configured');
     }
     return this.workerBridgeUrl;
   }

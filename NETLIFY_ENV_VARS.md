@@ -6,7 +6,7 @@ To deploy Brief AI to Netlify, you need to configure the following environment v
 
 ### 1. Cloudflare Worker Bridge URL (REQUIRED)
 ```
-VITE_WORKER_BRIDGE_URL=https://briefai.ysfzby.workers.dev
+WORKER_BRIDGE_URL=https://briefai.ysfzby.workers.dev
 ```
 **Description**: Cloudflare Worker bridge endpoint used for Gemini and DataForSEO API calls
 **Required**: YES - Without this, app will fall back to Netlify function for DataForSEO and static templates for Gemini
@@ -18,7 +18,7 @@ DATAFORSEO_PASSWORD=your_dataforseo_password
 ```
 **Description**: DataForSEO credentials used by Cloudflare Worker
 **Required**: YES - For competitor selection and analysis features
-**Note**: Do not expose these as `VITE_*` variables.
+**Note**: Keep these as server-side secrets.
 
 ### 3. Gemini Configuration (Worker Secret)
 ```
@@ -26,16 +26,16 @@ GEMINI_API_KEY=your_gemini_api_key
 ```
 **Description**: Gemini API key used by Cloudflare Worker
 **Required**: YES - For AI-generated content strategy
-**Note**: Do not expose this as any client-side `VITE_*` variable.
+**Note**: Keep this as a server-side secret.
 
 ### 4. Firebase Configuration (OPTIONAL - for sharing functionality)
 ```
-VITE_FIREBASE_API_KEY=your_firebase_api_key
-VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your_project_id
-VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-VITE_FIREBASE_APP_ID=1:your_sender_id:web:your_app_id
+FIREBASE_API_KEY=your_firebase_api_key
+FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+FIREBASE_PROJECT_ID=your_project_id
+FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+FIREBASE_APP_ID=1:your_sender_id:web:your_app_id
 ```
 **Description**: Firebase web config for brief sharing, referral, and token usage features
 **Required**: NO - App will work without sharing if not configured
@@ -59,7 +59,7 @@ VITE_FIREBASE_APP_ID=1:your_sender_id:web:your_app_id
 ## Security Notes
 
 - Never commit API keys to your repository
-- All environment variables starting with `VITE_` are exposed to the client
+- Client-exposed environment variables should be treated as public
 - Firebase web configuration is safe to expose as it's designed for client-side use
 - Keep Gemini and DataForSEO credentials only in Cloudflare Worker Secrets
 
@@ -69,8 +69,8 @@ Your app will be available at: https://content-brief-ai-app.netlify.app/
 
 ## Features Status
 
-- ✅ **Dynamic Content Generation**: Requires Worker `GEMINI_API_KEY` + Netlify `VITE_WORKER_BRIDGE_URL`
-- ✅ **Competitor Analysis**: Requires Worker `DATAFORSEO_LOGIN`/`DATAFORSEO_PASSWORD` + Netlify `VITE_WORKER_BRIDGE_URL`
+- ✅ **Dynamic Content Generation**: Requires Worker `GEMINI_API_KEY` + Netlify `WORKER_BRIDGE_URL`
+- ✅ **Competitor Analysis**: Requires Worker `DATAFORSEO_LOGIN`/`DATAFORSEO_PASSWORD` + Netlify `WORKER_BRIDGE_URL`
 - ✅ **Brief Sharing**: Requires Firebase configuration (optional)
 - ✅ **NOINDEX for Shared Briefs**: Automatic (no configuration needed)
 - ✅ **2025 Content Updates**: Automatic (no configuration needed)
@@ -79,7 +79,7 @@ Your app will be available at: https://content-brief-ai-app.netlify.app/
 
 ### Static Template Content
 If you see generic content like "Detaylı yanıt" instead of AI-generated content:
-- Check that `VITE_WORKER_BRIDGE_URL` is correctly set
+- Check that `WORKER_BRIDGE_URL` is correctly set
 - Verify Worker `GEMINI_API_KEY` secret is valid and has quota
 - Check Worker logs for `/api/gemini/content-strategy` errors
 
@@ -100,4 +100,4 @@ If competitor selection doesn't work:
 If you see CORS errors in the browser console:
 - This is handled by the Cloudflare Worker bridge
 - Verify your app domain is included in Worker `ALLOWED_ORIGINS`
-- Verify `VITE_WORKER_BRIDGE_URL` points to the active Worker deployment
+- Verify `WORKER_BRIDGE_URL` points to the active Worker deployment

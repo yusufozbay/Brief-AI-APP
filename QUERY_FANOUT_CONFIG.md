@@ -12,42 +12,42 @@ GEMINI_API_KEY=your_gemini_api_key_here
 OPENAI_API_KEY=your_openai_api_key_here
 
 # Brief AI Configuration
-VITE_BRIEF_AI_API_URL=https://api.briefai.com
-VITE_QUERY_FANOUT_ENABLED=true
-VITE_CONCURRENCY_LIMIT=10
-VITE_CACHE_TTL=3600000
+BRIEF_AI_API_URL=https://api.briefai.com
+QUERY_FANOUT_ENABLED=true
+CONCURRENCY_LIMIT=10
+CACHE_TTL=3600000
 
 # Performance Settings
-VITE_MAX_RETRIES=3
-VITE_CIRCUIT_BREAKER_THRESHOLD=5
-VITE_CIRCUIT_BREAKER_TIMEOUT=60000
+MAX_RETRIES=3
+CIRCUIT_BREAKER_THRESHOLD=5
+CIRCUIT_BREAKER_TIMEOUT=60000
 
 # DataForSEO Configuration
 DATAFORSEO_LOGIN=your_dataforseo_login
 DATAFORSEO_PASSWORD=your_dataforseo_password
 
 # Firebase Configuration
-VITE_FIREBASE_API_KEY=your_firebase_api_key
-VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your_project_id
-VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-VITE_FIREBASE_APP_ID=your_app_id
+FIREBASE_API_KEY=your_firebase_api_key
+FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+FIREBASE_PROJECT_ID=your_project_id
+FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+FIREBASE_APP_ID=your_app_id
 ```
 
 ## Configuration Options
 
 ### Query Fan-Out Settings
 
-- `VITE_QUERY_FANOUT_ENABLED`: Enable/disable Query Fan-Out functionality (default: true)
-- `VITE_CONCURRENCY_LIMIT`: Maximum parallel queries (default: 10)
-- `VITE_CACHE_TTL`: Cache time-to-live in milliseconds (default: 3600000 = 1 hour)
+- `QUERY_FANOUT_ENABLED`: Enable/disable Query Fan-Out functionality (default: true)
+- `CONCURRENCY_LIMIT`: Maximum parallel queries (default: 10)
+- `CACHE_TTL`: Cache time-to-live in milliseconds (default: 3600000 = 1 hour)
 
 ### Performance Settings
 
-- `VITE_MAX_RETRIES`: Maximum retry attempts for failed requests (default: 3)
-- `VITE_CIRCUIT_BREAKER_THRESHOLD`: Failure threshold for circuit breaker (default: 5)
-- `VITE_CIRCUIT_BREAKER_TIMEOUT`: Circuit breaker timeout in milliseconds (default: 60000 = 1 minute)
+- `MAX_RETRIES`: Maximum retry attempts for failed requests (default: 3)
+- `CIRCUIT_BREAKER_THRESHOLD`: Failure threshold for circuit breaker (default: 5)
+- `CIRCUIT_BREAKER_TIMEOUT`: Circuit breaker timeout in milliseconds (default: 60000 = 1 minute)
 
 ### API Keys
 
@@ -92,15 +92,15 @@ VITE_FIREBASE_APP_ID=your_app_id
 ### Common Issues
 
 1. **API Key Errors**: Ensure all required API keys are properly set
-2. **Rate Limiting**: Adjust `VITE_CONCURRENCY_LIMIT` if hitting rate limits
-3. **Memory Issues**: Reduce `VITE_CACHE_TTL` for lower memory usage
-4. **Timeout Errors**: Increase `VITE_CIRCUIT_BREAKER_TIMEOUT` for slower networks
+2. **Rate Limiting**: Adjust `CONCURRENCY_LIMIT` if hitting rate limits
+3. **Memory Issues**: Reduce `CACHE_TTL` for lower memory usage
+4. **Timeout Errors**: Increase `CIRCUIT_BREAKER_TIMEOUT` for slower networks
 
 ### Debug Mode
 
 Enable debug logging by setting:
 ```bash
-VITE_DEBUG_MODE=true
+DEBUG_MODE=true
 ```
 
 This will provide detailed logs for troubleshooting Query Fan-Out operations.

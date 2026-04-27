@@ -61,7 +61,7 @@ Create a `.env` file with the following variables:
 
 ```bash
 # Required
-VITE_WORKER_BRIDGE_URL=https://briefai.ysfzby.workers.dev
+WORKER_BRIDGE_URL=https://briefai.ysfzby.workers.dev
 
 # Optional
 OPENAI_API_KEY=your_openai_api_key_here
@@ -72,12 +72,12 @@ DATAFORSEO_PASSWORD=your_dataforseo_password
 GEMINI_API_KEY=your_gemini_api_key_here
 
 # Configuration
-VITE_QUERY_FANOUT_ENABLED=true
-VITE_CONCURRENCY_LIMIT=10
-VITE_CACHE_TTL=3600000
-VITE_MAX_RETRIES=3
-VITE_CIRCUIT_BREAKER_THRESHOLD=5
-VITE_CIRCUIT_BREAKER_TIMEOUT=60000
+QUERY_FANOUT_ENABLED=true
+CONCURRENCY_LIMIT=10
+CACHE_TTL=3600000
+MAX_RETRIES=3
+CIRCUIT_BREAKER_THRESHOLD=5
+CIRCUIT_BREAKER_TIMEOUT=60000
 ```
 
 ### Installation
@@ -215,23 +215,23 @@ Invalidates cache entries matching pattern.
 
 ```typescript
 // Adjust concurrency based on API limits
-VITE_CONCURRENCY_LIMIT=5  // Lower for rate-limited APIs
+CONCURRENCY_LIMIT=5  // Lower for rate-limited APIs
 
 // Adjust cache TTL based on content volatility
-VITE_CACHE_TTL=1800000    // 30 minutes for dynamic content
+CACHE_TTL=1800000    // 30 minutes for dynamic content
 
 // Adjust retry settings for network conditions
-VITE_MAX_RETRIES=5        // More retries for unstable networks
+MAX_RETRIES=5        // More retries for unstable networks
 ```
 
 ### Circuit Breaker Settings
 
 ```typescript
 // Adjust failure threshold
-VITE_CIRCUIT_BREAKER_THRESHOLD=3  // Lower threshold for critical systems
+CIRCUIT_BREAKER_THRESHOLD=3  // Lower threshold for critical systems
 
 // Adjust timeout duration
-VITE_CIRCUIT_BREAKER_TIMEOUT=30000  // 30 seconds for slower APIs
+CIRCUIT_BREAKER_TIMEOUT=30000  // 30 seconds for slower APIs
 ```
 
 ## Testing
@@ -269,26 +269,26 @@ The test suite covers:
 
 #### API Rate Limiting
 **Problem**: "Rate limit exceeded" errors
-**Solution**: Reduce `VITE_CONCURRENCY_LIMIT` or implement request queuing
+**Solution**: Reduce `CONCURRENCY_LIMIT` or implement request queuing
 
 #### Memory Issues
 **Problem**: High memory usage with large content
-**Solution**: Reduce `VITE_CACHE_TTL` or implement content chunking
+**Solution**: Reduce `CACHE_TTL` or implement content chunking
 
 #### Circuit Breaker Activation
 **Problem**: Circuit breaker frequently opens
-**Solution**: Check API health, increase `VITE_CIRCUIT_BREAKER_THRESHOLD`, or reduce concurrency
+**Solution**: Check API health, increase `CIRCUIT_BREAKER_THRESHOLD`, or reduce concurrency
 
 #### Cache Misses
 **Problem**: Low cache hit rate
-**Solution**: Review cache key generation or increase `VITE_CACHE_TTL`
+**Solution**: Review cache key generation or increase `CACHE_TTL`
 
 ### Debug Mode
 
 Enable detailed logging:
 
 ```bash
-VITE_DEBUG_MODE=true npm run dev
+DEBUG_MODE=true npm run dev
 ```
 
 This provides:

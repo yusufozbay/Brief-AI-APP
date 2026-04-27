@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { DataForSEOResponse, SERPResult, CompetitorSelection } from '../types/serp';
 
-const WORKER_BRIDGE_URL = (import.meta.env.VITE_WORKER_BRIDGE_URL || '').replace(/\/$/, '');
+const WORKER_BRIDGE_URL = (import.meta.env.WORKER_BRIDGE_URL || '').replace(/\/$/, '');
 const DATAFORSEO_WORKER_PROXY_URL = WORKER_BRIDGE_URL ? `${WORKER_BRIDGE_URL}/api/dataforseo/serp` : '';
 const DATAFORSEO_NETLIFY_PROXY_URL = '/.netlify/functions/dataforseo-proxy';
 
@@ -23,7 +23,7 @@ class DataForSEOService {
         console.warn('⚠️ Worker DataForSEO request failed, trying Netlify fallback:', workerError);
       }
     } else {
-      console.warn('⚠️ VITE_WORKER_BRIDGE_URL is not configured. Using Netlify fallback for DataForSEO.');
+      console.warn('⚠️ WORKER_BRIDGE_URL is not configured. Using Netlify fallback for DataForSEO.');
     }
 
     const netlifyResponse = await axios.post<DataForSEOResponse>(
