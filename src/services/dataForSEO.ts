@@ -20,11 +20,14 @@ class DataForSEOService {
         );
         return workerResponse.data;
       } catch (workerError) {
-        console.warn('⚠️ Worker DataForSEO request failed, trying Netlify fallback:', workerError);
+        // In production, use Worker as the single source of truth for DataForSEO secrets.
+        // Falling back here can mask Worker issues and trigger missing Netlify credential errors.
+        console.error('❌ Worker DataForSEO request failed:', workerError);
+        throw workerError;
       }
-    } else {
-      console.warn('⚠️ WORKER_BRIDGE_URL/VITE_WORKER_BRIDGE_URL is not configured. Using Netlify fallback for DataForSEO.');
     }
+
+    console.warn('⚠️ WORKER_BRIDGE_URL/VITE_WORKER_BRIDGE_URL is not configured. Using Netlify fallback for DataForSEO.');
 
     const netlifyResponse = await axios.post<DataForSEOResponse>(
       DATAFORSEO_NETLIFY_PROXY_URL,
