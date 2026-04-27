@@ -1,13 +1,19 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, collection, addDoc, doc, getDoc, updateDoc, increment, serverTimestamp } from 'firebase/firestore';
 
+const env = import.meta.env as Record<string, string | undefined>;
+
+const getEnvValue = (primary: string, fallback: string): string | undefined => {
+  return env[primary] || env[fallback];
+};
+
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
+  apiKey: getEnvValue('FIREBASE_API_KEY', 'VITE_FIREBASE_API_KEY'),
+  authDomain: getEnvValue('FIREBASE_AUTH_DOMAIN', 'VITE_FIREBASE_AUTH_DOMAIN'),
+  projectId: getEnvValue('FIREBASE_PROJECT_ID', 'VITE_FIREBASE_PROJECT_ID'),
+  storageBucket: getEnvValue('FIREBASE_STORAGE_BUCKET', 'VITE_FIREBASE_STORAGE_BUCKET'),
+  messagingSenderId: getEnvValue('FIREBASE_MESSAGING_SENDER_ID', 'VITE_FIREBASE_MESSAGING_SENDER_ID'),
+  appId: getEnvValue('FIREBASE_APP_ID', 'VITE_FIREBASE_APP_ID')
 };
 
 // Check if Firebase is properly configured
