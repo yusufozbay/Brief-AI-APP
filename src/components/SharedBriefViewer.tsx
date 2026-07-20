@@ -3,6 +3,25 @@ import { useParams } from 'react-router-dom';
 import { BarChart3, Lightbulb, FileText, Target, CheckCircle, Copy } from 'lucide-react';
 import { firebaseService, SharedBrief } from '../services/firebase';
 
+const getKeyTakeaways = (brief: SharedBrief) => {
+  const suppliedTakeaways = brief.keyTakeaways?.filter(takeaway => takeaway.trim()) || [];
+  if (suppliedTakeaways.length >= 3) return suppliedTakeaways.slice(0, 3);
+
+  const derivedTakeaways = brief.contentOutline
+    .filter(section => section.level === 'H2')
+    .slice(0, 3)
+    .map(section => `${section.title} ile daha bilinçli seçimler yapın ve uygulanabilir sonuçlar elde edin.`);
+
+  while (derivedTakeaways.length < 3) {
+    derivedTakeaways.push(`${brief.topic} hakkında güvenilir bilgilerle etkili ve sürdürülebilir kararlar verin.`);
+  }
+
+  return derivedTakeaways;
+};
+
+const getImagePrompt = (section: SharedBrief['contentOutline'][number], topic: string) => section.imagePrompt ||
+  `Cinematic premium editorial image illustrating ${section.title} for ${topic}, sophisticated composition, rich tactile detail, dramatic natural lighting, photorealistic, high-end magazine photography, no text, no logo, no watermark`;
+
 const SharedBriefViewer: React.FC = () => {
   const { briefId } = useParams<{ briefId: string }>();
   const [brief, setBrief] = useState<SharedBrief | null>(null);
@@ -89,6 +108,8 @@ const SharedBriefViewer: React.FC = () => {
       </div>
     );
   }
+
+  const keyTakeaways = getKeyTakeaways(brief);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -188,11 +209,11 @@ const SharedBriefViewer: React.FC = () => {
               Detaylı İçerik Planı
             </h2>
 
-            {brief.keyTakeaways && brief.keyTakeaways.length > 0 && (
+            {keyTakeaways.length > 0 && (
               <div className="mb-6 border-l-4 border-amber-400 bg-amber-50 p-4">
                 <h3 className="font-semibold text-gray-800">📌 Key Takeaways (Önemli Çıkarımlar)</h3>
                 <ul className="mt-3 list-disc space-y-2 pl-5 text-gray-700">
-                  {brief.keyTakeaways.slice(0, 3).map((takeaway, index) => (
+                  {keyTakeaways.map((takeaway, index) => (
                     <li key={index}>{takeaway}</li>
                   ))}
                 </ul>
@@ -227,20 +248,20 @@ const SharedBriefViewer: React.FC = () => {
                       </p>
                     </div>
                   )}
-                  {section.level === 'H2' && section.imagePrompt && (
+                  {section.level === 'H2' && (
                     <div className="mt-3 overflow-hidden rounded-lg bg-gray-900 text-gray-100">
                       <div className="flex items-center justify-between gap-3 border-b border-gray-700 px-3 py-2">
                         <h4 className="text-sm font-semibold">🎨 Görsel Prompt</h4>
                         <button
                           type="button"
-                          onClick={() => copyImagePrompt(section.imagePrompt!)}
+                          onClick={() => copyImagePrompt(getImagePrompt(section, brief.topic))}
                           className="inline-flex shrink-0 items-center gap-1.5 rounded bg-gray-700 px-2.5 py-1 text-xs font-medium hover:bg-gray-600"
                         >
                           <Copy className="h-3.5 w-3.5" />
                           Kopyala
                         </button>
                       </div>
-                      <pre className="whitespace-pre-wrap break-words p-3 text-sm leading-6">{section.imagePrompt}</pre>
+                      <pre className="whitespace-pre-wrap break-words p-3 text-sm leading-6">{getImagePrompt(section, brief.topic)}</pre>
                     </div>
                   )}
                 </div>

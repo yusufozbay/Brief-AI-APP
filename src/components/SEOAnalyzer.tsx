@@ -647,6 +647,27 @@ const SEOAnalyzer: React.FC = () => {
     }
   };
 
+  const getKeyTakeaways = (outline: OutlineSection[]) => {
+    const suppliedTakeaways = result?.keyTakeaways?.filter(takeaway => takeaway.trim()) || [];
+    if (suppliedTakeaways.length >= 3) return suppliedTakeaways.slice(0, 3);
+
+    const derivedTakeaways = outline
+      .filter(section => section.level === 'H2')
+      .slice(0, 3)
+      .map(section => `${section.title} ile daha bilinçli seçimler yapın ve uygulanabilir sonuçlar elde edin.`);
+
+    while (derivedTakeaways.length < 3) {
+      derivedTakeaways.push(`${result?.topic || 'Konu'} hakkında güvenilir bilgilerle etkili ve sürdürülebilir kararlar verin.`);
+    }
+
+    return derivedTakeaways;
+  };
+
+  const getImagePrompt = (section: OutlineSection) => section.imagePrompt ||
+    `Cinematic premium editorial image illustrating ${section.title} for ${result?.topic || 'this topic'}, sophisticated composition, rich tactile detail, dramatic natural lighting, photorealistic, high-end magazine photography, no text, no logo, no watermark`;
+
+  const keyTakeaways = result ? getKeyTakeaways(result.contentOutline) : [];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
       <div className="max-w-6xl mx-auto">
@@ -1079,11 +1100,11 @@ const SEOAnalyzer: React.FC = () => {
                 Detaylı İçerik Planı
               </h2>
 
-              {result.keyTakeaways?.length > 0 && (
+              {keyTakeaways.length > 0 && (
                 <div className="mb-6 border-l-4 border-amber-400 bg-amber-50 p-4">
                   <h3 className="font-semibold text-gray-800">📌 Key Takeaways (Önemli Çıkarımlar)</h3>
                   <ul className="mt-3 list-disc space-y-2 pl-5 text-gray-700">
-                    {result.keyTakeaways.slice(0, 3).map((takeaway, index) => (
+                    {keyTakeaways.map((takeaway, index) => (
                       <li key={index}>{takeaway}</li>
                     ))}
                   </ul>
@@ -1113,20 +1134,20 @@ const SEOAnalyzer: React.FC = () => {
                       </div>
                     )}
 
-                    {section.level === 'H2' && section.imagePrompt && (
+                    {section.level === 'H2' && (
                       <div className="mt-3 overflow-hidden rounded-lg bg-gray-900 text-gray-100">
                         <div className="flex items-center justify-between gap-3 border-b border-gray-700 px-3 py-2">
                           <h4 className="text-sm font-semibold">🎨 Görsel Prompt</h4>
                           <button
                             type="button"
-                            onClick={() => copyToClipboard(section.imagePrompt!)}
+                            onClick={() => copyToClipboard(getImagePrompt(section))}
                             className="inline-flex shrink-0 items-center gap-1.5 rounded bg-gray-700 px-2.5 py-1 text-xs font-medium hover:bg-gray-600"
                           >
                             <Copy className="h-3.5 w-3.5" />
                             Kopyala
                           </button>
                         </div>
-                        <pre className="whitespace-pre-wrap break-words p-3 text-sm leading-6">{section.imagePrompt}</pre>
+                        <pre className="whitespace-pre-wrap break-words p-3 text-sm leading-6">{getImagePrompt(section)}</pre>
                       </div>
                     )}
                   </div>
