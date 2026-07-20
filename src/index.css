@@ -1,3 +1,70 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+html {
+	background: #f8fafc;
+}
+
+html.dark {
+	background: #111827;
+	color-scheme: dark;
+}
+
+html.dark .bg-white,
+html.dark .bg-gray-50,
+html.dark .bg-gray-100 {
+	background-color: #1f2937;
+}
+
+html.dark .bg-gradient-to-br {
+	background-image: linear-gradient(to bottom right, #111827, #172554);
+}
+
+html.dark .text-gray-800,
+html.dark .text-gray-700,
+html.dark .text-gray-600,
+html.dark .text-gray-500 {
+	color: #e5e7eb;
+}
+
+html.dark .border,
+html.dark .border-gray-200,
+html.dark .border-gray-300,
+html.dark .border-l-4 {
+	border-color: #4b5563;
+}
+
+html.dark .bg-indigo-100,
+html.dark .bg-blue-50,
+html.dark .bg-green-50,
+html.dark .bg-yellow-50,
+html.dark .bg-purple-50,
+html.dark .bg-amber-50 {
+	background-color: #273449;
+}
+
+html.dark .text-indigo-800,
+html.dark .text-blue-800,
+html.dark .text-green-800,
+html.dark .text-yellow-800,
+html.dark .text-purple-800 {
+	color: #dbeafe;
+}
+
+html.dark input,
+html.dark textarea {
+	background-color: #111827;
+	border-color: #4b5563;
+	color: #f9fafb;
+}
+
+html.dark .theme-toggle {
+	background-color: #1f2937;
+	border-color: #4b5563;
+	color: #f9fafb;
+}
+
+html.dark .theme-toggle:hover {
+	background-color: #374151;
+}
