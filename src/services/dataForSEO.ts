@@ -56,22 +56,23 @@ class DataForSEOService {
         const task = responseData.tasks[0];
         if (task.result && task.result.length > 0) {
           const serpResults = task.result[0].items;
-          return this.processSERPResults(serpResults);
+          const competitors = this.processSERPResults(serpResults);
+          if (competitors.length > 0) {
+            return competitors;
+          }
         }
       }
 
-      console.warn('No valid SERP results found from DataForSEO API, falling back to mock data');
-      return this.getMockSERPResults(keyword);
+      throw new Error('DataForSEO bu sorgu için geçerli organik sonuç döndürmedi. Rakip analizi oluşturulamadı.');
     } catch (error) {
       console.error('DataForSEO API Error during request:', error);
-      // Fallback to mock data
-      return this.getMockSERPResults(keyword);
+      throw error;
     }
   }
 
   private processSERPResults(serpResults: SERPResult[]): CompetitorSelection[] {
     return serpResults
-      .filter(item => item.type === 'organic')
+      .filter(item => item.type === 'organic' && item.url && item.title && item.domain)
       .slice(0, 10) // Top 10 results
       .map((item, index) => ({
         url: item.url,
@@ -81,31 +82,6 @@ class DataForSEOService {
         position: item.rank_absolute || index + 1,
         selected: true // Automatically select all competitors
       }));
-  }
-
-  private getMockSERPResults(keyword: string): CompetitorSelection[] {
-    // Mock SERP results for demo
-    const mockDomains = [
-      'wikipedia.org',
-      'medium.com',
-      'hubspot.com',
-      'moz.com',
-      'searchengineland.com',
-      'backlinko.com',
-      'ahrefs.com',
-      'semrush.com',
-      'neilpatel.com',
-      'contentmarketinginstitute.com'
-    ];
-
-    return mockDomains.map((domain, index) => ({
-      url: `https://${domain}/${keyword.toLowerCase().replace(/\s+/g, '-')}`,
-      title: `${keyword} - Kapsamlı Rehber | ${domain.split('.')[0].toUpperCase()}`,
-      domain: domain,
-      snippet: `${keyword} hakkında detaylı bilgi, stratejiler ve uygulama örnekleri. Uzmanlar tarafından hazırlanmış kapsamlı içerik.`,
-      position: index + 1,
-      selected: true // Automatically select all competitors
-    }));
   }
 
   async analyzeCompetitorContent(url: string): Promise<{

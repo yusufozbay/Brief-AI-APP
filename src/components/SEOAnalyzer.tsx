@@ -102,11 +102,11 @@ const SEOAnalyzer: React.FC = () => {
       setSelectedCompetitors(competitors);
       
       // Start the actual analysis
-      await generateFinalAnalysisWithQFO();
+      await generateFinalAnalysisWithQFO(undefined, undefined, competitors);
       
     } catch (error) {
       console.error('Error during analysis:', error);
-      alert('Analiz sırasında hata oluştu. Lütfen tekrar deneyin.');
+      alert(error instanceof Error ? error.message : 'Analiz sırasında bir hata oluştu. Lütfen tekrar deneyin.');
       setCurrentStep('input'); // Go back to input on error
     } finally {
       setIsAnalyzing(false);
@@ -131,7 +131,7 @@ const SEOAnalyzer: React.FC = () => {
     setQueryFanoutResult(null);
   };
 
-    const generateFinalAnalysis = async (competitorData?: any) => {
+    const generateFinalAnalysis = async (competitorData?: any, competitors: CompetitorSelection[] = selectedCompetitors) => {
     if (!referralCode) {
       alert('Referans kodu gerekli!');
       return;
@@ -144,7 +144,7 @@ const SEOAnalyzer: React.FC = () => {
       // Use Gemini AI for actual content strategy generation
       const geminiResult = await geminiAIService.generateContentStrategy(
         topic,
-        selectedCompetitors,
+        competitors,
         competitorData
       );
       
@@ -295,7 +295,11 @@ const SEOAnalyzer: React.FC = () => {
   /**
    * Enhanced final analysis with integrated Query Fan-Out
    */
-  const generateFinalAnalysisWithQFO = async (competitorData?: any, qfoData?: QueryFanoutResult) => {
+  const generateFinalAnalysisWithQFO = async (
+    competitorData?: any,
+    qfoData?: QueryFanoutResult,
+    competitors: CompetitorSelection[] = selectedCompetitors
+  ) => {
     setCurrentStep('results');
     setIsAnalyzing(true);
     
@@ -334,7 +338,7 @@ const SEOAnalyzer: React.FC = () => {
       // Generate main analysis with QFO insights
       const analysisResult = await geminiAIService.generateContentStrategy(
         topic,
-        selectedCompetitors,
+        competitors,
         enhancedCompetitorData
       );
       
@@ -444,7 +448,7 @@ const SEOAnalyzer: React.FC = () => {
       }
       
       // Fallback to regular analysis
-      generateFinalAnalysis(competitorData);
+      generateFinalAnalysis(competitorData, competitors);
     } finally {
       setIsAnalyzing(false);
     }
