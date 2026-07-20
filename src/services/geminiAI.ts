@@ -189,6 +189,7 @@ class GeminiAIService {
       const analysisResult = JSON.parse(cleanText);
       const permittedHistoricalYears = this.getPermittedHistoricalYears(topic, selectedCompetitors, competitorAnalysis);
       const sanitizedAnalysisResult = this.removeUnspecifiedHistoricalYears(analysisResult, permittedHistoricalYears);
+      const enhancedAnalysisResult = this.ensureBriefEnhancements(sanitizedAnalysisResult, topic);
       
       console.log('✅ Successfully parsed Gemini AI response');
       console.log('📊 Generated keywords count:', analysisResult.secondaryKeywords?.length || 0);
@@ -202,8 +203,7 @@ class GeminiAIService {
       
       return {
         topic,
-        ...sanitizedAnalysisResult,
-        keyTakeaways: Array.isArray(sanitizedAnalysisResult.keyTakeaways) ? sanitizedAnalysisResult.keyTakeaways : [],
+        ...enhancedAnalysisResult,
         tokenUsage
       };
     } catch (error) {
@@ -260,6 +260,32 @@ class GeminiAIService {
     }
 
     return value;
+  }
+
+  private ensureBriefEnhancements(analysisResult: any, topic: string): any {
+    const contentOutline = Array.isArray(analysisResult.contentOutline) ? analysisResult.contentOutline : [];
+    const h2Sections = contentOutline.filter((section: any) => section?.level === 'H2');
+    const generatedTakeaways = Array.isArray(analysisResult.keyTakeaways)
+      ? analysisResult.keyTakeaways.filter((takeaway: unknown) => typeof takeaway === 'string' && takeaway.trim())
+      : [];
+    const fallbackTakeaways = h2Sections.slice(0, 3).map((section: any) =>
+      `${section.title} bölümündeki önerilerle bilinçli kararlar alın ve pratik uygulamalar geliştirin.`
+    );
+
+    while (fallbackTakeaways.length < 3) {
+      fallbackTakeaways.push(`${topic} konusunda güvenilir bilgilerle daha etkili ve sürdürülebilir seçimler yapın.`);
+    }
+
+    return {
+      ...analysisResult,
+      keyTakeaways: generatedTakeaways.length >= 3 ? generatedTakeaways.slice(0, 3) : fallbackTakeaways,
+      contentOutline: contentOutline.map((section: any) => ({
+        ...section,
+        imagePrompt: section?.level === 'H2' && !section.imagePrompt
+          ? `Cinematic premium editorial image illustrating ${section.title} for ${topic}, sophisticated composition, rich tactile detail, dramatic natural lighting, photorealistic, high-end magazine photography, no text, no logo, no watermark`
+          : section.imagePrompt
+      }))
+    };
   }
 
   /**
