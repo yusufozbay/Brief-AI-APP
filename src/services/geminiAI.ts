@@ -185,6 +185,8 @@ class GeminiAIService {
       
       console.log('🔧 Cleaned text for parsing:', cleanText.substring(0, 200) + '...');
       const analysisResult = JSON.parse(cleanText);
+      const permittedHistoricalYears = this.getPermittedHistoricalYears(topic, selectedCompetitors, competitorAnalysis);
+      const sanitizedAnalysisResult = this.removeUnspecifiedHistoricalYears(analysisResult, permittedHistoricalYears);
       
       console.log('✅ Successfully parsed Gemini AI response');
       console.log('📊 Generated keywords count:', analysisResult.secondaryKeywords?.length || 0);
@@ -198,7 +200,7 @@ class GeminiAIService {
       
       return {
         topic,
-        ...analysisResult,
+        ...sanitizedAnalysisResult,
         tokenUsage
       };
     } catch (error) {
@@ -209,6 +211,52 @@ class GeminiAIService {
     } finally {
       this.isGenerating = false;
     }
+  }
+
+  private getPermittedHistoricalYears(
+    topic: string,
+    selectedCompetitors: CompetitorSelection[],
+    competitorAnalysis?: any
+  ): Set<string> {
+    const sourceText = [
+      topic,
+      ...selectedCompetitors.flatMap(({ title, snippet }) => [title, snippet]),
+      JSON.stringify(competitorAnalysis ?? {})
+    ].join(' ');
+    const currentYear = new Date().getFullYear();
+
+    return new Set(
+      (sourceText.match(/\b(?:19|20)\d{2}\b/g) ?? [])
+        .filter(year => Number(year) < currentYear)
+    );
+  }
+
+  private removeUnspecifiedHistoricalYears(value: any, permittedHistoricalYears: Set<string>): any {
+    if (typeof value === 'string') {
+      const currentYear = new Date().getFullYear();
+      return value
+        .replace(/\b(?:19|20)\d{2}\b/g, year =>
+          Number(year) < currentYear && !permittedHistoricalYears.has(year) ? '' : year
+        )
+        .replace(/\(\s*\)/g, '')
+        .replace(/\s{2,}/g, ' ')
+        .trim();
+    }
+
+    if (Array.isArray(value)) {
+      return value.map(item => this.removeUnspecifiedHistoricalYears(item, permittedHistoricalYears));
+    }
+
+    if (value && typeof value === 'object') {
+      return Object.fromEntries(
+        Object.entries(value).map(([key, item]) => [
+          key,
+          this.removeUnspecifiedHistoricalYears(item, permittedHistoricalYears)
+        ])
+      );
+    }
+
+    return value;
   }
 
   /**
@@ -480,7 +528,7 @@ Lütfen aşağıdaki JSON formatında QFO verilerine dayalı en üst düzeyde bi
 
 ÖNEMLI KURALLAR:
 1. Türkiye pazarına özel örnekler kullan
-2. 2025 güncel trendlerini dahil et
+2. Güncel trendleri dahil et. Kullanıcı girdisi veya analiz verisi açıkça belirtmedikçe 2025 ya da daha eski bir yıl kullanma; başlık, anahtar kelime ve içerikte tarihsiz ifade kullan.
 3. E-E-A-T (Experience, Expertise, Authoritativeness, Trustworthiness) prensiplerini uygula
 4. Rakiplerden farklılaşacak özgün değer teklifi sun
 5. Pratik, uygulanabilir öneriler ver
@@ -526,7 +574,7 @@ Lütfen aşağıdaki JSON formatında QFO verilerine dayalı en üst düzeyde bi
       ],
       contentGaps: qfoData?.contentGaps || [
         "Türkiye'ye özel veriler eksik",
-        "Güncel 2025 trendleri yetersiz", 
+        "Güncel trendler yetersiz",
         "Adım adım uygulama rehberi eksik",
         "Gerçek kullanıcı deneyimleri az",
         "Yerel vaka çalışmaları eksik",
@@ -540,7 +588,6 @@ Lütfen aşağıdaki JSON formatında QFO verilerine dayalı en üst düzeyde bi
         `${topic} örnekleri`, 
         `${topic} avantajları`,
         `${topic} stratejileri`,
-        `${topic} 2024`,
         `${topic} rehberi`,
         `${topic} ipuçları`
       ]).map((keyword: string) => {
@@ -551,7 +598,7 @@ Lütfen aşağıdaki JSON formatında QFO verilerine dayalı en üst düzeyde bi
           .replace('yperler', 'yerler');
       }),
       titleSuggestions: {
-        clickFocused: `${topic}: 2025'te Başarı İçin Bilmeniz Gereken Her Şey`,
+        clickFocused: `${topic}: Bilmeniz Gereken Her Şey`,
         seoFocused: `${topic} Rehberi: Tanımı, Avantajları ve Uygulama Stratejileri`
       },
       metaDescription: `${topic} hakkında kapsamlı rehber. Tanımı, avantajları, uygulama stratejileri ve uzman önerileri ile başarıya ulaşın. Türkiye'ye özel örnekler.`,

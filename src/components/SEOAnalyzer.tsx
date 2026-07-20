@@ -1035,14 +1035,33 @@ const SEOAnalyzer: React.FC = () => {
               </div>
 
               <div className="mt-6">
-                    AI Tarafından Geliştirilen Özgün Değer Teklifi
+                <h3 className="font-semibold text-gray-800 mb-3">AI Tarafından Geliştirilen Özgün Değer Teklifi</h3>
                 <div className="bg-gray-50 p-4 rounded-lg border">
                   <p className="text-gray-700">{result.metaDescription}</p>
                   <p className="text-sm text-gray-500 mt-2">Karakter sayısı: {result.metaDescription.length}/155</p>
                   {selectedCompetitors.length > 0 && (
-                    <p className="text-sm text-gray-600 mt-2">
-                      <strong>Seçilen Rakipler:</strong> {selectedCompetitors.map(c => c.domain).join(', ')}
-                    </p>
+                    <div className="mt-3">
+                      <strong className="text-sm text-gray-700">Seçilen Rakipler:</strong>
+                      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2">
+                        {selectedCompetitors.map((competitor) => (
+                          <a
+                            key={competitor.url}
+                            href={competitor.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title={competitor.domain}
+                            className="inline-flex max-w-full items-center gap-2 text-sm text-indigo-700 hover:text-indigo-900 hover:underline"
+                          >
+                            <img
+                              src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(competitor.domain)}&sz=32`}
+                              alt=""
+                              className="h-4 w-4 shrink-0"
+                            />
+                            <span>{competitor.title}</span>
+                          </a>
+                        ))}
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>

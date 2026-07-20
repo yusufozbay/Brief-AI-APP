@@ -265,7 +265,6 @@ export class QueryFanoutService {
       'rehberi',
       'ipuçları',
       'örnekleri',
-      '2024',
       'Türkiye',
       'en iyi',
       'karşılaştırma',
