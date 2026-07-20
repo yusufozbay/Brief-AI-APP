@@ -16,12 +16,14 @@ interface GeminiAnalysisResult {
     seoFocused: string;
   };
   metaDescription: string;
+  keyTakeaways: string[];
   contentOutline: Array<{
     level: 'H1' | 'H2' | 'H3';
     title: string;
     content: string;
     keyInfo?: string;
     storytelling?: string;
+    imagePrompt?: string;
   }>;
   faqSection: Array<{
     question: string;
@@ -201,6 +203,7 @@ class GeminiAIService {
       return {
         topic,
         ...sanitizedAnalysisResult,
+        keyTakeaways: Array.isArray(sanitizedAnalysisResult.keyTakeaways) ? sanitizedAnalysisResult.keyTakeaways : [],
         tokenUsage
       };
     } catch (error) {
@@ -457,6 +460,7 @@ Lütfen aşağıdaki JSON formatında QFO verilerine dayalı en üst düzeyde bi
     "seoFocused": "SEO odaklı başlık önerisi"
   },
   "metaDescription": "155 karakter sınırında meta açıklama",
+  "keyTakeaways": ["10-15 kelimelik ilk önemli çıkarım", "10-15 kelimelik ikinci önemli çıkarım", "10-15 kelimelik üçüncü önemli çıkarım"],
   "contentOutline": [
     {
       "level": "H1",
@@ -468,7 +472,8 @@ Lütfen aşağıdaki JSON formatında QFO verilerine dayalı en üst düzeyde bi
       "level": "H2", 
       "title": "İkinci seviye başlık",
       "content": "Bu bölümde ne anlatılacağının detaylı açıklaması",
-      "storytelling": "Bu bölüm için hikayeleştirme önerisi"
+      "storytelling": "Bu bölüm için hikayeleştirme önerisi",
+      "imagePrompt": "English cinematic, premium visual prompt for this H2 section"
     }
   ],
   "faqSection": [
@@ -534,7 +539,9 @@ Lütfen aşağıdaki JSON formatında QFO verilerine dayalı en üst düzeyde bi
 5. Pratik, uygulanabilir öneriler ver
 6. İçerik outline'ında en az 6 H2 bölümü olsun
 7. FAQ bölümünde en az 10 soru olsun
-8. Yanıtın sadece JSON formatında olsun, başka açıklama ekleme
+8. "keyTakeaways" alanında, okuyucunun yazıdan elde edeceği en önemli 3 fayda ve bilgiyi Türkçe, 10-15 kelimelik kısa ve vurucu maddeler halinde özetle.
+9. Her H2 için "imagePrompt" alanında yalnızca İngilizce, Midjourney/DALL-E uyumlu, konuyu yansıtan sinematik ve premium bir görsel prompt oluştur. Kompozisyon, ışık, doku ve kalite detaylarını belirt; yazı, logo veya watermark isteme.
+10. Yanıtın sadece JSON formatında olsun, başka açıklama ekleme
 
 🚀 QFO VERİLERİNİ MAKSİMUM ETKİ İÇİN KULLAN:
 - Her QFO analiz verisini dikkate al ve stratejiye entegre et
@@ -602,6 +609,11 @@ Lütfen aşağıdaki JSON formatında QFO verilerine dayalı en üst düzeyde bi
         seoFocused: `${topic} Rehberi: Tanımı, Avantajları ve Uygulama Stratejileri`
       },
       metaDescription: `${topic} hakkında kapsamlı rehber. Tanımı, avantajları, uygulama stratejileri ve uzman önerileri ile başarıya ulaşın. Türkiye'ye özel örnekler.`,
+      keyTakeaways: [
+        `${topic} seçiminde temel kriterleri öğrenerek daha bilinçli ve güvenli kararlar alın.`,
+        `Uzman önerileriyle yaygın hatalardan kaçının ve uygulama sürecinizi güvenle planlayın.`,
+        `Türkiye'ye uygun örnekler sayesinde bilgileri günlük ihtiyaçlarınıza kolayca uyarlayın.`
+      ],
       contentOutline: [
         {
           level: 'H1',
@@ -612,37 +624,43 @@ Lütfen aşağıdaki JSON formatında QFO verilerine dayalı en üst düzeyde bi
           level: 'H2',
           title: `${topic} Nedir? Temel Kavramlar`,
           content: "Konunun temelini anlatın. En az 1-2 somut Türkiye'den örnek kullanın. Paragraflar 55 kelimeyi aşmayacak şekilde kısa tutun.",
-          keyInfo: `${topic}'in Türkiye pazarındaki en önemli özelliği ve temel amacı`
+          keyInfo: `${topic}'in Türkiye pazarındaki en önemli özelliği ve temel amacı`,
+          imagePrompt: `Cinematic premium editorial scene explaining ${topic}, refined Turkish setting, warm natural light, sophisticated textures, photorealistic, high-end magazine photography, no text, no logo, no watermark`
         },
         {
           level: 'H2',
           title: `${topic}'in Avantajları ve Faydaları`,
           content: "Konunun sağladığı faydaları madde madde, her maddeye Türkiye'den kısa örnek ekleyerek işleyin.",
-          storytelling: "Türkiye'den gerçek bir kullanıcının bu yöntemle elde ettiği başarı hikayesi üzerinden anlatın"
+          storytelling: "Türkiye'den gerçek bir kullanıcının bu yöntemle elde ettiği başarı hikayesi üzerinden anlatın",
+          imagePrompt: `Premium cinematic lifestyle image showing the benefits of ${topic}, elegant composition, soft directional lighting, tactile details, aspirational yet authentic, photorealistic, no text, no logo, no watermark`
         },
         {
           level: 'H2',
           title: `${topic} Nasıl Uygulanır? Adım Adım Rehber`,
           content: "Pratik uygulama adımlarını detaylı şekilde açıklayın. Her adım için Türkiye pazarından somut örnekler verin.",
-          keyInfo: "Türkiye'de en kritik uygulama adımı ve dikkat edilmesi gereken yasal/kültürel nokta"
+          keyInfo: "Türkiye'de en kritik uygulama adımı ve dikkat edilmesi gereken yasal/kültürel nokta",
+          imagePrompt: `Cinematic premium overhead scene of ${topic} being applied step by step, precise hands and tools, rich material detail, dramatic studio lighting, photorealistic editorial photography, no text, no logo, no watermark`
         },
         {
           level: 'H2',
           title: `${topic} Örnekleri ve Türkiye'den Vaka Çalışmaları`,
           content: "Başarılı uygulama örneklerini detaylı şekilde inceleyin. Mutlaka Türkiye'den örneklere yer verin.",
-          storytelling: "Türkiye'den başarılı bir şirketin bu stratejiyi nasıl uyguladığı ve sonuçları"
+          storytelling: "Türkiye'den başarılı bir şirketin bu stratejiyi nasıl uyguladığı ve sonuçları",
+          imagePrompt: `High-end cinematic case study scene for ${topic} in Türkiye, authentic local context, polished professional environment, nuanced depth of field, editorial photography, no text, no logo, no watermark`
         },
         {
           level: 'H2',
           title: `${topic}'te Dikkat Edilmesi Gereken Hatalar`,
           content: "Yaygın hataları ve bunlardan kaçınma yollarını açıklayın. Türkiye'ye özel hatalara değinin.",
-          keyInfo: "Türkiye pazarında en sık yapılan hata ve bunun önlenmesi için kritik ipucu"
+          keyInfo: "Türkiye pazarında en sık yapılan hata ve bunun önlenmesi için kritik ipucu",
+          imagePrompt: `Cinematic premium conceptual image about avoiding mistakes in ${topic}, subtle contrast between risk and confidence, controlled moody lighting, elegant visual storytelling, photorealistic, no text, no logo, no watermark`
         },
         {
           level: 'H2',
           title: `${topic} için Araçlar ve Kaynaklar`,
           content: "Konuyla ilgili faydalı araçları, Türkiye'de erişilebilir kaynakları listeleyin.",
-          keyInfo: "Türkiye'de ücretsiz erişilebilecek en değerli kaynak"
+          keyInfo: "Türkiye'de ücretsiz erişilebilecek en değerli kaynak",
+          imagePrompt: `Luxury editorial flat lay of tools and resources for ${topic}, curated objects, premium materials, balanced composition, soft cinematic light, photorealistic, no text, no logo, no watermark`
         }
       ],
       faqSection: [

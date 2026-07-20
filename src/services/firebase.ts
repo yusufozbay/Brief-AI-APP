@@ -53,12 +53,14 @@ export interface SharedBrief {
     seoFocused: string;
   };
   metaDescription: string;
+  keyTakeaways?: string[];
   contentOutline: Array<{
     level: 'H1' | 'H2' | 'H3';
     title: string;
     content: string;
     keyInfo?: string;
     storytelling?: string;
+    imagePrompt?: string;
   }>;
   faqSection: Array<{
     question: string;
@@ -142,6 +144,7 @@ class FirebaseService {
         secondaryKeywords: Array.isArray(briefData.secondaryKeywords) ? briefData.secondaryKeywords : [],
         titleSuggestions: briefData.titleSuggestions || { clickFocused: '', seoFocused: '' },
         metaDescription: briefData.metaDescription || '',
+        keyTakeaways: Array.isArray(briefData.keyTakeaways) ? briefData.keyTakeaways : [],
         contentOutline: Array.isArray(briefData.contentOutline) ? sanitizeData(briefData.contentOutline) : [],
         faqSection: Array.isArray(briefData.faqSection) ? sanitizeData(briefData.faqSection) : [],
         schemaStrategy: briefData.schemaStrategy || { mainSchema: '', supportingSchemas: [], reasoning: '' },

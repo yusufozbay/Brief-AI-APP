@@ -26,6 +26,7 @@ interface AnalysisResult {
     seoFocused: string;
   };
   metaDescription: string;
+  keyTakeaways: string[];
   contentOutline: OutlineSection[];
   faqSection: FAQ[];
   schemaStrategy: {
@@ -65,6 +66,7 @@ interface OutlineSection {
   content: string;
   keyInfo?: string;
   storytelling?: string;
+  imagePrompt?: string;
 }
 
 interface FAQ {
@@ -202,6 +204,7 @@ const SEOAnalyzer: React.FC = () => {
         secondaryKeywords: geminiResult.secondaryKeywords,
         titleSuggestions: geminiResult.titleSuggestions,
         metaDescription: geminiResult.metaDescription,
+        keyTakeaways: geminiResult.keyTakeaways,
         contentOutline: geminiResult.contentOutline,
         faqSection: geminiResult.faqSection,
         schemaStrategy: geminiResult.schemaStrategy,
@@ -498,6 +501,7 @@ const SEOAnalyzer: React.FC = () => {
         secondaryKeywords: geminiResult.secondaryKeywords,
         titleSuggestions: geminiResult.titleSuggestions,
         metaDescription: geminiResult.metaDescription,
+        keyTakeaways: geminiResult.keyTakeaways,
         contentOutline: geminiResult.contentOutline,
         faqSection: geminiResult.faqSection,
         schemaStrategy: geminiResult.schemaStrategy,
@@ -612,6 +616,7 @@ const SEOAnalyzer: React.FC = () => {
         secondaryKeywords: result.secondaryKeywords || [],
         titleSuggestions: result.titleSuggestions || { clickFocused: '', seoFocused: '' },
         metaDescription: result.metaDescription || '',
+        keyTakeaways: result.keyTakeaways || [],
         contentOutline: result.contentOutline || [],
         faqSection: result.faqSection || [],
         schemaStrategy: result.schemaStrategy || { mainSchema: '', supportingSchemas: [], reasoning: '' },
@@ -1073,6 +1078,17 @@ const SEOAnalyzer: React.FC = () => {
                 <FileText className="w-6 h-6 mr-3 text-indigo-600" />
                 Detaylı İçerik Planı
               </h2>
+
+              {result.keyTakeaways?.length > 0 && (
+                <div className="mb-6 border-l-4 border-amber-400 bg-amber-50 p-4">
+                  <h3 className="font-semibold text-gray-800">📌 Key Takeaways (Önemli Çıkarımlar)</h3>
+                  <ul className="mt-3 list-disc space-y-2 pl-5 text-gray-700">
+                    {result.keyTakeaways.slice(0, 3).map((takeaway, index) => (
+                      <li key={index}>{takeaway}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               
               <div className="space-y-6">
                 {result.contentOutline.map((section, index) => (
@@ -1094,6 +1110,23 @@ const SEOAnalyzer: React.FC = () => {
                     {section.storytelling && (
                       <div className="bg-purple-50 p-3 rounded-lg border-l-4 border-purple-400">
                         <p className="text-sm"><strong>✍️ Hikayeleştirme:</strong> {section.storytelling}</p>
+                      </div>
+                    )}
+
+                    {section.level === 'H2' && section.imagePrompt && (
+                      <div className="mt-3 overflow-hidden rounded-lg bg-gray-900 text-gray-100">
+                        <div className="flex items-center justify-between gap-3 border-b border-gray-700 px-3 py-2">
+                          <h4 className="text-sm font-semibold">🎨 Görsel Prompt</h4>
+                          <button
+                            type="button"
+                            onClick={() => copyToClipboard(section.imagePrompt!)}
+                            className="inline-flex shrink-0 items-center gap-1.5 rounded bg-gray-700 px-2.5 py-1 text-xs font-medium hover:bg-gray-600"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                            Kopyala
+                          </button>
+                        </div>
+                        <pre className="whitespace-pre-wrap break-words p-3 text-sm leading-6">{section.imagePrompt}</pre>
                       </div>
                     )}
                   </div>

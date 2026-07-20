@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { BarChart3, Lightbulb, FileText, Target, CheckCircle } from 'lucide-react';
+import { BarChart3, Lightbulb, FileText, Target, CheckCircle, Copy } from 'lucide-react';
 import { firebaseService, SharedBrief } from '../services/firebase';
 
 const SharedBriefViewer: React.FC = () => {
@@ -8,6 +8,14 @@ const SharedBriefViewer: React.FC = () => {
   const [brief, setBrief] = useState<SharedBrief | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const copyImagePrompt = async (imagePrompt: string) => {
+    try {
+      await navigator.clipboard.writeText(imagePrompt);
+    } catch (copyError) {
+      console.error('Image prompt could not be copied:', copyError);
+    }
+  };
 
   useEffect(() => {
     // Add NOINDEX meta tag for shared briefs
@@ -179,6 +187,17 @@ const SharedBriefViewer: React.FC = () => {
               <FileText className="w-5 h-5 mr-2 text-indigo-600" />
               Detaylı İçerik Planı
             </h2>
+
+            {brief.keyTakeaways && brief.keyTakeaways.length > 0 && (
+              <div className="mb-6 border-l-4 border-amber-400 bg-amber-50 p-4">
+                <h3 className="font-semibold text-gray-800">📌 Key Takeaways (Önemli Çıkarımlar)</h3>
+                <ul className="mt-3 list-disc space-y-2 pl-5 text-gray-700">
+                  {brief.keyTakeaways.slice(0, 3).map((takeaway, index) => (
+                    <li key={index}>{takeaway}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
             
             <div className="space-y-6">
               {brief.contentOutline.map((section, index) => (
@@ -206,6 +225,22 @@ const SharedBriefViewer: React.FC = () => {
                       <p className="text-sm text-purple-800">
                         <strong>📖 Hikayeleştirme:</strong> {section.storytelling}
                       </p>
+                    </div>
+                  )}
+                  {section.level === 'H2' && section.imagePrompt && (
+                    <div className="mt-3 overflow-hidden rounded-lg bg-gray-900 text-gray-100">
+                      <div className="flex items-center justify-between gap-3 border-b border-gray-700 px-3 py-2">
+                        <h4 className="text-sm font-semibold">🎨 Görsel Prompt</h4>
+                        <button
+                          type="button"
+                          onClick={() => copyImagePrompt(section.imagePrompt!)}
+                          className="inline-flex shrink-0 items-center gap-1.5 rounded bg-gray-700 px-2.5 py-1 text-xs font-medium hover:bg-gray-600"
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                          Kopyala
+                        </button>
+                      </div>
+                      <pre className="whitespace-pre-wrap break-words p-3 text-sm leading-6">{section.imagePrompt}</pre>
                     </div>
                   )}
                 </div>
