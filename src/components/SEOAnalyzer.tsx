@@ -1100,16 +1100,14 @@ const SEOAnalyzer: React.FC = () => {
                 Detaylı İçerik Planı
               </h2>
 
-              {keyTakeaways.length > 0 && (
-                <div className="mb-6 border-l-4 border-amber-400 bg-amber-50 p-4">
-                  <h3 className="font-semibold text-gray-800">📌 Key Takeaways (Önemli Çıkarımlar)</h3>
-                  <ul className="mt-3 list-disc space-y-2 pl-5 text-gray-700">
-                    {keyTakeaways.map((takeaway, index) => (
-                      <li key={index}>{takeaway}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+              <section className="mb-6 border-l-4 border-amber-400 bg-amber-50 p-4" aria-labelledby="key-takeaways-title">
+                <h3 id="key-takeaways-title" className="font-semibold text-gray-800">📌 Key Takeaways (Önemli Çıkarımlar)</h3>
+                <ul className="mt-3 list-disc space-y-2 pl-5 text-gray-700">
+                  {keyTakeaways.map((takeaway, index) => (
+                    <li key={index}>{takeaway}</li>
+                  ))}
+                </ul>
+              </section>
               
               <div className="space-y-6">
                 {result.contentOutline.map((section, index) => (
