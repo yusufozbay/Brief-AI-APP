@@ -1144,6 +1144,16 @@ const SEOAnalyzer: React.FC = () => {
                       <h3 className="text-lg font-semibold text-gray-800">{section.title}</h3>
                     </div>
                     <p className="text-gray-700 mb-3">{section.content}</p>
+                    {section.level === 'H2' && (
+                      <div className="mb-3 border-l-4 border-indigo-200 bg-indigo-50 p-3">
+                        <h4 className="mb-2 text-sm font-semibold text-indigo-900">✍️ Giriş Fikirleri:</h4>
+                        <div className="space-y-1 text-sm italic text-indigo-800">
+                          {getIcebreakerIdeas(section).map((idea, ideaIndex) => (
+                            <p key={ideaIndex}>"{idea}"</p>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     
                     {section.keyInfo && (
                       <div className="bg-yellow-50 p-3 rounded-lg mb-2 border-l-4 border-yellow-400">
@@ -1158,13 +1168,13 @@ const SEOAnalyzer: React.FC = () => {
                     )}
 
                     {section.level === 'H2' && (
-                      <div className="mt-3 overflow-hidden rounded-lg border border-slate-200 bg-slate-100 text-slate-700">
-                        <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-slate-200 px-3 py-2">
+                      <div className="mt-3 overflow-hidden rounded-lg border border-zinc-300 bg-zinc-200 text-zinc-800">
+                        <div className="flex items-center justify-between gap-3 border-b border-zinc-400 bg-zinc-300 px-3 py-2">
                           <h4 className="text-sm font-semibold">🎨 Görsel Prompt</h4>
                           <button
                             type="button"
                             onClick={() => copyToClipboard(getImagePrompt(section))}
-                            className="inline-flex shrink-0 items-center gap-1.5 rounded bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                            className="inline-flex shrink-0 items-center gap-1.5 rounded border border-zinc-400 bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-800 hover:bg-zinc-50"
                           >
                             <Copy className="h-3.5 w-3.5" />
                             Kopyala

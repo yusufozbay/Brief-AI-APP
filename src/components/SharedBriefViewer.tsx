@@ -267,13 +267,13 @@ const SharedBriefViewer: React.FC = () => {
                     </div>
                   )}
                   {section.level === 'H2' && (
-                    <div className="mt-3 overflow-hidden rounded-lg border border-slate-200 bg-slate-100 text-slate-700">
-                      <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-slate-200 px-3 py-2">
+                    <div className="mt-3 overflow-hidden rounded-lg border border-zinc-300 bg-zinc-200 text-zinc-800">
+                      <div className="flex items-center justify-between gap-3 border-b border-zinc-400 bg-zinc-300 px-3 py-2">
                         <h4 className="text-sm font-semibold">🎨 Görsel Prompt</h4>
                         <button
                           type="button"
                           onClick={() => copyImagePrompt(getImagePrompt(section, brief.topic))}
-                          className="inline-flex shrink-0 items-center gap-1.5 rounded bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                          className="inline-flex shrink-0 items-center gap-1.5 rounded border border-zinc-400 bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-800 hover:bg-zinc-50"
                         >
                           <Copy className="h-3.5 w-3.5" />
                           Kopyala

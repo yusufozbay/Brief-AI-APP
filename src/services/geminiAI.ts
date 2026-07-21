@@ -150,7 +150,10 @@ class GeminiAIService {
     // Prevent multiple simultaneous calls
     if (this.isGenerating) {
       console.log('⚠️ Generation already in progress, skipping duplicate call');
-      return this.getFallbackAnalysis(topic, selectedCompetitors, competitorAnalysis);
+      return this.ensureBriefEnhancements(
+        this.getFallbackAnalysis(topic, selectedCompetitors, competitorAnalysis),
+        topic
+      );
     }
     
     this.isGenerating = true;
@@ -211,7 +214,10 @@ class GeminiAIService {
       console.error('❌ Gemini AI analysis error:', error);
       console.error('❌ Error details:', error instanceof Error ? error.message : String(error));
       console.log('🔄 Falling back to static template due to error');
-      return this.getFallbackAnalysis(topic, selectedCompetitors, competitorAnalysis);
+      return this.ensureBriefEnhancements(
+        this.getFallbackAnalysis(topic, selectedCompetitors, competitorAnalysis),
+        topic
+      );
     } finally {
       this.isGenerating = false;
     }
