@@ -6,6 +6,24 @@ const DATAFORSEO_WORKER_PROXY_URL = WORKER_BRIDGE_URL ? `${WORKER_BRIDGE_URL}/ap
 const DATAFORSEO_NETLIFY_PROXY_URL = '/.netlify/functions/dataforseo-proxy';
 
 class DataForSEOService {
+  private formatCompetitorTitle(item: SERPResult): string {
+    const siteName = item.website_name?.trim() || item.domain.replace(/^www\./, '');
+    const normalizedSiteName = siteName.toLocaleLowerCase('tr-TR');
+    const titleParts = item.title
+      .split(/\s*[|\u2013\u2014-]\s*/)
+      .map(part => part.trim())
+      .filter(Boolean);
+    const pageTitle = titleParts
+      .filter(part => part.toLocaleLowerCase('tr-TR') !== normalizedSiteName)
+      .join(' - ') || item.title;
+
+    if (pageTitle.toLocaleLowerCase('tr-TR').startsWith(normalizedSiteName)) {
+      return pageTitle;
+    }
+
+    return `${siteName} - ${pageTitle}`;
+  }
+
   private async requestSERP(requestData: any[]): Promise<DataForSEOResponse> {
     const headers = {
       'Content-Type': 'application/json'
@@ -76,7 +94,7 @@ class DataForSEOService {
       .slice(0, 10) // Top 10 results
       .map((item, index) => ({
         url: item.url,
-        title: item.title,
+        title: this.formatCompetitorTitle(item),
         domain: item.domain,
         snippet: item.snippet || '',
         position: item.rank_absolute || index + 1,

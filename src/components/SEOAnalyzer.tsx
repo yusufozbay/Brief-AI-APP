@@ -725,16 +725,6 @@ const SEOAnalyzer: React.FC = () => {
             <div className="grid md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  {section.level === 'H2' && (
-                    <div className="mb-3 border-l-4 border-indigo-200 bg-indigo-50 p-3">
-                      <h4 className="mb-2 text-sm font-semibold text-indigo-900">✍️ Giriş Fikirleri:</h4>
-                      <div className="space-y-1 text-sm italic text-indigo-800">
-                        {getIcebreakerIdeas(section).map((idea, ideaIndex) => (
-                          <p key={ideaIndex}>"{idea}"</p>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                   <Target className="w-4 h-4 inline mr-2" />
                   Ana Konu / Anahtar Kelime
                 </label>
