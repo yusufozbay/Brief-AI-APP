@@ -67,6 +67,7 @@ interface OutlineSection {
   keyInfo?: string;
   storytelling?: string;
   imagePrompt?: string;
+  icebreakerIdeas?: string[];
 }
 
 interface FAQ {
@@ -670,6 +671,16 @@ const SEOAnalyzer: React.FC = () => {
   const getImagePrompt = (section: OutlineSection) => section.imagePrompt ||
     `Cinematic premium editorial image illustrating ${section.title} for ${result?.topic || 'this topic'}, sophisticated composition, rich tactile detail, dramatic natural lighting, photorealistic, high-end magazine photography, no text, no logo, no watermark`;
 
+  const getIcebreakerIdeas = (section: OutlineSection) => {
+    const suppliedIdeas = section.icebreakerIdeas?.filter(idea => idea.trim()).slice(0, 2) || [];
+    const fallbackIdeas = [
+      `${section.title} ilk bakışta basit görünebilir; doğru yaklaşım ise sonucu doğrudan değiştirir.`,
+      `Peki, ${result?.topic || 'bu konu'} kapsamında bu başlık neden şimdi önem kazanıyor?`
+    ];
+
+    return [...suppliedIdeas, ...fallbackIdeas].slice(0, 2);
+  };
+
   const keyTakeaways = result ? getKeyTakeaways(result.contentOutline) : [];
 
   return (
@@ -701,6 +712,16 @@ const SEOAnalyzer: React.FC = () => {
             <div className="grid md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  {section.level === 'H2' && (
+                    <div className="mb-3 border-l-4 border-indigo-200 bg-indigo-50 p-3">
+                      <h4 className="mb-2 text-sm font-semibold text-indigo-900">✍️ Giriş Fikirleri:</h4>
+                      <div className="space-y-1 text-sm italic text-indigo-800">
+                        {getIcebreakerIdeas(section).map((idea, ideaIndex) => (
+                          <p key={ideaIndex}>"{idea}"</p>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   <Target className="w-4 h-4 inline mr-2" />
                   Ana Konu / Anahtar Kelime
                 </label>
@@ -1137,13 +1158,13 @@ const SEOAnalyzer: React.FC = () => {
                     )}
 
                     {section.level === 'H2' && (
-                      <div className="mt-3 overflow-hidden rounded-lg bg-gray-900 text-gray-100">
-                        <div className="flex items-center justify-between gap-3 border-b border-gray-700 px-3 py-2">
+                      <div className="mt-3 overflow-hidden rounded-lg border border-slate-200 bg-slate-100 text-slate-700">
+                        <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-slate-200 px-3 py-2">
                           <h4 className="text-sm font-semibold">🎨 Görsel Prompt</h4>
                           <button
                             type="button"
                             onClick={() => copyToClipboard(getImagePrompt(section))}
-                            className="inline-flex shrink-0 items-center gap-1.5 rounded bg-gray-700 px-2.5 py-1 text-xs font-medium hover:bg-gray-600"
+                            className="inline-flex shrink-0 items-center gap-1.5 rounded bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
                           >
                             <Copy className="h-3.5 w-3.5" />
                             Kopyala

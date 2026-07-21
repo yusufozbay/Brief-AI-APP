@@ -22,6 +22,16 @@ const getKeyTakeaways = (brief: SharedBrief) => {
 const getImagePrompt = (section: SharedBrief['contentOutline'][number], topic: string) => section.imagePrompt ||
   `Cinematic premium editorial image illustrating ${section.title} for ${topic}, sophisticated composition, rich tactile detail, dramatic natural lighting, photorealistic, high-end magazine photography, no text, no logo, no watermark`;
 
+const getIcebreakerIdeas = (section: SharedBrief['contentOutline'][number], topic: string) => {
+  const suppliedIdeas = section.icebreakerIdeas?.filter(idea => idea.trim()).slice(0, 2) || [];
+  const fallbackIdeas = [
+    `${section.title} ilk bakışta basit görünebilir; doğru yaklaşım ise sonucu doğrudan değiştirir.`,
+    `Peki, ${topic} kapsamında bu başlık neden şimdi önem kazanıyor?`
+  ];
+
+  return [...suppliedIdeas, ...fallbackIdeas].slice(0, 2);
+};
+
 const SharedBriefViewer: React.FC = () => {
   const { briefId } = useParams<{ briefId: string }>();
   const [brief, setBrief] = useState<SharedBrief | null>(null);
@@ -232,6 +242,16 @@ const SharedBriefViewer: React.FC = () => {
                     <h3 className="font-semibold text-gray-800">{section.title}</h3>
                   </div>
                   <p className="text-gray-600 mb-3">{section.content}</p>
+                  {section.level === 'H2' && (
+                    <div className="mb-3 border-l-4 border-indigo-200 bg-indigo-50 p-3">
+                      <h4 className="mb-2 text-sm font-semibold text-indigo-900">✍️ Giriş Fikirleri:</h4>
+                      <div className="space-y-1 text-sm italic text-indigo-800">
+                        {getIcebreakerIdeas(section, brief.topic).map((idea, ideaIndex) => (
+                          <p key={ideaIndex}>"{idea}"</p>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   {section.keyInfo && (
                     <div className="bg-yellow-50 rounded-lg p-3 mb-2">
                       <p className="text-sm text-yellow-800">
@@ -247,13 +267,13 @@ const SharedBriefViewer: React.FC = () => {
                     </div>
                   )}
                   {section.level === 'H2' && (
-                    <div className="mt-3 overflow-hidden rounded-lg bg-gray-900 text-gray-100">
-                      <div className="flex items-center justify-between gap-3 border-b border-gray-700 px-3 py-2">
+                    <div className="mt-3 overflow-hidden rounded-lg border border-slate-200 bg-slate-100 text-slate-700">
+                      <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-slate-200 px-3 py-2">
                         <h4 className="text-sm font-semibold">🎨 Görsel Prompt</h4>
                         <button
                           type="button"
                           onClick={() => copyImagePrompt(getImagePrompt(section, brief.topic))}
-                          className="inline-flex shrink-0 items-center gap-1.5 rounded bg-gray-700 px-2.5 py-1 text-xs font-medium hover:bg-gray-600"
+                          className="inline-flex shrink-0 items-center gap-1.5 rounded bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
                         >
                           <Copy className="h-3.5 w-3.5" />
                           Kopyala

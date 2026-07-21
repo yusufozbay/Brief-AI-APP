@@ -24,6 +24,7 @@ interface GeminiAnalysisResult {
     keyInfo?: string;
     storytelling?: string;
     imagePrompt?: string;
+    icebreakerIdeas?: string[];
   }>;
   faqSection: Array<{
     question: string;
@@ -279,12 +280,25 @@ class GeminiAIService {
     return {
       ...analysisResult,
       keyTakeaways: generatedTakeaways.length >= 3 ? generatedTakeaways.slice(0, 3) : fallbackTakeaways,
-      contentOutline: contentOutline.map((section: any) => ({
-        ...section,
-        imagePrompt: section?.level === 'H2' && !section.imagePrompt
-          ? `Cinematic premium editorial image illustrating ${section.title} for ${topic}, sophisticated composition, rich tactile detail, dramatic natural lighting, photorealistic, high-end magazine photography, no text, no logo, no watermark`
-          : section.imagePrompt
-      }))
+      contentOutline: contentOutline.map((section: any) => {
+        const suppliedIcebreakerIdeas = Array.isArray(section?.icebreakerIdeas)
+          ? section.icebreakerIdeas.filter((idea: unknown) => typeof idea === 'string' && idea.trim()).slice(0, 2)
+          : [];
+        const fallbackIcebreakerIdeas = [
+          `${section?.title || topic} ilk bakışta basit görünebilir; doğru yaklaşım ise sonucu doğrudan değiştirir.`,
+          `Peki, ${topic} kapsamında bu başlık neden şimdi önem kazanıyor?`
+        ];
+
+        return {
+          ...section,
+          imagePrompt: section?.level === 'H2' && !section.imagePrompt
+            ? `Cinematic premium editorial image illustrating ${section.title} for ${topic}, sophisticated composition, rich tactile detail, dramatic natural lighting, photorealistic, high-end magazine photography, no text, no logo, no watermark`
+            : section.imagePrompt,
+          icebreakerIdeas: section?.level === 'H2'
+            ? [...suppliedIcebreakerIdeas, ...fallbackIcebreakerIdeas].slice(0, 2)
+            : section?.icebreakerIdeas
+        };
+      })
     };
   }
 
@@ -499,6 +513,7 @@ Lütfen aşağıdaki JSON formatında QFO verilerine dayalı en üst düzeyde bi
       "title": "İkinci seviye başlık",
       "content": "Bu bölümde ne anlatılacağının detaylı açıklaması",
       "storytelling": "Bu bölüm için hikayeleştirme önerisi",
+      "icebreakerIdeas": ["Editörü yazıya hızlı başlatacak ilk giriş/kanca cümlesi", "Farklı bir açı sunan ikinci giriş/kanca cümlesi"],
       "imagePrompt": "English cinematic, premium visual prompt for this H2 section"
     }
   ],
@@ -567,7 +582,8 @@ Lütfen aşağıdaki JSON formatında QFO verilerine dayalı en üst düzeyde bi
 7. FAQ bölümünde en az 10 soru olsun
 8. "keyTakeaways" alanında, okuyucunun yazıdan elde edeceği en önemli 3 fayda ve bilgiyi Türkçe, 10-15 kelimelik kısa ve vurucu maddeler halinde özetle.
 9. Her H2 için "imagePrompt" alanında yalnızca İngilizce, Midjourney/DALL-E uyumlu, konuyu yansıtan sinematik ve premium bir görsel prompt oluştur. Kompozisyon, ışık, doku ve kalite detaylarını belirt; yazı, logo veya watermark isteme.
-10. Yanıtın sadece JSON formatında olsun, başka açıklama ekleme
+10. Her H2 için "icebreakerIdeas" alanında Türkçe, birbirinden farklı, editörün metne hızlı başlamasını sağlayacak tam 2 giriş/kanca cümlesi oluştur.
+11. Yanıtın sadece JSON formatında olsun, başka açıklama ekleme
 
 🚀 QFO VERİLERİNİ MAKSİMUM ETKİ İÇİN KULLAN:
 - Her QFO analiz verisini dikkate al ve stratejiye entegre et

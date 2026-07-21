@@ -61,6 +61,7 @@ export interface SharedBrief {
     keyInfo?: string;
     storytelling?: string;
     imagePrompt?: string;
+    icebreakerIdeas?: string[];
   }>;
   faqSection: Array<{
     question: string;
