@@ -86,6 +86,7 @@ const SEOAnalyzer: React.FC = () => {
   const [isSharing, setIsSharing] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [copiedPromptIndex, setCopiedPromptIndex] = useState<number | null>(null);
   
   // Referral code state
   const [referralCode, setReferralCode] = useState<string | null>(null);
@@ -652,6 +653,18 @@ const SEOAnalyzer: React.FC = () => {
     }
   };
 
+  const copyImagePrompt = async (imagePrompt: string, sectionIndex: number) => {
+    try {
+      await navigator.clipboard.writeText(imagePrompt);
+      setCopiedPromptIndex(sectionIndex);
+      window.setTimeout(() => setCopiedPromptIndex(currentIndex =>
+        currentIndex === sectionIndex ? null : currentIndex
+      ), 2000);
+    } catch (error) {
+      console.error('Image prompt could not be copied:', error);
+    }
+  };
+
   const getKeyTakeaways = (outline: OutlineSection[]) => {
     const suppliedTakeaways = result?.keyTakeaways?.filter(takeaway => takeaway.trim()) || [];
     if (suppliedTakeaways.length >= 3) return suppliedTakeaways.slice(0, 3);
@@ -1162,22 +1175,22 @@ const SEOAnalyzer: React.FC = () => {
                     )}
                     
                     {section.storytelling && (
-                      <div className="bg-purple-50 p-3 rounded-lg border-l-4 border-purple-400">
+                      <div className="bg-[#F7F5FC] p-3 rounded-lg border-l-4 border-purple-400">
                         <p className="text-sm"><strong>✍️ Hikayeleştirme:</strong> {section.storytelling}</p>
                       </div>
                     )}
 
                     {section.level === 'H2' && (
-                      <div className="mt-3 overflow-hidden rounded-lg border border-zinc-300 bg-zinc-200 text-zinc-800">
-                        <div className="flex items-center justify-between gap-3 border-b border-zinc-400 bg-zinc-300 px-3 py-2">
-                          <h4 className="text-sm font-semibold">🎨 Görsel Prompt</h4>
+                      <div className="mt-3 overflow-hidden rounded-lg border border-[#B8BEC7] border-l-4 border-l-violet-400 bg-[#ECEDEF] text-slate-800">
+                        <div className="flex items-center justify-between gap-3 border-b border-[#B8BEC7] bg-[#D9DDE2] px-3 py-2">
+                          <h4 className="text-sm font-semibold text-violet-950">🎨 Görsel Prompt</h4>
                           <button
                             type="button"
-                            onClick={() => copyToClipboard(getImagePrompt(section))}
-                            className="inline-flex shrink-0 items-center gap-1.5 rounded border border-zinc-400 bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-800 hover:bg-zinc-50"
+                            onClick={() => copyImagePrompt(getImagePrompt(section), index)}
+                            className="inline-flex shrink-0 items-center gap-1.5 rounded border border-violet-300 bg-violet-100 px-2.5 py-1 text-xs font-medium text-violet-800 transition-colors hover:bg-violet-200"
                           >
-                            <Copy className="h-3.5 w-3.5" />
-                            Kopyala
+                            {copiedPromptIndex === index ? <CheckCircle className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                            {copiedPromptIndex === index ? 'Kopyalandı' : 'Kopyala'}
                           </button>
                         </div>
                         <pre className="whitespace-pre-wrap break-words p-3 text-sm leading-6">{getImagePrompt(section)}</pre>

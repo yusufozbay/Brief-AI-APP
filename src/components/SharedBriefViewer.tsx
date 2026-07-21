@@ -37,10 +37,15 @@ const SharedBriefViewer: React.FC = () => {
   const [brief, setBrief] = useState<SharedBrief | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [copiedPromptIndex, setCopiedPromptIndex] = useState<number | null>(null);
 
-  const copyImagePrompt = async (imagePrompt: string) => {
+  const copyImagePrompt = async (imagePrompt: string, sectionIndex: number) => {
     try {
       await navigator.clipboard.writeText(imagePrompt);
+      setCopiedPromptIndex(sectionIndex);
+      window.setTimeout(() => setCopiedPromptIndex(currentIndex =>
+        currentIndex === sectionIndex ? null : currentIndex
+      ), 2000);
     } catch (copyError) {
       console.error('Image prompt could not be copied:', copyError);
     }
@@ -260,23 +265,23 @@ const SharedBriefViewer: React.FC = () => {
                     </div>
                   )}
                   {section.storytelling && (
-                    <div className="bg-purple-50 rounded-lg p-3">
+                    <div className="bg-[#F7F5FC] rounded-lg p-3">
                       <p className="text-sm text-purple-800">
                         <strong>📖 Hikayeleştirme:</strong> {section.storytelling}
                       </p>
                     </div>
                   )}
                   {section.level === 'H2' && (
-                    <div className="mt-3 overflow-hidden rounded-lg border border-zinc-300 bg-zinc-200 text-zinc-800">
-                      <div className="flex items-center justify-between gap-3 border-b border-zinc-400 bg-zinc-300 px-3 py-2">
-                        <h4 className="text-sm font-semibold">🎨 Görsel Prompt</h4>
+                    <div className="mt-3 overflow-hidden rounded-lg border border-[#B8BEC7] border-l-4 border-l-violet-400 bg-[#ECEDEF] text-slate-800">
+                      <div className="flex items-center justify-between gap-3 border-b border-[#B8BEC7] bg-[#D9DDE2] px-3 py-2">
+                        <h4 className="text-sm font-semibold text-violet-950">🎨 Görsel Prompt</h4>
                         <button
                           type="button"
-                          onClick={() => copyImagePrompt(getImagePrompt(section, brief.topic))}
-                          className="inline-flex shrink-0 items-center gap-1.5 rounded border border-zinc-400 bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-800 hover:bg-zinc-50"
+                          onClick={() => copyImagePrompt(getImagePrompt(section, brief.topic), index)}
+                          className="inline-flex shrink-0 items-center gap-1.5 rounded border border-violet-300 bg-violet-100 px-2.5 py-1 text-xs font-medium text-violet-800 transition-colors hover:bg-violet-200"
                         >
-                          <Copy className="h-3.5 w-3.5" />
-                          Kopyala
+                          {copiedPromptIndex === index ? <CheckCircle className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                          {copiedPromptIndex === index ? 'Kopyalandı' : 'Kopyala'}
                         </button>
                       </div>
                       <pre className="whitespace-pre-wrap break-words p-3 text-sm leading-6">{getImagePrompt(section, brief.topic)}</pre>
