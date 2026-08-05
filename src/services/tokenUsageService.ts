@@ -132,6 +132,16 @@ export async function incrementTokenUsageWithComprehensiveDetails(
 ): Promise<number> {
   const ref = doc(db, COLLECTION, userId);
 
+  // Bill double the provider-reported tokens for each recorded call
+  const billedTokenUsage: TokenUsage = {
+    promptTokens: tokenUsage.promptTokens * 2,
+    candidatesTokens: tokenUsage.candidatesTokens * 2,
+    totalTokens: tokenUsage.totalTokens * 2,
+    thoughtsTokens: tokenUsage.thoughtsTokens * 2,
+    cachedTokens: tokenUsage.cachedTokens * 2,
+    toolUseTokens: tokenUsage.toolUseTokens * 2
+  };
+
   // Create new analysis record
   const newAnalysis: AnalysisRecord = {
     id: generateAnalysisId(),
@@ -139,12 +149,12 @@ export async function incrementTokenUsageWithComprehensiveDetails(
     url: analysisDetails.url,
     analysisType: analysisDetails.analysisType,
     status: analysisDetails.status,
-    tokensUsed: tokenUsage.totalTokens,
-    promptTokens: tokenUsage.promptTokens,
-    candidatesTokens: tokenUsage.candidatesTokens,
-    thoughtsTokens: tokenUsage.thoughtsTokens,
-    cachedTokens: tokenUsage.cachedTokens,
-    toolUseTokens: tokenUsage.toolUseTokens,
+    tokensUsed: billedTokenUsage.totalTokens,
+    promptTokens: billedTokenUsage.promptTokens,
+    candidatesTokens: billedTokenUsage.candidatesTokens,
+    thoughtsTokens: billedTokenUsage.thoughtsTokens,
+    cachedTokens: billedTokenUsage.cachedTokens,
+    toolUseTokens: billedTokenUsage.toolUseTokens,
     error: analysisDetails.error || null,
     model: analysisDetails.model || 'unknown',
     step: analysisDetails.step || 'unknown'
@@ -157,20 +167,20 @@ export async function incrementTokenUsageWithComprehensiveDetails(
 
     if (!currentSnapshot.exists()) {
       transaction.set(ref, {
-        totalTokens: tokenUsage.totalTokens,
+        totalTokens: billedTokenUsage.totalTokens,
         tokenLimit: DEFAULT_TOKEN_LIMIT,
         analyses: [newAnalysis],
-        dailyUsage: { [currentDate]: tokenUsage.totalTokens },
-        monthlyUsage: { [currentMonth]: tokenUsage.totalTokens },
+        dailyUsage: { [currentDate]: billedTokenUsage.totalTokens },
+        monthlyUsage: { [currentMonth]: billedTokenUsage.totalTokens },
         lastUpdated: serverTimestamp()
       });
-      return tokenUsage.totalTokens;
+      return billedTokenUsage.totalTokens;
     }
 
     const currentData = currentSnapshot.data();
     const currentTotal = Number(currentData.totalTokens) || 0;
     const tokenLimit = Number(currentData.tokenLimit) || DEFAULT_TOKEN_LIMIT;
-    const nextTotal = currentTotal + tokenUsage.totalTokens;
+    const nextTotal = currentTotal + billedTokenUsage.totalTokens;
 
     if (nextTotal > tokenLimit) {
       throw new Error('Token limit reached. Please pay');
@@ -183,8 +193,8 @@ export async function incrementTokenUsageWithComprehensiveDetails(
     transaction.update(ref, {
       totalTokens: nextTotal,
       analyses,
-      [`dailyUsage.${currentDate}`]: (Number(currentData.dailyUsage?.[currentDate]) || 0) + tokenUsage.totalTokens,
-      [`monthlyUsage.${currentMonth}`]: (Number(currentData.monthlyUsage?.[currentMonth]) || 0) + tokenUsage.totalTokens,
+      [`dailyUsage.${currentDate}`]: (Number(currentData.dailyUsage?.[currentDate]) || 0) + billedTokenUsage.totalTokens,
+      [`monthlyUsage.${currentMonth}`]: (Number(currentData.monthlyUsage?.[currentMonth]) || 0) + billedTokenUsage.totalTokens,
       lastUpdated: serverTimestamp()
     });
 
