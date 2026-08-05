@@ -35,6 +35,12 @@ interface AnalysisResult {
     labeledItems?: Array<{ label: string; value: string }>;
   };
   coverImagePrompt?: string;
+  geoOptimization?: {
+    directAnswer: string;
+    keyEntities: string[];
+    claimGuidance: string[];
+    citationInstruction: string;
+  };
   contentOutline: OutlineSection[];
   faqSection: FAQ[];
   schemaStrategy: {
@@ -76,6 +82,7 @@ interface OutlineSection {
   storytelling?: string;
   imagePrompt?: string;
   icebreakerIdeas?: string[];
+  geoTip?: string;
   referenceSuggestions?: Array<{
     title: string;
     url: string;
@@ -96,7 +103,17 @@ const getReferenceSuggestions = (section: OutlineSection) => (section.referenceS
       return false;
     }
   })
+  .filter((reference, index, references) =>
+    references.findIndex(item => item.url === reference.url) === index
+  )
   .slice(0, 2);
+
+const getGeoOptimization = (brief: Pick<AnalysisResult, 'topic' | 'geoOptimization'>) => brief.geoOptimization || {
+  directAnswer: `${brief.topic} hakkında ilk paragrafta doğrudan, kısa ve doğrulanabilir bir yanıt verin; ayrıntıları aşağıdaki bölümlerde açın.`,
+  keyEntities: [brief.topic, 'Türkiye pazarı', 'güvenilir kaynaklar'],
+  claimGuidance: ['Ölçülebilir her iddiayı birincil veya otoriter bir kaynakla destekleyin.', 'Tanımları ve ana sonuçları kısa, tek anlamlı cümlelerle yazın.'],
+  citationInstruction: 'Kaynakları ilgili iddianın hemen ardından, yayıncı adı ve doğrudan bağlantıyla belirtin.'
+};
 
 const SEOAnalyzer: React.FC = () => {
   const [topic, setTopic] = useState('');
@@ -546,6 +563,7 @@ const SEOAnalyzer: React.FC = () => {
         keyTakeaways: result.keyTakeaways || [],
         summaryBox: result.summaryBox,
         coverImagePrompt: result.coverImagePrompt || '',
+        geoOptimization: result.geoOptimization,
         contentOutline: result.contentOutline || [],
         faqSection: result.faqSection || [],
         schemaStrategy: result.schemaStrategy || { mainSchema: '', supportingSchemas: [], reasoning: '' },
@@ -1135,7 +1153,7 @@ const SEOAnalyzer: React.FC = () => {
                         <pre className="whitespace-pre-wrap break-words p-3 text-sm leading-6">{getImagePrompt(section)}</pre>
                       </div>
                     )}
-                    {section.level === 'H2' && getReferenceSuggestions(section).length > 0 && (
+                    {section.level === 'H2' && getReferenceSuggestions(section).length === 2 && (
                       <div className="brief-reference-suggestions mt-3 border-l-4 border-cyan-400 bg-cyan-50 p-3">
                         <p className="text-sm font-semibold text-cyan-950">🔗 Referans Önerisi:</p>
                         <ul className="mt-2 space-y-1.5 text-sm">
@@ -1155,9 +1173,29 @@ const SEOAnalyzer: React.FC = () => {
                         </ul>
                       </div>
                     )}
+                    {section.level === 'H2' && section.geoTip && (
+                      <p className="brief-geo-tip mt-3 text-sm">🤖 GEO Notu: {section.geoTip}</p>
+                    )}
                   </div>
                 ))}
               </div>
+
+              {(() => {
+                const geoOptimization = getGeoOptimization(result);
+                return (
+                  <section className="brief-geo-box mt-6 border-l-4 border-teal-500 bg-teal-50 p-4" aria-labelledby="geo-optimization-title">
+                    <h3 id="geo-optimization-title" className="text-base font-semibold text-teal-950">🤖 GEO Optimizasyon Kutusu</h3>
+                    <p className="mt-2 text-sm text-teal-900">{geoOptimization.directAnswer}</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {geoOptimization.keyEntities.slice(0, 5).map(entity => <span key={entity} className="bg-white px-2 py-1 text-xs font-medium text-teal-900">{entity}</span>)}
+                    </div>
+                    <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-teal-900">
+                      {geoOptimization.claimGuidance.slice(0, 3).map(guidance => <li key={guidance}>{guidance}</li>)}
+                    </ul>
+                    <p className="mt-3 text-sm font-medium text-teal-950">Kaynak yerleşimi: {geoOptimization.citationInstruction}</p>
+                  </section>
+                );
+              })()}
             </div>
 
             {/* FAQ Section */}

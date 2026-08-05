@@ -42,6 +42,12 @@ interface GeminiAnalysisResult {
     }>;
   };
   coverImagePrompt?: string;
+  geoOptimization?: {
+    directAnswer: string;
+    keyEntities: string[];
+    claimGuidance: string[];
+    citationInstruction: string;
+  };
   contentOutline: Array<{
     level: 'H1' | 'H2' | 'H3';
     title: string;
@@ -50,6 +56,7 @@ interface GeminiAnalysisResult {
     storytelling?: string;
     imagePrompt?: string;
     icebreakerIdeas?: string[];
+    geoTip?: string;
     referenceSuggestions?: Array<{
       title: string;
       url: string;
@@ -330,11 +337,26 @@ class GeminiAIService {
           title: 'Bu yazıda ne okuyacaksınız?',
           items: generatedTakeaways.length >= 3 ? generatedTakeaways.slice(0, 3) : fallbackTakeaways
         };
+    const geoOptimization = {
+      directAnswer: typeof analysisResult.geoOptimization?.directAnswer === 'string' && analysisResult.geoOptimization.directAnswer.trim()
+        ? analysisResult.geoOptimization.directAnswer.trim()
+        : `${topic} hakkında ilk paragrafta doğrudan, kısa ve doğrulanabilir bir yanıt verin; ayrıntıları aşağıdaki bölümlerde açın.`,
+      keyEntities: Array.isArray(analysisResult.geoOptimization?.keyEntities)
+        ? analysisResult.geoOptimization.keyEntities.filter((entity: unknown) => typeof entity === 'string' && entity.trim()).slice(0, 5)
+        : [topic, 'Türkiye pazarı', 'güvenilir kaynaklar'],
+      claimGuidance: Array.isArray(analysisResult.geoOptimization?.claimGuidance)
+        ? analysisResult.geoOptimization.claimGuidance.filter((guidance: unknown) => typeof guidance === 'string' && guidance.trim()).slice(0, 3)
+        : ['Ölçülebilir her iddiayı birincil veya otoriter bir kaynakla destekleyin.', 'Tanımları ve ana sonuçları kısa, tek anlamlı cümlelerle yazın.'],
+      citationInstruction: typeof analysisResult.geoOptimization?.citationInstruction === 'string' && analysisResult.geoOptimization.citationInstruction.trim()
+        ? analysisResult.geoOptimization.citationInstruction.trim()
+        : 'Kaynakları ilgili iddianın hemen ardından, yayıncı adı ve doğrudan bağlantıyla belirtin.'
+    };
 
     return {
       ...analysisResult,
       keyTakeaways: generatedTakeaways.length >= 3 ? generatedTakeaways.slice(0, 3) : fallbackTakeaways,
       summaryBox,
+      geoOptimization,
       coverImagePrompt: analysisResult.coverImagePrompt ||
         `Premium editorial cover image for ${topic}, a clear focal subject that instantly communicates the article theme, refined composition with room for an editorial masthead, sophisticated natural lighting, rich tactile detail, photorealistic, high-end magazine photography, no text, no logo, no watermark`,
       contentOutline: contentOutline.map((section: any) => {
@@ -354,6 +376,11 @@ class GeminiAIService {
           icebreakerIdeas: section?.level === 'H2'
             ? [...suppliedIcebreakerIdeas, ...fallbackIcebreakerIdeas].slice(0, 2)
             : section?.icebreakerIdeas,
+          geoTip: section?.level === 'H2' && typeof section?.geoTip === 'string' && section.geoTip.trim()
+            ? section.geoTip.trim()
+            : section?.level === 'H2'
+              ? 'Bu bölümü kısa bir doğrudan yanıtla açın; her doğrulanabilir iddiayı yakındaki bir kaynakla destekleyin.'
+              : section?.geoTip,
           referenceSuggestions: section?.level === 'H2' && Array.isArray(section?.referenceSuggestions)
             ? section.referenceSuggestions
               .filter((reference: unknown) => {
@@ -366,6 +393,15 @@ class GeminiAIService {
                   return false;
                 }
               })
+              .filter((reference: { title?: unknown; url?: unknown }, index: number, references: unknown[]) =>
+                typeof reference.title === 'string' &&
+                reference.title.trim().length > 0 &&
+                references.findIndex(item =>
+                  typeof item === 'object' &&
+                  item !== null &&
+                  (item as { url?: unknown }).url === reference.url
+                ) === index
+              )
               .slice(0, 2)
             : section?.referenceSuggestions
         };
@@ -558,6 +594,12 @@ Lütfen aşağıdaki JSON formatında QFO verilerine dayalı en üst düzeyde bi
     "labeledItems": [{ "label": "Öne Çıkan Özellik", "value": "Format labeled için kısa cevap" }]
   },
   "coverImagePrompt": "English cover-image prompt",
+  "geoOptimization": {
+    "directAnswer": "Yapay zeka arama sonuçlarında kullanılabilecek, konuyu doğrudan yanıtlayan 35-55 kelimelik Türkçe özet",
+    "keyEntities": ["Konuya ait önemli varlık veya kavram", "İkinci önemli varlık"],
+    "claimGuidance": ["Doğrulanabilir iddiaya yönelik kaynak kuralı", "Kısa ve açık yanıt biçimi önerisi"],
+    "citationInstruction": "Kaynakların iddiaya yakın ve doğrudan bağlantıyla belirtilmesi için kısa direktif"
+  },
   "contentOutline": [
     {
       "level": "H1",
@@ -571,6 +613,7 @@ Lütfen aşağıdaki JSON formatında QFO verilerine dayalı en üst düzeyde bi
       "content": "Bu bölümde ne anlatılacağının detaylı açıklaması",
       "storytelling": "Bu bölüm için hikayeleştirme önerisi",
       "icebreakerIdeas": ["Editörü yazıya hızlı başlatacak ilk giriş/kanca cümlesi", "Farklı bir açı sunan ikinci giriş/kanca cümlesi"],
+      "geoTip": "Bu H2 altında kullanılacak, doğrudan yanıt ve kaynak yerleşimi odaklı kısa GEO önerisi",
       "imagePrompt": "English cinematic, premium visual prompt for this H2 section",
       "referenceSuggestions": [
         { "title": "Konuya ilişkin otoriter kurum veya akademik kaynak adı", "url": "https://example.org/official-source" }
@@ -644,8 +687,10 @@ Lütfen aşağıdaki JSON formatında QFO verilerine dayalı en üst düzeyde bi
 9. "coverImagePrompt" alanında yalnızca İngilizce, Midjourney/DALL-E uyumlu kapak görseli promptu oluştur. Konuyu ilk bakışta anlatan belirgin bir ana özne, editoryal başlık için boşluk, kompozisyon, ışık, doku ve kalite detaylarını belirt; yazı, logo veya watermark isteme.
 10. Her H2 için "imagePrompt" alanında yalnızca İngilizce, Midjourney/DALL-E uyumlu, konuyu yansıtan sinematik ve premium bir görsel prompt oluştur. Kompozisyon, ışık, doku ve kalite detaylarını belirt; yazı, logo veya watermark isteme.
 11. Her H2 için "icebreakerIdeas" alanında Türkçe, birbirinden farklı, editörün metne hızlı başlamasını sağlayacak tam 2 giriş/kanca cümlesi oluştur.
-12. Her H2 için "referenceSuggestions" alanında, o bölümdeki iddia ve verileri doğrulayabilecek 1 veya 2 küresel ve otoriter dış kaynak ver. Her kaynakta kısa ve net "title" ile doğrudan çalışır "https" URL'si bulunmalı. Resmi kurumlar, uluslararası kuruluşlar, hakemli yayınlar, akademik kurumlar veya güvenilir veri sağlayıcılarını önceliklendir. Rakip siteleri, ana sayfa dışı belirsiz arama sonuçlarını, uydurma URL'leri ve ticari satış sayfalarını kullanma.
-13. Yanıtın sadece JSON formatında olsun, başka açıklama ekleme
+12. Her H2 için "referenceSuggestions" alanında tam 2 farklı küresel ve otoriter dış kaynak ver. Bu iki kaynak, o bölümdeki iddia ve verileri doğrulayabilmeli; aynı domain veya aynı URL tekrar edilemez. Her kaynakta kısa ve net "title" ile doğrudan çalışan "https" URL'si bulunmalı. Resmi kurumlar, uluslararası kuruluşlar, hakemli yayınlar, akademik kurumlar veya güvenilir veri sağlayıcılarını önceliklendir. Rakip siteleri, ana sayfa dışı belirsiz arama sonuçlarını, uydurma URL'leri ve ticari satış sayfalarını kullanma.
+13. "geoOptimization" alanında ChatGPT, Gemini, Perplexity ve AI Overviews için uygulanabilir GEO direktifi oluştur. "directAnswer" alanı konuyu ilk bakışta cevaplamalı, 35-55 Türkçe kelime içermeli ve doğrulanamayan sayısal iddia barındırmamalı. "keyEntities" alanında 3-5 temel varlık veya kavram, "claimGuidance" alanında en fazla 3 doğrulanabilirlik/yapı önerisi ve "citationInstruction" alanında kaynak yerleşimi direktifi ver.
+14. Her H2 için "geoTip" alanında en fazla 20 kelimelik Türkçe GEO önerisi oluştur; bölümü doğrudan yanıt, varlık netliği veya kaynak yerleşimi bakımından güçlendirsin.
+15. Yanıtın sadece JSON formatında olsun, başka açıklama ekleme
 
 🚀 QFO VERİLERİNİ MAKSİMUM ETKİ İÇİN KULLAN:
 - Her QFO analiz verisini dikkate al ve stratejiye entegre et

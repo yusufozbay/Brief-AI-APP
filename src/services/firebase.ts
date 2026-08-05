@@ -74,6 +74,12 @@ export interface SharedBrief {
     }>;
   };
   coverImagePrompt?: string;
+  geoOptimization?: {
+    directAnswer: string;
+    keyEntities: string[];
+    claimGuidance: string[];
+    citationInstruction: string;
+  };
   contentOutline: Array<{
     level: 'H1' | 'H2' | 'H3';
     title: string;
@@ -82,6 +88,7 @@ export interface SharedBrief {
     storytelling?: string;
     imagePrompt?: string;
     icebreakerIdeas?: string[];
+    geoTip?: string;
     referenceSuggestions?: Array<{
       title: string;
       url: string;
@@ -177,6 +184,7 @@ class FirebaseService {
         keyTakeaways: Array.isArray(briefData.keyTakeaways) ? briefData.keyTakeaways : [],
         summaryBox: briefData.summaryBox ? sanitizeData(briefData.summaryBox) : null,
         coverImagePrompt: briefData.coverImagePrompt || '',
+        geoOptimization: briefData.geoOptimization ? sanitizeData(briefData.geoOptimization) : null,
         contentOutline: Array.isArray(briefData.contentOutline) ? sanitizeData(briefData.contentOutline) : [],
         faqSection: Array.isArray(briefData.faqSection) ? sanitizeData(briefData.faqSection) : [],
         schemaStrategy: briefData.schemaStrategy || { mainSchema: '', supportingSchemas: [], reasoning: '' },

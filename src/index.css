@@ -69,6 +69,26 @@ html.dark .brief-story {
 	color: #f5f3ff;
 }
 
+html.dark .brief-geo-box {
+	background-color: #123b3a;
+	border-color: #2dd4bf;
+	color: #e6fffb;
+}
+
+html.dark .brief-geo-box .text-teal-950,
+html.dark .brief-geo-box .text-teal-900 {
+	color: #ccfbf1;
+}
+
+html.dark .brief-geo-box .bg-white {
+	background-color: #164e4a;
+	color: #ccfbf1;
+}
+
+html.dark .brief-geo-tip {
+	color: #99f6e4;
+}
+
 html.dark .brief-reference-suggestions {
 	background-color: #123247;
 	border-color: #22d3ee;
