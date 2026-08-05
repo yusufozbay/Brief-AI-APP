@@ -82,6 +82,10 @@ export interface SharedBrief {
     storytelling?: string;
     imagePrompt?: string;
     icebreakerIdeas?: string[];
+    referenceSuggestions?: Array<{
+      title: string;
+      url: string;
+    }>;
   }>;
   faqSection: Array<{
     question: string;

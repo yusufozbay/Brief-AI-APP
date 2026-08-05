@@ -76,12 +76,27 @@ interface OutlineSection {
   storytelling?: string;
   imagePrompt?: string;
   icebreakerIdeas?: string[];
+  referenceSuggestions?: Array<{
+    title: string;
+    url: string;
+  }>;
 }
 
 interface FAQ {
   question: string;
   answer: string;
 }
+
+const getReferenceSuggestions = (section: OutlineSection) => (section.referenceSuggestions || [])
+  .filter(reference => {
+    try {
+      const url = new URL(reference.url);
+      return Boolean(reference.title.trim()) && (url.protocol === 'https:' || url.protocol === 'http:');
+    } catch {
+      return false;
+    }
+  })
+  .slice(0, 2);
 
 const SEOAnalyzer: React.FC = () => {
   const [topic, setTopic] = useState('');
@@ -829,7 +844,7 @@ const SEOAnalyzer: React.FC = () => {
                 <TrendingUp className="w-6 h-6 mr-3 text-indigo-600" />
                 AI Destekli Stratejik Analiz
                 {result.qfoEnhanced && (
-                  <span className="ml-3 bg-green-100 text-green-800 text-xs font-semibold px-2 py-1 rounded-full">
+                  <span className="qfo-badge ml-3 bg-green-100 text-green-800 text-xs font-semibold px-2 py-1 rounded-full">
                     QFO Enhanced
                   </span>
                 )}
@@ -1118,6 +1133,26 @@ const SEOAnalyzer: React.FC = () => {
                           </button>
                         </div>
                         <pre className="whitespace-pre-wrap break-words p-3 text-sm leading-6">{getImagePrompt(section)}</pre>
+                      </div>
+                    )}
+                    {section.level === 'H2' && getReferenceSuggestions(section).length > 0 && (
+                      <div className="brief-reference-suggestions mt-3 border-l-4 border-cyan-400 bg-cyan-50 p-3">
+                        <p className="text-sm font-semibold text-cyan-950">🔗 Referans Önerisi:</p>
+                        <ul className="mt-2 space-y-1.5 text-sm">
+                          {getReferenceSuggestions(section).map(reference => (
+                            <li key={reference.url}>
+                              <a
+                                href={reference.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 text-cyan-800 underline decoration-cyan-400 underline-offset-2 hover:text-cyan-950"
+                              >
+                                {reference.title}
+                                <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
                       </div>
                     )}
                   </div>

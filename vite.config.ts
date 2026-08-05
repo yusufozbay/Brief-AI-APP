@@ -9,6 +9,9 @@ export default defineConfig({
     'WORKER_',
     'FIREBASE_'
   ],
+  esbuild: {
+    drop: ['console', 'debugger'],
+  },
   optimizeDeps: {
     exclude: ['lucide-react'],
   },

@@ -50,6 +50,10 @@ interface GeminiAnalysisResult {
     storytelling?: string;
     imagePrompt?: string;
     icebreakerIdeas?: string[];
+    referenceSuggestions?: Array<{
+      title: string;
+      url: string;
+    }>;
   }>;
   faqSection: Array<{
     question: string;
@@ -349,7 +353,21 @@ class GeminiAIService {
             : section.imagePrompt,
           icebreakerIdeas: section?.level === 'H2'
             ? [...suppliedIcebreakerIdeas, ...fallbackIcebreakerIdeas].slice(0, 2)
-            : section?.icebreakerIdeas
+            : section?.icebreakerIdeas,
+          referenceSuggestions: section?.level === 'H2' && Array.isArray(section?.referenceSuggestions)
+            ? section.referenceSuggestions
+              .filter((reference: unknown) => {
+                if (!reference || typeof reference !== 'object') return false;
+                const url = (reference as { url?: unknown }).url;
+                try {
+                  const parsedUrl = new URL(typeof url === 'string' ? url : '');
+                  return parsedUrl.protocol === 'https:' || parsedUrl.protocol === 'http:';
+                } catch {
+                  return false;
+                }
+              })
+              .slice(0, 2)
+            : section?.referenceSuggestions
         };
       })
     };
@@ -553,7 +571,10 @@ Lütfen aşağıdaki JSON formatında QFO verilerine dayalı en üst düzeyde bi
       "content": "Bu bölümde ne anlatılacağının detaylı açıklaması",
       "storytelling": "Bu bölüm için hikayeleştirme önerisi",
       "icebreakerIdeas": ["Editörü yazıya hızlı başlatacak ilk giriş/kanca cümlesi", "Farklı bir açı sunan ikinci giriş/kanca cümlesi"],
-      "imagePrompt": "English cinematic, premium visual prompt for this H2 section"
+      "imagePrompt": "English cinematic, premium visual prompt for this H2 section",
+      "referenceSuggestions": [
+        { "title": "Konuya ilişkin otoriter kurum veya akademik kaynak adı", "url": "https://example.org/official-source" }
+      ]
     }
   ],
   "faqSection": [
@@ -623,7 +644,8 @@ Lütfen aşağıdaki JSON formatında QFO verilerine dayalı en üst düzeyde bi
 9. "coverImagePrompt" alanında yalnızca İngilizce, Midjourney/DALL-E uyumlu kapak görseli promptu oluştur. Konuyu ilk bakışta anlatan belirgin bir ana özne, editoryal başlık için boşluk, kompozisyon, ışık, doku ve kalite detaylarını belirt; yazı, logo veya watermark isteme.
 10. Her H2 için "imagePrompt" alanında yalnızca İngilizce, Midjourney/DALL-E uyumlu, konuyu yansıtan sinematik ve premium bir görsel prompt oluştur. Kompozisyon, ışık, doku ve kalite detaylarını belirt; yazı, logo veya watermark isteme.
 11. Her H2 için "icebreakerIdeas" alanında Türkçe, birbirinden farklı, editörün metne hızlı başlamasını sağlayacak tam 2 giriş/kanca cümlesi oluştur.
-12. Yanıtın sadece JSON formatında olsun, başka açıklama ekleme
+12. Her H2 için "referenceSuggestions" alanında, o bölümdeki iddia ve verileri doğrulayabilecek 1 veya 2 küresel ve otoriter dış kaynak ver. Her kaynakta kısa ve net "title" ile doğrudan çalışır "https" URL'si bulunmalı. Resmi kurumlar, uluslararası kuruluşlar, hakemli yayınlar, akademik kurumlar veya güvenilir veri sağlayıcılarını önceliklendir. Rakip siteleri, ana sayfa dışı belirsiz arama sonuçlarını, uydurma URL'leri ve ticari satış sayfalarını kullanma.
+13. Yanıtın sadece JSON formatında olsun, başka açıklama ekleme
 
 🚀 QFO VERİLERİNİ MAKSİMUM ETKİ İÇİN KULLAN:
 - Her QFO analiz verisini dikkate al ve stratejiye entegre et
