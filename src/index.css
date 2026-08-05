@@ -24,7 +24,8 @@ html.dark .bg-gradient-to-br {
 html.dark .text-gray-800,
 html.dark .text-gray-700,
 html.dark .text-gray-600,
-html.dark .text-gray-500 {
+html.dark .text-gray-500,
+html.dark .text-gray-900 {
 	color: #e5e7eb;
 }
 
@@ -50,6 +51,39 @@ html.dark .text-green-800,
 html.dark .text-yellow-800,
 html.dark .text-purple-800 {
 	color: #dbeafe;
+}
+
+html.dark .brief-summary-box,
+html.dark .brief-icebreaker {
+	background-color: #273449;
+	color: #f8fafc;
+}
+
+html.dark .brief-icebreaker .text-indigo-900,
+html.dark .brief-icebreaker .text-indigo-800 {
+	color: #dbeafe;
+}
+
+html.dark .brief-story {
+	background-color: #302a44;
+	color: #f5f3ff;
+}
+
+html.dark .brief-image-prompt {
+	background-color: #1e293b;
+	border-color: #475569;
+	color: #e2e8f0;
+}
+
+html.dark .brief-image-prompt > div {
+	background-color: #334155;
+	border-color: #475569;
+}
+
+html.dark .brief-image-prompt .text-violet-950,
+html.dark .brief-image-prompt .text-violet-800,
+html.dark .brief-image-prompt .text-slate-800 {
+	color: #f5f3ff;
 }
 
 html.dark input,

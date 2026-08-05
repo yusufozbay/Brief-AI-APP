@@ -19,6 +19,12 @@ const getKeyTakeaways = (brief: SharedBrief) => {
   return derivedTakeaways;
 };
 
+const getSummaryBox = (brief: SharedBrief) => brief.summaryBox || {
+  format: 'bullets' as const,
+  title: 'Bu yazıda ne okuyacaksınız?',
+  items: getKeyTakeaways(brief)
+};
+
 const getImagePrompt = (section: SharedBrief['contentOutline'][number], topic: string) => section.imagePrompt ||
   `Cinematic premium editorial image illustrating ${section.title} for ${topic}, sophisticated composition, rich tactile detail, dramatic natural lighting, photorealistic, high-end magazine photography, no text, no logo, no watermark`;
 
@@ -125,6 +131,7 @@ const SharedBriefViewer: React.FC = () => {
   }
 
   const keyTakeaways = getKeyTakeaways(brief);
+  const summaryBox = getSummaryBox(brief);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -224,14 +231,35 @@ const SharedBriefViewer: React.FC = () => {
               Detaylı İçerik Planı
             </h2>
 
-            <section className="mb-6 border-l-4 border-amber-400 bg-amber-50 p-4" aria-labelledby="key-takeaways-title">
-              <h3 id="key-takeaways-title" className="font-semibold text-gray-800">📌 Key Takeaways (Önemli Çıkarımlar)</h3>
-              <ul className="mt-3 list-disc space-y-2 pl-5 text-gray-700">
-                {keyTakeaways.map((takeaway, index) => (
-                  <li key={index}>{takeaway}</li>
-                ))}
-              </ul>
+            <section className="brief-summary-box mb-6 border-l-4 border-amber-400 bg-amber-50 p-4" aria-labelledby="content-summary-title">
+              <h3 id="content-summary-title" className="font-semibold text-gray-800">{summaryBox.title}</h3>
+              {summaryBox.format === 'paragraph' && summaryBox.paragraph ? (
+                <p className="mt-3 text-gray-700">{summaryBox.paragraph}</p>
+              ) : summaryBox.format === 'labeled' && summaryBox.labeledItems?.length ? (
+                <dl className="mt-3 space-y-2 text-gray-700">
+                  {summaryBox.labeledItems.slice(0, 5).map((item, index) => (
+                    <div key={index}><dt className="inline font-semibold">{item.label}: </dt><dd className="inline">{item.value}</dd></div>
+                  ))}
+                </dl>
+              ) : (
+                <ul className="mt-3 list-disc space-y-2 pl-5 text-gray-700">
+                  {(summaryBox.items?.slice(0, 5) || keyTakeaways).map((takeaway, index) => <li key={index}>{takeaway}</li>)}
+                </ul>
+              )}
             </section>
+
+            {brief.coverImagePrompt && (
+              <div className="brief-image-prompt mb-6 overflow-hidden rounded-lg border border-[#B8BEC7] border-l-4 border-l-violet-400 bg-[#ECEDEF] text-slate-800">
+                <div className="flex items-center justify-between gap-3 border-b border-[#B8BEC7] bg-[#D9DDE2] px-3 py-2">
+                  <h3 className="text-sm font-semibold text-violet-950">🖼️ Kapak Görseli Promptu</h3>
+                  <button type="button" onClick={() => copyImagePrompt(brief.coverImagePrompt || '', -1)} className="inline-flex shrink-0 items-center gap-1.5 rounded border border-violet-300 bg-violet-100 px-2.5 py-1 text-xs font-medium text-violet-800 transition-colors hover:bg-violet-200">
+                    {copiedPromptIndex === -1 ? <CheckCircle className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                    {copiedPromptIndex === -1 ? 'Kopyalandı' : 'Kopyala'}
+                  </button>
+                </div>
+                <pre className="whitespace-pre-wrap break-words p-3 text-sm leading-6">{brief.coverImagePrompt}</pre>
+              </div>
+            )}
             
             <div className="space-y-6">
               {brief.contentOutline.map((section, index) => (
@@ -248,7 +276,7 @@ const SharedBriefViewer: React.FC = () => {
                   </div>
                   <p className="text-gray-600 mb-3">{section.content}</p>
                   {section.level === 'H2' && (
-                    <div className="mb-3 border-l-4 border-indigo-200 bg-indigo-50 p-3">
+                    <div className="brief-icebreaker mb-3 border-l-4 border-indigo-200 bg-indigo-50 p-3">
                       <h4 className="mb-2 text-sm font-semibold text-indigo-900">✍️ Giriş Fikirleri:</h4>
                       <div className="space-y-1 text-sm italic text-indigo-800">
                         {getIcebreakerIdeas(section, brief.topic).map((idea, ideaIndex) => (
@@ -265,14 +293,14 @@ const SharedBriefViewer: React.FC = () => {
                     </div>
                   )}
                   {section.storytelling && (
-                    <div className="bg-[#F7F5FC] rounded-lg p-3">
+                    <div className="brief-story bg-[#F7F5FC] rounded-lg p-3">
                       <p className="text-sm text-purple-800">
                         <strong>📖 Hikayeleştirme:</strong> {section.storytelling}
                       </p>
                     </div>
                   )}
                   {section.level === 'H2' && (
-                    <div className="mt-3 overflow-hidden rounded-lg border border-[#B8BEC7] border-l-4 border-l-violet-400 bg-[#ECEDEF] text-slate-800">
+                    <div className="brief-image-prompt mt-3 overflow-hidden rounded-lg border border-[#B8BEC7] border-l-4 border-l-violet-400 bg-[#ECEDEF] text-slate-800">
                       <div className="flex items-center justify-between gap-3 border-b border-[#B8BEC7] bg-[#D9DDE2] px-3 py-2">
                         <h4 className="text-sm font-semibold text-violet-950">🎨 Görsel Prompt</h4>
                         <button

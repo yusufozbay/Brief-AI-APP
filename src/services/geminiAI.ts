@@ -1,5 +1,19 @@
 import { CompetitorSelection } from '../types/serp';
 
+export interface GeminiTokenUsage {
+  promptTokens: number;
+  candidatesTokens: number;
+  totalTokens: number;
+  thoughtsTokens: number;
+  cachedTokens: number;
+  toolUseTokens: number;
+}
+
+export interface GeminiUsageEvent {
+  tokenUsage: GeminiTokenUsage;
+  model: string;
+}
+
 interface GeminiAnalysisResult {
   topic: string;
   userIntent: string;
@@ -17,6 +31,17 @@ interface GeminiAnalysisResult {
   };
   metaDescription: string;
   keyTakeaways: string[];
+  summaryBox?: {
+    format: 'bullets' | 'paragraph' | 'labeled';
+    title: string;
+    items?: string[];
+    paragraph?: string;
+    labeledItems?: Array<{
+      label: string;
+      value: string;
+    }>;
+  };
+  coverImagePrompt?: string;
   contentOutline: Array<{
     level: 'H1' | 'H2' | 'H3';
     title: string;
@@ -40,18 +65,13 @@ interface GeminiAnalysisResult {
     status: boolean;
     note: string;
   }>;
-  tokenUsage?: {
-    promptTokens: number;
-    candidatesTokens: number;
-    totalTokens: number;
-    thoughtsTokens?: number;
-    cachedTokens?: number;
-  };
+  tokenUsage?: GeminiTokenUsage;
 }
 
 class GeminiAIService {
   private isGenerating: boolean = false;
   private currentModelIndex: number = 0;
+  private usageObserver: ((event: GeminiUsageEvent) => Promise<void>) | null = null;
   private workerBridgeUrl: string = ((import.meta.env as Record<string, string | undefined>).WORKER_BRIDGE_URL || import.meta.env.VITE_WORKER_BRIDGE_URL || '').replace(/\/$/, '');
   private modelOrder: string[] = [
     'gemini-3.1-pro-preview',
@@ -72,6 +92,21 @@ class GeminiAIService {
   initializeAI(_apiKey: string) {
     // Kept for compatibility. API key is no longer used client-side.
     console.log('ℹ️ initializeAI() is deprecated. Gemini calls now use Cloudflare Worker bridge.');
+  }
+
+  setUsageObserver(observer: ((event: GeminiUsageEvent) => Promise<void>) | null) {
+    this.usageObserver = observer;
+  }
+
+  private async reportUsage(tokenUsage: GeminiTokenUsage | null, model: string) {
+    if (!tokenUsage || !this.usageObserver) return;
+
+    try {
+      await this.usageObserver({ tokenUsage, model });
+    } catch (error) {
+      // Usage reporting must not discard a successfully generated brief.
+      console.error('❌ Error recording Gemini token usage:', error);
+    }
   }
 
   private getBridgeBaseUrl(): string {
@@ -175,11 +210,16 @@ class GeminiAIService {
       const result = await this.tryWithFallback(async (modelName) => {
         const workerResult = await this.callWorkerForContent(prompt, modelName);
         console.log('📊 Token usage metadata:', workerResult.usageMetadata);
-        return workerResult;
+        return { ...workerResult, modelName };
       });
       
       console.log('📥 Gemini AI response received, length:', result.text.length);
       console.log('📥 Raw response preview:', result.text.substring(0, 500) + '...');
+
+      // Record usage as soon as Gemini has completed, even if local JSON parsing fails.
+      const tokenUsage = this.calculateTokenUsage(result.usageMetadata);
+      console.log('📊 Calculated token usage:', tokenUsage);
+      await this.reportUsage(tokenUsage, result.modelName);
       
       // Parse the JSON response from Gemini (remove markdown code blocks if present)
       let cleanText = result.text.trim();
@@ -200,10 +240,6 @@ class GeminiAIService {
       console.log('📊 Generated FAQ count:', analysisResult.faqSection?.length || 0);
       console.log('📊 Sample FAQ question:', analysisResult.faqSection?.[0]?.question || 'No FAQ found');
       console.log('📊 Sample FAQ answer length:', analysisResult.faqSection?.[0]?.answer?.length || 0);
-      
-      // Calculate token usage
-      const tokenUsage = this.calculateTokenUsage(result.usageMetadata, prompt);
-      console.log('📊 Calculated token usage:', tokenUsage);
       
       return {
         topic,
@@ -283,9 +319,20 @@ class GeminiAIService {
       fallbackTakeaways.push(`${topic} konusunda güvenilir bilgilerle daha etkili ve sürdürülebilir seçimler yapın.`);
     }
 
+    const summaryBox = analysisResult.summaryBox?.format
+      ? analysisResult.summaryBox
+      : {
+          format: 'bullets' as const,
+          title: 'Bu yazıda ne okuyacaksınız?',
+          items: generatedTakeaways.length >= 3 ? generatedTakeaways.slice(0, 3) : fallbackTakeaways
+        };
+
     return {
       ...analysisResult,
       keyTakeaways: generatedTakeaways.length >= 3 ? generatedTakeaways.slice(0, 3) : fallbackTakeaways,
+      summaryBox,
+      coverImagePrompt: analysisResult.coverImagePrompt ||
+        `Premium editorial cover image for ${topic}, a clear focal subject that instantly communicates the article theme, refined composition with room for an editorial masthead, sophisticated natural lighting, rich tactile detail, photorealistic, high-end magazine photography, no text, no logo, no watermark`,
       contentOutline: contentOutline.map((section: any) => {
         const suppliedIcebreakerIdeas = Array.isArray(section?.icebreakerIdeas)
           ? section.icebreakerIdeas.filter((idea: unknown) => typeof idea === 'string' && idea.trim()).slice(0, 2)
@@ -311,57 +358,35 @@ class GeminiAIService {
   /**
    * Calculate token usage from Gemini AI response
    */
-  private calculateTokenUsage(usageMetadata: any, prompt: string): {
-    promptTokens: number;
-    candidatesTokens: number;
-    totalTokens: number;
-    thoughtsTokens?: number;
-    cachedTokens?: number;
-  } {
-    try {
-      // Extract token counts from usage metadata
-      const promptTokens = usageMetadata?.promptTokenCount || 0;
-      const candidatesTokens = usageMetadata?.candidatesTokenCount || 0;
-      const totalTokens = usageMetadata?.totalTokenCount || 0;
-      
-      // Extract thinking tokens (if available)
-      const thoughtsTokens = usageMetadata?.thinkingTokenCount || 0;
-      
-      // Extract cached tokens (if available)
-      const cachedTokens = usageMetadata?.cachedContentTokenCount || 0;
-      
-      console.log('📊 Token breakdown:', {
-        promptTokens,
-        candidatesTokens,
-        totalTokens,
-        thoughtsTokens,
-        cachedTokens,
-        promptLength: prompt.length,
-        usageMetadata: usageMetadata
-      });
-      
-      return {
-        promptTokens,
-        candidatesTokens,
-        totalTokens: totalTokens || (promptTokens + candidatesTokens),
-        thoughtsTokens,
-        cachedTokens
-      };
-    } catch (error) {
-      console.error('❌ Error calculating token usage:', error);
-      
-      // Fallback calculation based on text length
-      const estimatedPromptTokens = Math.ceil(prompt.length / 4); // Rough estimation
-      const estimatedOutputTokens = 2000; // Estimated output for brief generation
-      
-      return {
-        promptTokens: estimatedPromptTokens,
-        candidatesTokens: estimatedOutputTokens,
-        totalTokens: estimatedPromptTokens + estimatedOutputTokens,
-        thoughtsTokens: 0,
-        cachedTokens: 0
-      };
+  private calculateTokenUsage(usageMetadata: unknown): GeminiTokenUsage | null {
+    if (!usageMetadata || typeof usageMetadata !== 'object') {
+      console.warn('⚠️ Gemini response did not include usage metadata; usage was not estimated or recorded.');
+      return null;
     }
+
+    const metadata = usageMetadata as Record<string, unknown>;
+    const readTokenCount = (key: string) => {
+      const value = metadata[key];
+      return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : 0;
+    };
+
+    const totalTokens = readTokenCount('totalTokenCount');
+    if (totalTokens === 0) {
+      console.warn('⚠️ Gemini response did not include a positive totalTokenCount; usage was not recorded.', usageMetadata);
+      return null;
+    }
+
+    const tokenUsage = {
+      promptTokens: readTokenCount('promptTokenCount'),
+      candidatesTokens: readTokenCount('candidatesTokenCount'),
+      thoughtsTokens: readTokenCount('thoughtsTokenCount'),
+      cachedTokens: readTokenCount('cachedContentTokenCount'),
+      toolUseTokens: readTokenCount('toolUsePromptTokenCount'),
+      totalTokens
+    };
+
+    console.log('📊 Provider-reported token breakdown:', tokenUsage);
+    return tokenUsage;
   }
 
   /**
@@ -507,6 +532,14 @@ Lütfen aşağıdaki JSON formatında QFO verilerine dayalı en üst düzeyde bi
   },
   "metaDescription": "155 karakter sınırında meta açıklama",
   "keyTakeaways": ["10-15 kelimelik ilk önemli çıkarım", "10-15 kelimelik ikinci önemli çıkarım", "10-15 kelimelik üçüncü önemli çıkarım"],
+  "summaryBox": {
+    "format": "bullets | paragraph | labeled",
+    "title": "Bu yazıda ne okuyacaksınız?",
+    "items": ["Format bullets için 3-5 cevap odaklı madde"],
+    "paragraph": "Format paragraph için 2-3 cümlelik editoryal özet",
+    "labeledItems": [{ "label": "Öne Çıkan Özellik", "value": "Format labeled için kısa cevap" }]
+  },
+  "coverImagePrompt": "English cover-image prompt",
   "contentOutline": [
     {
       "level": "H1",
@@ -586,10 +619,11 @@ Lütfen aşağıdaki JSON formatında QFO verilerine dayalı en üst düzeyde bi
 5. Pratik, uygulanabilir öneriler ver
 6. İçerik outline'ında en az 6 H2 bölümü olsun
 7. FAQ bölümünde en az 10 soru olsun
-8. "keyTakeaways" alanında, okuyucunun yazıdan elde edeceği en önemli 3 fayda ve bilgiyi Türkçe, 10-15 kelimelik kısa ve vurucu maddeler halinde özetle.
-9. Her H2 için "imagePrompt" alanında yalnızca İngilizce, Midjourney/DALL-E uyumlu, konuyu yansıtan sinematik ve premium bir görsel prompt oluştur. Kompozisyon, ışık, doku ve kalite detaylarını belirt; yazı, logo veya watermark isteme.
-10. Her H2 için "icebreakerIdeas" alanında Türkçe, birbirinden farklı, editörün metne hızlı başlamasını sağlayacak tam 2 giriş/kanca cümlesi oluştur.
-11. Yanıtın sadece JSON formatında olsun, başka açıklama ekleme
+8. "summaryBox" alanını içerik türüne göre oluştur: standart makale, rehber ve liste içeriklerinde "bullets" formatını kullan; başlık "Bu yazıda ne okuyacaksınız?" olsun, 3-5 cevap odaklı tam cümle yaz ve toplamı 100 kelimeyi geçirme. Röportaj veya uzun editoryal içeriklerde "paragraph" formatını kullan; 2-3 editoryal cevap cümlesi yaz, madde işareti kullanma ve toplamı 100 kelimeyi geçirme. Ürün, koleksiyon, otel veya villa tanıtımlarında "labeled" formatını kullan; 3-5 kısa etiket ve her etiket için bir cevap cümlesi yaz, toplamı 100 kelimeyi geçirme. Soru cümlesi kullanma. "keyTakeaways" alanını summaryBox'ın bullet maddeleriyle uyumlu tut.
+9. "coverImagePrompt" alanında yalnızca İngilizce, Midjourney/DALL-E uyumlu kapak görseli promptu oluştur. Konuyu ilk bakışta anlatan belirgin bir ana özne, editoryal başlık için boşluk, kompozisyon, ışık, doku ve kalite detaylarını belirt; yazı, logo veya watermark isteme.
+10. Her H2 için "imagePrompt" alanında yalnızca İngilizce, Midjourney/DALL-E uyumlu, konuyu yansıtan sinematik ve premium bir görsel prompt oluştur. Kompozisyon, ışık, doku ve kalite detaylarını belirt; yazı, logo veya watermark isteme.
+11. Her H2 için "icebreakerIdeas" alanında Türkçe, birbirinden farklı, editörün metne hızlı başlamasını sağlayacak tam 2 giriş/kanca cümlesi oluştur.
+12. Yanıtın sadece JSON formatında olsun, başka açıklama ekleme
 
 🚀 QFO VERİLERİNİ MAKSİMUM ETKİ İÇİN KULLAN:
 - Her QFO analiz verisini dikkate al ve stratejiye entegre et
@@ -662,6 +696,16 @@ Lütfen aşağıdaki JSON formatında QFO verilerine dayalı en üst düzeyde bi
         `Uzman önerileriyle yaygın hatalardan kaçının ve uygulama sürecinizi güvenle planlayın.`,
         `Türkiye'ye uygun örnekler sayesinde bilgileri günlük ihtiyaçlarınıza kolayca uyarlayın.`
       ],
+      summaryBox: {
+        format: 'bullets',
+        title: 'Bu yazıda ne okuyacaksınız?',
+        items: [
+          `${topic} seçiminde temel kriterleri öğrenerek daha bilinçli ve güvenli kararlar alın.`,
+          `Uzman önerileriyle yaygın hatalardan kaçının ve uygulama sürecinizi güvenle planlayın.`,
+          `Türkiye'ye uygun örnekler sayesinde bilgileri günlük ihtiyaçlarınıza kolayca uyarlayın.`
+        ]
+      },
+      coverImagePrompt: `Premium editorial cover image for ${topic}, a clear focal subject that instantly communicates the article theme, refined composition with room for an editorial masthead, sophisticated natural lighting, rich tactile detail, photorealistic, high-end magazine photography, no text, no logo, no watermark`,
       contentOutline: [
         {
           level: 'H1',

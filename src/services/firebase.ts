@@ -16,8 +16,15 @@ const firebaseConfig = {
   appId: getEnvValue('FIREBASE_APP_ID', 'VITE_FIREBASE_APP_ID')
 };
 
+const isFirebaseConfigured = Boolean(
+  firebaseConfig.apiKey &&
+  firebaseConfig.projectId &&
+  firebaseConfig.appId &&
+  firebaseConfig.apiKey !== 'demo-api-key'
+);
+
 // Check if Firebase is properly configured
-if (!firebaseConfig.apiKey || firebaseConfig.apiKey === 'demo-api-key') {
+if (!isFirebaseConfigured) {
   console.error('❌ Firebase not properly configured! Check environment variables.');
   console.error('❌ Current config:', {
     apiKey: firebaseConfig.apiKey ? 'SET' : 'NOT SET',
@@ -33,8 +40,10 @@ if (!firebaseConfig.apiKey || firebaseConfig.apiKey === 'demo-api-key') {
 }
 
 // Initialize Firebase only if it hasn't been initialized already
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-export const db = getFirestore(app);
+const app = isFirebaseConfigured
+  ? (getApps().length === 0 ? initializeApp(firebaseConfig) : getApp())
+  : null;
+export const db = app ? getFirestore(app) : null;
 
 export interface SharedBrief {
   id?: string;
@@ -54,6 +63,17 @@ export interface SharedBrief {
   };
   metaDescription: string;
   keyTakeaways?: string[];
+  summaryBox?: {
+    format: 'bullets' | 'paragraph' | 'labeled';
+    title: string;
+    items?: string[];
+    paragraph?: string;
+    labeledItems?: Array<{
+      label: string;
+      value: string;
+    }>;
+  };
+  coverImagePrompt?: string;
   contentOutline: Array<{
     level: 'H1' | 'H2' | 'H3';
     title: string;
@@ -90,10 +110,10 @@ class FirebaseService {
       // Check if Firebase is properly initialized
       if (!db) {
         console.error('❌ Firebase database not initialized');
-        throw new Error('Firebase not configured');
+        throw new Error('Paylaşım için Firebase yapılandırması eksik. Netlify ortam değişkenlerini kontrol edin.');
       }
 
-      // Helper function to safely serialize objects and remove circular references
+      // Remove unsupported values before passing the brief to Firestore.
       const sanitizeData = (obj: any, visited = new WeakSet()): any => {
         if (obj === null || obj === undefined) return obj;
         if (typeof obj !== 'object') return obj;
@@ -109,7 +129,9 @@ class FirebaseService {
         
         try {
           if (Array.isArray(obj)) {
-            return obj.map(item => sanitizeData(item, visited));
+            return obj
+              .map(item => sanitizeData(item, visited))
+              .filter(item => item !== undefined);
           }
           
           const sanitized: any = {};
@@ -119,7 +141,10 @@ class FirebaseService {
                 const value = obj[key];
                 if (typeof value === 'function') continue; // Skip functions
                 if (typeof value === 'symbol') continue; // Skip symbols
-                sanitized[key] = sanitizeData(value, visited);
+                const sanitizedValue = sanitizeData(value, visited);
+                if (sanitizedValue !== undefined) {
+                  sanitized[key] = sanitizedValue;
+                }
               } catch (error) {
                 console.warn(`Skipping property ${key} due to serialization error:`, error);
               }
@@ -132,7 +157,7 @@ class FirebaseService {
       };
 
       // Create a clean brief object without circular references
-      const briefToShare = {
+      const briefToShare = sanitizeData({
         topic: briefData.topic || '',
         userIntent: briefData.userIntent || '',
         competitorTone: briefData.competitorTone || '',
@@ -146,6 +171,8 @@ class FirebaseService {
         titleSuggestions: briefData.titleSuggestions || { clickFocused: '', seoFocused: '' },
         metaDescription: briefData.metaDescription || '',
         keyTakeaways: Array.isArray(briefData.keyTakeaways) ? briefData.keyTakeaways : [],
+        summaryBox: briefData.summaryBox ? sanitizeData(briefData.summaryBox) : null,
+        coverImagePrompt: briefData.coverImagePrompt || '',
         contentOutline: Array.isArray(briefData.contentOutline) ? sanitizeData(briefData.contentOutline) : [],
         faqSection: Array.isArray(briefData.faqSection) ? sanitizeData(briefData.faqSection) : [],
         schemaStrategy: briefData.schemaStrategy || { mainSchema: '', supportingSchemas: [], reasoning: '' },
@@ -153,7 +180,7 @@ class FirebaseService {
         competitorAnalysis: briefData.competitorAnalysis ? sanitizeData(briefData.competitorAnalysis) : null,
         createdAt: new Date(),
         sharedAt: new Date()
-      };
+      });
 
       console.log('🔥 Adding document to Firestore...');
       const docRef = await addDoc(collection(db, 'shared-briefs'), briefToShare);
@@ -162,6 +189,15 @@ class FirebaseService {
     } catch (error) {
       console.error('❌ Error sharing brief:', error);
       console.error('❌ Error details:', error instanceof Error ? error.message : String(error));
+
+      if (error instanceof Error && error.message.startsWith('Paylaşım için Firebase')) {
+        throw error;
+      }
+
+      if ((error as { code?: string }).code === 'permission-denied') {
+        throw new Error('Firebase paylaşım izni reddedildi. Firestore kurallarını kontrol edin.');
+      }
+
       throw new Error('Paylaşım sırasında bir hata oluştu. Lütfen tekrar deneyin.');
     }
   }
@@ -172,7 +208,7 @@ class FirebaseService {
       
       if (!db) {
         console.error('❌ Firebase database not initialized');
-        throw new Error('Firebase not configured');
+        throw new Error('Firebase yapılandırması eksik.');
       }
 
       if (!briefId || briefId.trim() === '') {

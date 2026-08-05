@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { Search, Target, Users, TrendingUp, FileText, CheckCircle, Lightbulb, BarChart3, ArrowRight, Share2, Copy, ExternalLink, Zap } from 'lucide-react';
 import ReferralCodeInput from './ReferralCodeInput';
 import { CompetitorSelection } from '../types/serp';
-import { geminiAIService } from '../services/geminiAI';
+import { geminiAIService, GeminiUsageEvent } from '../services/geminiAI';
 import { firebaseService } from '../services/firebase';
 import { referralService } from '../services/referralService';
-import { incrementTokenUsageWithComprehensiveDetails, TokenUsage, AnalysisDetails } from '../services/tokenUsageService';
+import { incrementTokenUsageWithComprehensiveDetails, AnalysisDetails } from '../services/tokenUsageService';
 import { QueryFanoutResult } from '../services/queryFanout';
 import { queryFanoutService } from '../services/queryFanout';
 import { dataForSEOService } from '../services/dataForSEO';
@@ -27,6 +27,14 @@ interface AnalysisResult {
   };
   metaDescription: string;
   keyTakeaways: string[];
+  summaryBox?: {
+    format: 'bullets' | 'paragraph' | 'labeled';
+    title: string;
+    items?: string[];
+    paragraph?: string;
+    labeledItems?: Array<{ label: string; value: string }>;
+  };
+  coverImagePrompt?: string;
   contentOutline: OutlineSection[];
   faqSection: FAQ[];
   schemaStrategy: {
@@ -94,6 +102,23 @@ const SEOAnalyzer: React.FC = () => {
 
   const proceedToAnalysis = async () => {
     if (!topic.trim() || !isCodeValidated) return;
+
+    if (!referralCode) {
+      alert('Referans kodu gerekli!');
+      return;
+    }
+
+    geminiAIService.setUsageObserver(async ({ tokenUsage, model }: GeminiUsageEvent) => {
+      const analysisDetails: AnalysisDetails = {
+        url: window.location.href,
+        analysisType: 'single',
+        status: 'completed',
+        model,
+        step: 'gemini-content-strategy'
+      };
+
+      await incrementTokenUsageWithComprehensiveDetails(referralCode, tokenUsage, analysisDetails);
+    });
     
     setIsAnalyzing(true);
     setCurrentStep('qfo'); // Show loading UI immediately
@@ -111,6 +136,7 @@ const SEOAnalyzer: React.FC = () => {
       alert(error instanceof Error ? error.message : 'Analiz sırasında bir hata oluştu. Lütfen tekrar deneyin.');
       setCurrentStep('input'); // Go back to input on error
     } finally {
+      geminiAIService.setUsageObserver(null);
       setIsAnalyzing(false);
     }
   };
@@ -150,48 +176,6 @@ const SEOAnalyzer: React.FC = () => {
         competitorData
       );
       
-      // Extract actual token usage from Gemini response
-      const actualTokenUsage = geminiResult.tokenUsage?.totalTokens || 1000; // Fallback to 1000 if not available
-      console.log('📊 Actual token usage from Gemini:', actualTokenUsage);
-      
-      // Use credits for the analysis with actual token usage
-      const creditsUsed = await referralService.useCredits(referralCode, actualTokenUsage);
-      if (!creditsUsed) {
-        alert('Yetersiz kredi! Lütfen referans kodunuzu kontrol edin.');
-        setIsAnalyzing(false);
-        return;
-      }
-
-      console.log('✅ Credits used successfully for referral code:', referralCode, 'Tokens:', actualTokenUsage);
-      
-      // Track comprehensive token usage in Firebase
-      if (geminiResult.tokenUsage && geminiResult.tokenUsage.totalTokens > 0) {
-        try {
-          const tokenUsage: TokenUsage = {
-            promptTokens: geminiResult.tokenUsage.promptTokens,
-            candidatesTokens: geminiResult.tokenUsage.candidatesTokens,
-            totalTokens: geminiResult.tokenUsage.totalTokens,
-            thoughtsTokens: geminiResult.tokenUsage.thoughtsTokens,
-            cachedTokens: geminiResult.tokenUsage.cachedTokens
-          };
-
-          const analysisDetails: AnalysisDetails = {
-            url: window.location.href,
-            analysisType: 'single',
-            status: 'completed',
-            model: 'gemini-2.5-pro',
-            step: 'comprehensive-analysis'
-          };
-
-          // Use referral code as userId for token tracking
-          await incrementTokenUsageWithComprehensiveDetails(referralCode, tokenUsage, analysisDetails);
-          console.log('✅ Token usage tracked successfully in Firebase');
-        } catch (tokenError) {
-          console.error('❌ Error tracking token usage:', tokenError);
-          // Don't fail the entire analysis if token tracking fails
-        }
-      }
-      
       // Convert Gemini result to our AnalysisResult format
       const analysisResult: AnalysisResult = {
         topic: geminiResult.topic,
@@ -207,6 +191,8 @@ const SEOAnalyzer: React.FC = () => {
         titleSuggestions: geminiResult.titleSuggestions,
         metaDescription: geminiResult.metaDescription,
         keyTakeaways: geminiResult.keyTakeaways,
+        summaryBox: geminiResult.summaryBox,
+        coverImagePrompt: geminiResult.coverImagePrompt,
         contentOutline: geminiResult.contentOutline,
         faqSection: geminiResult.faqSection,
         schemaStrategy: geminiResult.schemaStrategy,
@@ -261,33 +247,6 @@ const SEOAnalyzer: React.FC = () => {
       setIsAnalyzing(false);
     } catch (error) {
       console.error('Gemini AI analysis failed:', error);
-      
-      // Track failed analysis in Firebase
-      if (referralCode) {
-        try {
-          const tokenUsage: TokenUsage = {
-            promptTokens: 0,
-            candidatesTokens: 0,
-            totalTokens: 0,
-            thoughtsTokens: 0,
-            cachedTokens: 0
-          };
-
-          const analysisDetails: AnalysisDetails = {
-            url: window.location.href,
-            analysisType: 'single',
-            status: 'failed',
-            error: error instanceof Error ? error.message : String(error),
-            model: 'gemini-2.5-pro',
-            step: 'comprehensive-analysis'
-          };
-
-          await incrementTokenUsageWithComprehensiveDetails(referralCode, tokenUsage, analysisDetails);
-          console.log('✅ Failed analysis tracked in Firebase');
-        } catch (tokenError) {
-          console.error('❌ Error tracking failed analysis:', tokenError);
-        }
-      }
       
       alert('Analiz sırasında bir hata oluştu. Lütfen tekrar deneyin.');
       setIsAnalyzing(false);
@@ -344,34 +303,6 @@ const SEOAnalyzer: React.FC = () => {
         enhancedCompetitorData
       );
       
-      console.log('✅ Main analysis completed, tracking token usage...');
-      
-      // Track token usage for main analysis
-      if (analysisResult.tokenUsage && analysisResult.tokenUsage.totalTokens > 0 && referralCode) {
-        try {
-          const tokenUsage: TokenUsage = {
-            promptTokens: analysisResult.tokenUsage.promptTokens,
-            candidatesTokens: analysisResult.tokenUsage.candidatesTokens,
-            totalTokens: analysisResult.tokenUsage.totalTokens,
-            thoughtsTokens: analysisResult.tokenUsage.thoughtsTokens,
-            cachedTokens: analysisResult.tokenUsage.cachedTokens
-          };
-
-          const analysisDetails: AnalysisDetails = {
-            url: window.location.href,
-            analysisType: 'single',
-            status: 'completed',
-            model: 'gemini-2.5-pro',
-            step: 'enhanced-analysis-with-qfo'
-          };
-
-          await incrementTokenUsageWithComprehensiveDetails(referralCode, tokenUsage, analysisDetails);
-          console.log('✅ Enhanced analysis token usage tracked successfully in Firebase');
-        } catch (tokenError) {
-          console.error('❌ Error tracking enhanced analysis token usage:', tokenError);
-        }
-      }
-
       // Wait for QFO results and enhance the analysis
       const qfoResult = await qfoPromise;
       
@@ -422,35 +353,8 @@ const SEOAnalyzer: React.FC = () => {
     } catch (error) {
       console.error('❌ Enhanced analysis failed:', error);
       
-      // Track failed enhanced analysis in Firebase
-      if (referralCode) {
-        try {
-          const tokenUsage: TokenUsage = {
-            promptTokens: 0,
-            candidatesTokens: 0,
-            totalTokens: 0,
-            thoughtsTokens: 0,
-            cachedTokens: 0
-          };
-
-          const analysisDetails: AnalysisDetails = {
-            url: window.location.href,
-            analysisType: 'single',
-            status: 'failed',
-            error: error instanceof Error ? error.message : String(error),
-            model: 'gemini-2.5-pro',
-            step: 'enhanced-analysis-with-qfo'
-          };
-
-          await incrementTokenUsageWithComprehensiveDetails(referralCode, tokenUsage, analysisDetails);
-          console.log('✅ Failed enhanced analysis tracked in Firebase');
-        } catch (tokenError) {
-          console.error('❌ Error tracking failed enhanced analysis:', tokenError);
-        }
-      }
-      
       // Fallback to regular analysis
-      generateFinalAnalysis(competitorData, competitors);
+      await generateFinalAnalysis(competitorData, competitors);
     } finally {
       setIsAnalyzing(false);
     }
@@ -508,6 +412,8 @@ const SEOAnalyzer: React.FC = () => {
         titleSuggestions: geminiResult.titleSuggestions,
         metaDescription: geminiResult.metaDescription,
         keyTakeaways: geminiResult.keyTakeaways,
+        summaryBox: geminiResult.summaryBox,
+        coverImagePrompt: geminiResult.coverImagePrompt,
         contentOutline: geminiResult.contentOutline,
         faqSection: geminiResult.faqSection,
         schemaStrategy: geminiResult.schemaStrategy,
@@ -623,6 +529,8 @@ const SEOAnalyzer: React.FC = () => {
         titleSuggestions: result.titleSuggestions || { clickFocused: '', seoFocused: '' },
         metaDescription: result.metaDescription || '',
         keyTakeaways: result.keyTakeaways || [],
+        summaryBox: result.summaryBox,
+        coverImagePrompt: result.coverImagePrompt || '',
         contentOutline: result.contentOutline || [],
         faqSection: result.faqSection || [],
         schemaStrategy: result.schemaStrategy || { mainSchema: '', supportingSchemas: [], reasoning: '' },
@@ -637,7 +545,7 @@ const SEOAnalyzer: React.FC = () => {
     } catch (error) {
       console.error('❌ Error sharing brief:', error);
       console.error('❌ Error details:', error instanceof Error ? error.message : String(error));
-      alert('Paylaşım sırasında bir hata oluştu. Lütfen tekrar deneyin.');
+      alert(error instanceof Error ? error.message : 'Paylaşım sırasında bir hata oluştu. Lütfen tekrar deneyin.');
     } finally {
       setIsSharing(false);
     }
@@ -695,6 +603,11 @@ const SEOAnalyzer: React.FC = () => {
   };
 
   const keyTakeaways = result ? getKeyTakeaways(result.contentOutline) : [];
+  const summaryBox = result?.summaryBox || {
+    format: 'bullets' as const,
+    title: 'Bu yazıda ne okuyacaksınız?',
+    items: keyTakeaways
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
@@ -1128,14 +1041,35 @@ const SEOAnalyzer: React.FC = () => {
                 Detaylı İçerik Planı
               </h2>
 
-              <section className="mb-6 border-l-4 border-amber-400 bg-amber-50 p-4" aria-labelledby="key-takeaways-title">
-                <h3 id="key-takeaways-title" className="font-semibold text-gray-800">📌 Key Takeaways (Önemli Çıkarımlar)</h3>
-                <ul className="mt-3 list-disc space-y-2 pl-5 text-gray-700">
-                  {keyTakeaways.map((takeaway, index) => (
-                    <li key={index}>{takeaway}</li>
-                  ))}
-                </ul>
+              <section className="brief-summary-box mb-6 border-l-4 border-amber-400 bg-amber-50 p-4" aria-labelledby="content-summary-title">
+                <h3 id="content-summary-title" className="font-semibold text-gray-800">{summaryBox.title}</h3>
+                {summaryBox.format === 'paragraph' && summaryBox.paragraph ? (
+                  <p className="mt-3 text-gray-700">{summaryBox.paragraph}</p>
+                ) : summaryBox.format === 'labeled' && summaryBox.labeledItems?.length ? (
+                  <dl className="mt-3 space-y-2 text-gray-700">
+                    {summaryBox.labeledItems.slice(0, 5).map((item, index) => (
+                      <div key={index}><dt className="inline font-semibold">{item.label}: </dt><dd className="inline">{item.value}</dd></div>
+                    ))}
+                  </dl>
+                ) : (
+                  <ul className="mt-3 list-disc space-y-2 pl-5 text-gray-700">
+                    {(summaryBox.items?.slice(0, 5) || keyTakeaways).map((takeaway, index) => <li key={index}>{takeaway}</li>)}
+                  </ul>
+                )}
               </section>
+
+              {result.coverImagePrompt && (
+                <div className="brief-image-prompt mb-6 overflow-hidden rounded-lg border border-[#B8BEC7] border-l-4 border-l-violet-400 bg-[#ECEDEF] text-slate-800">
+                  <div className="flex items-center justify-between gap-3 border-b border-[#B8BEC7] bg-[#D9DDE2] px-3 py-2">
+                    <h3 className="text-sm font-semibold text-violet-950">🖼️ Kapak Görseli Promptu</h3>
+                    <button type="button" onClick={() => copyImagePrompt(result.coverImagePrompt || '', -1)} className="inline-flex shrink-0 items-center gap-1.5 rounded border border-violet-300 bg-violet-100 px-2.5 py-1 text-xs font-medium text-violet-800 transition-colors hover:bg-violet-200">
+                      {copiedPromptIndex === -1 ? <CheckCircle className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                      {copiedPromptIndex === -1 ? 'Kopyalandı' : 'Kopyala'}
+                    </button>
+                  </div>
+                  <pre className="whitespace-pre-wrap break-words p-3 text-sm leading-6">{result.coverImagePrompt}</pre>
+                </div>
+              )}
               
               <div className="space-y-6">
                 {result.contentOutline.map((section, index) => (
@@ -1148,7 +1082,7 @@ const SEOAnalyzer: React.FC = () => {
                     </div>
                     <p className="text-gray-700 mb-3">{section.content}</p>
                     {section.level === 'H2' && (
-                      <div className="mb-3 border-l-4 border-indigo-200 bg-indigo-50 p-3">
+                      <div className="brief-icebreaker mb-3 border-l-4 border-indigo-200 bg-indigo-50 p-3">
                         <h4 className="mb-2 text-sm font-semibold text-indigo-900">✍️ Giriş Fikirleri:</h4>
                         <div className="space-y-1 text-sm italic text-indigo-800">
                           {getIcebreakerIdeas(section).map((idea, ideaIndex) => (
@@ -1165,13 +1099,13 @@ const SEOAnalyzer: React.FC = () => {
                     )}
                     
                     {section.storytelling && (
-                      <div className="bg-[#F7F5FC] p-3 rounded-lg border-l-4 border-purple-400">
+                      <div className="brief-story bg-[#F7F5FC] p-3 rounded-lg border-l-4 border-purple-400">
                         <p className="text-sm"><strong>✍️ Hikayeleştirme:</strong> {section.storytelling}</p>
                       </div>
                     )}
 
                     {section.level === 'H2' && (
-                      <div className="mt-3 overflow-hidden rounded-lg border border-[#B8BEC7] border-l-4 border-l-violet-400 bg-[#ECEDEF] text-slate-800">
+                      <div className="brief-image-prompt mt-3 overflow-hidden rounded-lg border border-[#B8BEC7] border-l-4 border-l-violet-400 bg-[#ECEDEF] text-slate-800">
                         <div className="flex items-center justify-between gap-3 border-b border-[#B8BEC7] bg-[#D9DDE2] px-3 py-2">
                           <h4 className="text-sm font-semibold text-violet-950">🎨 Görsel Prompt</h4>
                           <button
